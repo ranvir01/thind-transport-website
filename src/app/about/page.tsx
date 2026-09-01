@@ -20,7 +20,7 @@ import { freightLinks } from "@/components/shared/link-sets"
 
 export const metadata: Metadata = {
   title: `About ${COMPANY_INFO.name}`,
-  description: `Learn about ${COMPANY_INFO.name}, a family-run trucking company based in Kent, Washington.`,
+  description: `${COMPANY_INFO.name} has hauled flatbed, reefer and dry van freight out of ${COMPANY_INFO.location} since ${COMPANY_INFO.founded} — a ${STATS.trucksInFleet}-truck family carrier run by ${COMPANY_INFO.owner}, who has ${COMPANY_INFO.ownerExperience} years in the business.`,
   alternates: { canonical: "/about" },
 }
 
@@ -173,9 +173,6 @@ export default function AboutPage() {
               Company Timeline
             </Badge>
             <h2 className="mb-4 text-3xl font-black text-gray-900 md:text-4xl">How We&apos;ve Grown</h2>
-            <p className="mx-auto max-w-2xl text-lg text-gray-600">
-              A steady path, a growing fleet, and the same emphasis on practical support.
-            </p>
           </div>
 
           <div className="mx-auto grid max-w-5xl gap-4 md:grid-cols-2">
@@ -197,9 +194,6 @@ export default function AboutPage() {
           <div className="mb-12 text-center">
             <Badge className="mb-4 bg-navy px-4 py-2 text-sm font-bold text-white">How We Operate</Badge>
             <h2 className="mb-4 text-3xl font-black text-gray-900 md:text-4xl">What Matters Day To Day</h2>
-            <p className="mx-auto max-w-2xl text-lg text-gray-600">
-              We replaced generic corporate filler here with the things drivers actually ask about.
-            </p>
           </div>
 
           <div className="mx-auto grid max-w-5xl gap-6 md:grid-cols-3">
@@ -325,6 +319,7 @@ export default function AboutPage() {
       </section>
 
       <RelatedLinks
+        tone="dark"
         title="See it for yourself"
         intro="Records, equipment and tools rather than more company history."
         links={freightLinks(["/about"])}

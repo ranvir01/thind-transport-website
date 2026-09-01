@@ -87,7 +87,7 @@ export default function LoadOffPage() {
             <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
               {/* PLAIN <a>, NOT next/link — deliberate, and load-bearing.
                   See the note above CROSS_APP_LINK_REASON below. */}
-              <Button size="lg" className="bg-white text-slate-900 hover:bg-slate-100" asChild>
+              <Button size="lg" className="bg-none bg-white text-slate-900 shadow-none hover:bg-slate-100" asChild>
                 <a href="/hub">
                   Open LoadOff <ArrowRight className="h-5 w-5 ml-2" />
                 </a>
@@ -268,7 +268,7 @@ export default function LoadOffPage() {
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             {/* Plain <a> — see CROSS_APP_LINK_REASON. */}
-            <Button size="lg" className="bg-white text-slate-900 hover:bg-slate-100" asChild>
+            <Button size="lg" className="bg-none bg-white text-slate-900 shadow-none hover:bg-slate-100" asChild>
               <a href="/hub">
                 Open LoadOff <ArrowRight className="h-5 w-5 ml-2" />
               </a>

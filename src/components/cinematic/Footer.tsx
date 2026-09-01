@@ -4,7 +4,7 @@ import { useState } from "react"
 import Link from "next/link"
 
 import { usePathname } from "next/navigation"
-import { COMPANY_INFO, TRUST_INDICATORS } from "@/lib/constants"
+import { COMPANY_INFO, SUPPORT, TRUST_INDICATORS } from "@/lib/constants"
 import {
   Award,
   BadgeCheck,
@@ -298,7 +298,7 @@ export const CinematicFooter = () => {
                       {COMPANY_INFO.phone}
                     </a>
                     <p className="text-xs text-zinc-400">
-                      24/7 Dispatch Support
+                      {SUPPORT.dispatch}
                     </p>
                   </div>
                 </div>
@@ -341,13 +341,16 @@ export const CinematicFooter = () => {
                       cert.icon as keyof typeof certificationIconMap
                     ] ?? ShieldCheck
 
+                  const href = "href" in cert ? cert.href : undefined
                   const content = (
-                    <div className="flex items-start gap-3 group cursor-pointer">
-                      <Icon className="mt-0.5 h-4 w-4 text-zinc-600 group-hover:text-orange-500 transition-colors flex-shrink-0" />
+                    <div
+                      className={`flex items-start gap-3 ${href ? "group cursor-pointer" : ""}`}
+                    >
+                      <Icon className="mt-0.5 h-4 w-4 flex-shrink-0 text-zinc-600 transition-colors group-hover:text-orange-500" />
                       <div>
                         <div className="font-medium text-zinc-200 text-sm group-hover:text-white transition-colors">
                           {cert.name}
-                          {cert.name.includes("Safety Rating") && (
+                          {href && (
                             <ExternalLink className="inline-block w-3 h-3 ml-1 text-zinc-500" />
                           )}
                         </div>
@@ -358,13 +361,8 @@ export const CinematicFooter = () => {
                     </div>
                   )
 
-                  return cert.name.includes("Safety Rating") ? (
-                    <a
-                      key={cert.name}
-                      href="https://safer.fmcsa.dot.gov/CompanySnapshot.aspx"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
+                  return href ? (
+                    <a key={cert.name} href={href} target="_blank" rel="noopener noreferrer">
                       {content}
                     </a>
                   ) : (

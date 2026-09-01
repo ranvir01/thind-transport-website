@@ -1,93 +1,29 @@
 "use client"
 
 import { useState } from "react"
-import { motion, AnimatePresence } from "framer-motion"
 import Image from "next/image"
 import Link from "next/link"
-import { 
-  Truck, 
-  Box, 
-  Snowflake, 
-  Layers,
-  Wrench, 
-  Clock, 
-  Shield, 
-  Gauge,
-  Zap,
-  Wind,
-  AlertTriangle,
-  Refrigerator,
-  ArrowRight,
-  CheckCircle2,
-  Cog,
-  Radio,
-  BatteryCharging,
-  Star,
-  Play,
-  ChevronDown,
-  ChevronUp,
-  Award,
-  Users,
-  MapPin,
-  Heart,
-  ThumbsUp,
-  Quote,
-  TrendingUp,
-  Bed,
-  Wifi,
-  Thermometer,
-  Lock,
-  Eye,
-  Phone,
-  Calendar
+import {
+  Truck, Box, Snowflake, Layers, Wrench,
+  Clock, Shield, Gauge, Zap, Wind,
+  AlertTriangle, Refrigerator, ArrowRight, CheckCircle2, Cog,
+  BatteryCharging, Star, Play, ChevronDown, ChevronUp,
+  TrendingUp, Bed, Wifi, Thermometer, Lock,
+  Eye, Phone, Calendar,
 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
-import { COMPANY_INFO } from "@/lib/constants"
+import { COMPANY_INFO, STATS, SUPPORT } from "@/lib/constants"
 import { FAQAccordion } from "@/components/shared/FAQAccordion"
+import { Reveal } from "@/components/ui/Reveal"
 import { PageBreadcrumb } from "@/components/shared/PageBreadcrumb"
 import { RelatedLinks } from "@/components/shared/RelatedLinks"
 import { freightLinks } from "@/components/shared/link-sets"
 
 // Animation variants
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.1,
-      delayChildren: 0.05
-    }
-  }
-}
 
-const cardVariants = {
-  hidden: { 
-    opacity: 0, 
-    y: 30,
-    scale: 0.97
-  },
-  visible: { 
-    opacity: 1, 
-    y: 0,
-    scale: 1,
-    transition: {
-      type: "spring" as const,
-      stiffness: 120,
-      damping: 17
-    }
-  }
-}
 
-const fadeInUp = {
-  hidden: { opacity: 0, y: 25 },
-  visible: { 
-    opacity: 1, 
-    y: 0,
-    transition: { duration: 0.5, ease: "easeOut" as const }
-  }
-}
 
 // Enhanced Fleet data with more details for SEO
 const trucks = [
@@ -263,9 +199,9 @@ const trailers = [
 const maintenanceFeatures = [
   {
     icon: Wrench,
-    title: "In-House Shop",
-    description: "Full-service maintenance facility with ASE-certified technicians. Most repairs done same-day.",
-    stat: "24hr"
+    title: "Maintained on schedule",
+    description: "Every truck goes to our regular shop on a fixed preventive-maintenance interval, not when something breaks.",
+    stat: "PM"
   },
   {
     icon: Clock,
@@ -276,8 +212,8 @@ const maintenanceFeatures = [
   {
     icon: Shield,
     title: "Preventive Care",
-    description: "Scheduled maintenance every 25,000 miles. We fix it before it breaks. You keep rolling.",
-    stat: "25K"
+    description: "Scheduled preventive maintenance. We fix it before it breaks, so you keep rolling.",
+    stat: "PM"
   }
 ]
 
@@ -297,31 +233,28 @@ const faqs = [
   },
   {
     question: "What happens if my truck breaks down on the road?",
-    answer: "Call our 24/7 dispatch line and we'll have roadside assistance to you within 4 hours on average. For repairs we can't do roadside, we'll get you to the nearest certified shop and cover all costs. We also provide rental equipment if repairs take longer than expected."
+    answer: "Call dispatch any hour — we arrange the roadside call and, if it can't be fixed on the shoulder, get you to a shop. We tell you what we cover before you sign anything."
   },
   {
     question: "How often is preventive maintenance performed?",
-    answer: "Every truck receives a full preventive maintenance inspection every 25,000 miles at our in-house shop, and we complete DOT inspections ahead of their due dates so trucks stay on the road."
+    answer: "Every truck runs a scheduled preventive-maintenance inspection, and we complete DOT inspections ahead of their due dates so trucks stay on the road."
   },
   {
     question: "Can I personalize my assigned truck?",
-    answer: "Absolutely! While the truck remains company property, you can add personal touches like seat covers, phone mounts, and non-permanent modifications. For company drivers with good standing, we offer equipment upgrade opportunities after 6 months."
+    answer: "Absolutely! While the truck remains company property, you can add personal touches like seat covers, phone mounts, and non-permanent modifications."
   }
 ]
 
 // Why choose our fleet stats
 const fleetStats = [
-  { value: "15+", label: "Trucks in Fleet", icon: TrendingUp },
+  { value: String(STATS.trucksInFleet), label: "Trucks in Fleet", icon: TrendingUp },
   { value: "100%", label: "APU-Equipped", icon: Shield },
-  { value: "24/7", label: "Dispatch & Roadside", icon: Clock },
-  { value: "2.5yr", label: "Avg Fleet Age", icon: Calendar }
+  { value: SUPPORT.hours, label: "Dispatch & Roadside", icon: Clock },
+  { value: "2023-2025", label: "Model Years", icon: Calendar }
 ]
 
 export default function FleetPage() {
   const [activeTab, setActiveTab] = useState<"trucks" | "trailers">("trucks")
-  const [hoveredCard, setHoveredCard] = useState<number | null>(null)
-  const [expandedFaq, setExpandedFaq] = useState<number | null>(null)
-  const [showVideo, setShowVideo] = useState(false)
   const [selectedTruck, setSelectedTruck] = useState<number | null>(null)
 
   return (
@@ -330,24 +263,13 @@ export default function FleetPage() {
       
       {/* Hero Section with Video Option */}
       <section className="relative min-h-[85vh] flex items-center justify-center overflow-hidden bg-navy">
-        {/* Video Background (optional) */}
-        {showVideo ? (
-          <video
-            autoPlay
-            muted
-            loop
-            playsInline
-            className="absolute inset-0 w-full h-full object-cover opacity-30"
-          >
-            <source src="/images/generated/hero-american-fleet.mp4?v=3" type="video/mp4" />
-          </video>
-        ) : (
-          <>
-            {/* Gradient overlays */}
-            <div className="absolute inset-0 bg-gradient-to-br from-navy via-navy-600 to-navy-800" />
-            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-orange/10 via-transparent to-transparent" />
-          </>
-        )}
+        {/* Gradient overlays. A <video> branch used to sit here behind a
+            `showVideo` flag that nothing ever set to true, so it never rendered.
+            The footage it pointed at (hero-american-fleet.mp4, 3 MB) is still in
+            public/ — enabling a video hero is a deliberate call about LCP and
+            the motion spec, not something to leave half-wired. */}
+        <div className="absolute inset-0 bg-gradient-to-br from-navy via-navy-600 to-navy-800" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-orange/10 via-transparent to-transparent" />
         
         {/* Grid pattern */}
         <div 
@@ -376,19 +298,9 @@ export default function FleetPage() {
 
         {/* Content */}
         <div className="container relative z-10 px-4 py-24 md:py-32">
-          <motion.div 
-            className="max-w-3xl"
-            initial="hidden"
-            animate="visible"
-            variants={{
-              hidden: { opacity: 0 },
-              visible: { 
-                opacity: 1, 
-                transition: { staggerChildren: 0.12 } 
-              }
-            }}
-          >
-            <motion.div variants={fadeInUp} className="flex flex-wrap items-center gap-3 mb-6">
+          {/* Static: above the fold, off the LCP path per DIRECTION §5. */}
+          <div className="max-w-3xl">
+            <div className="flex flex-wrap items-center gap-3 mb-6">
               <Badge variant="outline" className="bg-orange/20 text-orange border-orange/30 px-4 py-2 text-sm font-bold backdrop-blur-sm">
                 <Truck className="h-4 w-4 mr-2 inline" />
                 2023-2025 Model Fleet
@@ -397,35 +309,31 @@ export default function FleetPage() {
                 <CheckCircle2 className="h-4 w-4 mr-2 inline" />
                 All APU Equipped
               </Badge>
-            </motion.div>
+            </div>
             
-            <motion.h1 
-              variants={fadeInUp}
+            <h1
               className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black text-white mb-6 leading-[1.1] tracking-tight"
             >
               Modern Power.
               <br />
               <span className="text-orange">Maximum Comfort.</span>
-            </motion.h1>
+            </h1>
             
-            <motion.p 
-              variants={fadeInUp}
+            <p
               className="text-lg md:text-xl text-white/80 max-w-2xl leading-relaxed mb-4"
             >
               Drive the newest Freightliner Cascadias & Volvo VNL 860s. 
               <span className="text-white font-semibold"> Every truck equipped with APU, inverter, and full safety suite.</span>
-            </motion.p>
+            </p>
 
-            <motion.p 
-              variants={fadeInUp}
+            <p
               className="text-base text-white/80 max-w-xl leading-relaxed mb-8"
             >
-              No old equipment. No excuses. Just premium trucks maintained by our in-house shop 
+              No old equipment. Late-model trucks, maintained on a preventive schedule 
               with 24/7 road support. Your comfort and uptime are our priority.
-            </motion.p>
+            </p>
 
-            <motion.div 
-              variants={fadeInUp}
+            <div
               className="flex flex-col sm:flex-row gap-4"
             >
               <Button 
@@ -449,11 +357,10 @@ export default function FleetPage() {
                 <Play className="mr-2 h-5 w-5" />
                 Explore Fleet
               </Button>
-            </motion.div>
+            </div>
 
             {/* Trust indicators row */}
-            <motion.div 
-              variants={fadeInUp}
+            <div
               className="flex flex-wrap items-center gap-6 mt-10 pt-8 border-t border-white/10"
             >
               {fleetStats.map((stat, idx) => (
@@ -467,8 +374,8 @@ export default function FleetPage() {
                   </div>
                 </div>
               ))}
-            </motion.div>
-          </motion.div>
+            </div>
+          </div>
         </div>
 
         {/* Bottom gradient fade */}
@@ -478,13 +385,7 @@ export default function FleetPage() {
       {/* Why Our Equipment Section - Trust Builder */}
       <section className="py-16 bg-neutral-50">
         <div className="container px-4">
-          <motion.div 
-            className="text-center mb-12"
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true }}
-            variants={fadeInUp}
-          >
+          <Reveal className="text-center mb-12">
             <Badge className="mb-4 bg-navy text-white px-4 py-2 text-xs font-bold">
               The Thind Difference
             </Badge>
@@ -494,15 +395,9 @@ export default function FleetPage() {
             <p className="text-lg text-steel max-w-2xl mx-auto">
               Mega carriers cut corners on equipment. We don't. Here's what sets us apart.
             </p>
-          </motion.div>
+          </Reveal>
 
-          <motion.div 
-            className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto"
-            variants={containerVariants}
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true }}
-          >
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
             {[
               { 
                 icon: Calendar, 
@@ -518,20 +413,20 @@ export default function FleetPage() {
               },
               { 
                 icon: Wrench, 
-                title: "In-House Shop", 
-                desc: "Our technicians know our trucks. Most repairs same-day.",
-                highlight: "< 4hr Response"
+                title: "Preventive maintenance", 
+                desc: "Scheduled PM and DOT inspections ahead of their due dates, not after a breakdown.",
+                highlight: "On schedule"
               },
               { 
                 icon: Shield, 
                 title: "Safety First", 
                 desc: "Full safety suites: collision mitigation, lane departure, stability control.",
-                highlight: "0 DOT Violations"
+                highlight: "On the SAFER record"
               },
             ].map((item, idx) => (
-              <motion.div
+              <Reveal
                 key={idx}
-                variants={cardVariants}
+                index={Math.min(idx, 4)}
                 className="bg-white rounded-2xl p-6 shadow-brand border border-neutral-100 hover:shadow-brand-lg hover:border-orange/20 transition-all duration-300 group"
               >
                 <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-orange/10 to-orange/5 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
@@ -540,9 +435,9 @@ export default function FleetPage() {
                 <Badge className="mb-3 bg-navy/20 text-navy text-xs font-bold">{item.highlight}</Badge>
                 <h3 className="text-lg font-bold text-navy mb-2">{item.title}</h3>
                 <p className="text-sm text-steel leading-relaxed">{item.desc}</p>
-              </motion.div>
+              </Reveal>
             ))}
-          </motion.div>
+          </div>
         </div>
       </section>
 
@@ -559,13 +454,7 @@ export default function FleetPage() {
           <div className="absolute inset-0 bg-gradient-to-t from-navy via-navy/30 to-navy/10" />
           <div className="absolute bottom-0 left-0 right-0">
             <div className="container px-4 pb-10 md:pb-14">
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.6 }}
-                className="max-w-2xl"
-              >
+              <Reveal className="max-w-2xl">
                 <Badge className="mb-3 bg-orange-600 text-white px-4 py-1.5 text-xs font-bold">
                   The Yard — Kent, WA
                 </Badge>
@@ -573,7 +462,7 @@ export default function FleetPage() {
                   Late-model power,
                   <span className="text-orange"> lined up and ready.</span>
                 </h2>
-              </motion.div>
+              </Reveal>
             </div>
           </div>
         </div>
@@ -597,14 +486,14 @@ export default function FleetPage() {
 
           {/* Tab buttons */}
           <div className="flex justify-center mb-12">
-            <div className="inline-flex bg-neutral-100 rounded-2xl p-2 shadow-inner">
+            <div className="inline-flex bg-neutral-50 rounded-2xl p-2 shadow-inner">
               <button
                 onClick={() => setActiveTab("trucks")}
                 className={cn(
                   "flex items-center gap-2 px-8 py-4 rounded-xl font-bold text-sm transition-all duration-300",
                   activeTab === "trucks" 
                     ? "bg-navy text-white shadow-lg" 
-                    : "text-steel hover:bg-white/50"
+                    : "text-steel hover:bg-white/10"
                 )}
               >
                 <Truck className="h-5 w-5" />
@@ -616,7 +505,7 @@ export default function FleetPage() {
                   "flex items-center gap-2 px-8 py-4 rounded-xl font-bold text-sm transition-all duration-300",
                   activeTab === "trailers" 
                     ? "bg-navy text-white shadow-lg" 
-                    : "text-steel hover:bg-white/50"
+                    : "text-steel hover:bg-white/10"
                 )}
               >
                 <Box className="h-5 w-5" />
@@ -626,27 +515,18 @@ export default function FleetPage() {
           </div>
 
           {/* Trucks Grid */}
-          <AnimatePresence mode="wait">
             {activeTab === "trucks" && (
-              <motion.div 
-                className="grid md:grid-cols-2 gap-8 max-w-6xl mx-auto"
-                variants={containerVariants}
-                initial="hidden"
-                animate="visible"
-                exit="hidden"
-                key="trucks"
-              >
-                {trucks.map((truck) => (
-                  <motion.div
-                    key={truck.id}
-                    variants={cardVariants}
-                    onMouseEnter={() => setHoveredCard(truck.id)}
-                    onMouseLeave={() => setHoveredCard(null)}
+              <div key="trucks" className="grid md:grid-cols-2 gap-8 max-w-6xl mx-auto motion-safe:animate-fade-in">
+                {trucks.map((truck, index) => (
+                  <Reveal key={truck.id} index={Math.min(index, 4)}>
+                  <div
                     onClick={() => setSelectedTruck(selectedTruck === truck.id ? null : truck.id)}
                     className={cn(
-                      "group relative bg-white rounded-2xl shadow-brand overflow-hidden border-2 cursor-pointer",
+                      "group relative bg-white rounded-2xl shadow-brand overflow-hidden border-2 border-transparent cursor-pointer",
                       "transition-all duration-500 ease-out",
-                      hoveredCard === truck.id ? "scale-[1.02] shadow-brand-lg border-orange/30" : "border-transparent",
+                      // Hover was tracked in React state and re-rendered the
+                      // whole grid; the card is already a `group`.
+                      "hover:scale-[1.02] hover:shadow-brand-lg hover:border-orange/30",
                       selectedTruck === truck.id && "ring-2 ring-orange ring-offset-2"
                     )}
                   >
@@ -730,40 +610,41 @@ export default function FleetPage() {
                         ))}
                       </div>
 
-                      {/* Expandable specs */}
-                      <AnimatePresence>
-                        {selectedTruck === truck.id && (
-                          <motion.div
-                            initial={{ height: 0, opacity: 0 }}
-                            animate={{ height: "auto", opacity: 1 }}
-                            exit={{ height: 0, opacity: 0 }}
-                            transition={{ duration: 0.3 }}
-                            className="overflow-hidden"
-                          >
-                            <div className="pt-4 border-t border-neutral-100">
-                              <h4 className="font-bold text-navy text-sm mb-3">Full Specifications</h4>
-                              <div className="grid grid-cols-2 gap-2 mb-4">
-                                {truck.specs.map((spec, idx) => (
-                                  <div key={idx} className="flex items-center gap-2 text-sm text-steel">
-                                    <CheckCircle2 className="h-3.5 w-3.5 text-green-500 flex-shrink-0" />
-                                    <span>{spec}</span>
-                                  </div>
-                                ))}
-                              </div>
-                              
-                              <h4 className="font-bold text-navy text-sm mb-3">Sleeper Amenities</h4>
-                              <div className="grid grid-cols-2 gap-2">
-                                {truck.amenities.map((amenity, idx) => (
-                                  <div key={idx} className="flex items-center gap-2 text-sm text-steel">
-                                    <Bed className="h-3.5 w-3.5 text-orange flex-shrink-0" />
-                                    <span>{amenity}</span>
-                                  </div>
-                                ))}
-                              </div>
+                      {/* Expandable specs. Always mounted: a CSS collapse
+                          needs both states in the DOM, which is what
+                          AnimatePresence used to buy with an exit animation. */}
+                      <div
+                        className="grid overflow-hidden transition-[grid-template-rows,opacity] duration-slow ease-entrance"
+                        style={{
+                          gridTemplateRows: selectedTruck === truck.id ? "1fr" : "0fr",
+                          opacity: selectedTruck === truck.id ? 1 : 0,
+                        }}
+                        aria-hidden={selectedTruck !== truck.id}
+                      >
+                        <div className="min-h-0">
+                          <div className="pt-4 border-t border-neutral-100">
+                            <h4 className="font-bold text-navy text-sm mb-3">Full Specifications</h4>
+                            <div className="grid grid-cols-2 gap-2 mb-4">
+                              {truck.specs.map((spec, idx) => (
+                                <div key={idx} className="flex items-center gap-2 text-sm text-steel">
+                                  <CheckCircle2 className="h-3.5 w-3.5 text-green-500 flex-shrink-0" />
+                                  <span>{spec}</span>
+                                </div>
+                              ))}
                             </div>
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
+
+                            <h4 className="font-bold text-navy text-sm mb-3">Sleeper Amenities</h4>
+                            <div className="grid grid-cols-2 gap-2">
+                              {truck.amenities.map((amenity, idx) => (
+                                <div key={idx} className="flex items-center gap-2 text-sm text-steel">
+                                  <Bed className="h-3.5 w-3.5 text-orange flex-shrink-0" />
+                                  <span>{amenity}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
 
                       {/* CTA Row */}
                       <div className="flex items-center justify-between mt-5 pt-4 border-t border-neutral-100">
@@ -790,25 +671,19 @@ export default function FleetPage() {
                         </Button>
                       </div>
                     </div>
-                  </motion.div>
+                  </div>
+                  </Reveal>
                 ))}
-              </motion.div>
+              </div>
             )}
 
             {/* Trailers Grid */}
             {activeTab === "trailers" && (
-              <motion.div 
-                className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto"
-                variants={containerVariants}
-                initial="hidden"
-                animate="visible"
-                exit="hidden"
-                key="trailers"
-              >
+              <div key="trailers" className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto motion-safe:animate-fade-in">
                 {trailers.map((trailer, idx) => (
-                  <motion.div
+                  <Reveal
                     key={idx}
-                    variants={cardVariants}
+                    index={Math.min(idx, 4)}
                     className="group bg-white rounded-2xl shadow-brand overflow-hidden border-2 border-transparent hover:border-orange/20 hover:shadow-brand-lg transition-all duration-500 hover:scale-[1.02]"
                   >
                     {/* Trailer Image */}
@@ -848,11 +723,10 @@ export default function FleetPage() {
                         ))}
                       </ul>
                     </div>
-                  </motion.div>
+                  </Reveal>
                 ))}
-              </motion.div>
+              </div>
             )}
-          </AnimatePresence>
         </div>
       </section>
 
@@ -869,13 +743,7 @@ export default function FleetPage() {
         />
 
         <div className="container relative px-4">
-          <motion.div 
-            className="text-center mb-16"
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, margin: "-100px" }}
-            variants={fadeInUp}
-          >
+          <Reveal className="text-center mb-16">
             <Badge className="mb-4 bg-orange/20 text-orange border-orange/30 px-4 py-2 text-sm font-bold">
               <Shield className="h-4 w-4 mr-2 inline" />
               The Thind Maintenance Promise
@@ -884,23 +752,18 @@ export default function FleetPage() {
               We Fix It <span className="text-orange">Before</span> It Breaks.
             </h2>
             <p className="text-lg text-white/70 max-w-2xl mx-auto">
-              You keep rolling. Our dedicated maintenance team ensures your equipment 
-              is always road-ready and safe. No excuses, no delays.
+              Every truck runs a scheduled preventive-maintenance inspection and clears
+              its DOT inspection ahead of the due date — because catching it in the shop
+              beats catching it on the shoulder.
             </p>
-          </motion.div>
+          </Reveal>
 
           {/* Feature grid */}
-          <motion.div 
-            className="grid md:grid-cols-3 gap-8 max-w-4xl mx-auto"
-            variants={containerVariants}
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, margin: "-100px" }}
-          >
+          <div className="grid md:grid-cols-3 gap-8 max-w-4xl mx-auto">
             {maintenanceFeatures.map((feature, idx) => (
-              <motion.div
+              <Reveal
                 key={idx}
-                variants={cardVariants}
+                index={Math.min(idx, 4)}
                 className="text-center p-8 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-sm hover:bg-white/10 transition-all duration-300 group"
               >
                 <div className="w-20 h-20 rounded-2xl bg-orange/20 flex items-center justify-center mx-auto mb-6 group-hover:scale-110 group-hover:bg-orange/30 transition-all duration-300 relative">
@@ -911,18 +774,12 @@ export default function FleetPage() {
                 </div>
                 <h3 className="text-xl font-bold text-white mb-3">{feature.title}</h3>
                 <p className="text-white/80 leading-relaxed">{feature.description}</p>
-              </motion.div>
+              </Reveal>
             ))}
-          </motion.div>
+          </div>
 
           {/* CTA */}
-          <motion.div 
-            className="mt-12 text-center"
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.3 }}
-          >
+          <Reveal className="mt-12 text-center">
             <p className="text-white/70 text-sm mb-4">Questions about our equipment or maintenance?</p>
             <Button
               asChild
@@ -934,7 +791,7 @@ export default function FleetPage() {
                 Call {COMPANY_INFO.phone}
               </Link>
             </Button>
-          </motion.div>
+          </Reveal>
         </div>
       </section>
 
@@ -942,13 +799,7 @@ export default function FleetPage() {
       <section className="py-20 bg-white">
         <div className="container px-4">
           <div className="max-w-6xl mx-auto">
-            <motion.div 
-              className="text-center mb-16"
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true }}
-              variants={fadeInUp}
-            >
+            <Reveal className="text-center mb-16">
               <Badge className="mb-4 bg-navy text-white px-4 py-2 text-xs font-bold">
                 Standard on Every Truck
               </Badge>
@@ -958,15 +809,9 @@ export default function FleetPage() {
               <p className="text-lg text-steel max-w-2xl mx-auto">
                 No surprises, no upgrades needed. Every truck in our fleet comes fully equipped.
               </p>
-            </motion.div>
+            </Reveal>
 
-            <motion.div 
-              className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6"
-              variants={containerVariants}
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true, margin: "-50px" }}
-            >
+            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
               {[
                 { icon: Zap, title: "APU System", desc: "Stay comfortable without idling. Save fuel, protect the environment.", highlight: "Standard" },
                 { icon: BatteryCharging, title: "High-Power Inverter", desc: "1800W-2500W inverters. Run microwave, TV, gaming systems.", highlight: "1800-2500W" },
@@ -977,9 +822,9 @@ export default function FleetPage() {
                 { icon: Eye, title: "Lane Departure", desc: "Stay safe with visual and audio alerts.", highlight: "Warning System" },
                 { icon: Lock, title: "Security Features", desc: "Alarm systems, tracking, and secure storage.", highlight: "GPS Tracked" },
               ].map((item, idx) => (
-                <motion.div
+                <Reveal
                   key={idx}
-                  variants={cardVariants}
+                  index={Math.min(idx, 4)}
                   className="p-6 rounded-xl bg-neutral-50 hover:bg-orange/5 border border-neutral-100 hover:border-orange/20 transition-all duration-300 group"
                 >
                   <div className="flex items-start justify-between mb-4">
@@ -988,9 +833,9 @@ export default function FleetPage() {
                   </div>
                   <h3 className="font-bold text-navy mb-2">{item.title}</h3>
                   <p className="text-sm text-steel leading-relaxed">{item.desc}</p>
-                </motion.div>
+                </Reveal>
               ))}
-            </motion.div>
+            </div>
           </div>
         </div>
       </section>
@@ -998,13 +843,7 @@ export default function FleetPage() {
       {/* FAQ Section - SEO Rich */}
       <section className="py-20 bg-neutral-50">
         <div className="container px-4">
-          <motion.div 
-            className="text-center mb-12"
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true }}
-            variants={fadeInUp}
-          >
+          <Reveal className="text-center mb-12">
             <Badge className="mb-4 bg-navy text-white px-4 py-2 text-xs font-bold">
               Common Questions
             </Badge>
@@ -1014,17 +853,11 @@ export default function FleetPage() {
             <p className="text-lg text-steel max-w-2xl mx-auto">
               Everything you need to know about driving for Thind Transport.
             </p>
-          </motion.div>
+          </Reveal>
 
-          <motion.div 
-            className="max-w-4xl mx-auto space-y-4"
-            variants={containerVariants}
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true }}
-          >
+          <div className="max-w-4xl mx-auto space-y-4">
             <FAQAccordion items={faqs} darkBackground={false} />
-          </motion.div>
+          </div>
         </div>
       </section>
 
@@ -1034,16 +867,7 @@ export default function FleetPage() {
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_rgba(255,255,255,0.18),_transparent_60%)]" />
 
         <div className="container relative px-4">
-          <motion.div 
-            className="max-w-3xl mx-auto text-center"
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true }}
-            variants={{
-              hidden: { opacity: 0, y: 30 },
-              visible: { opacity: 1, y: 0, transition: { duration: 0.6 } }
-            }}
-          >
+          <Reveal className="max-w-3xl mx-auto text-center">
             <Badge className="mb-6 bg-white/20 text-white border-white/30 px-4 py-2">
               <Truck className="h-4 w-4 mr-2 inline" />
               Start Driving This Week
@@ -1052,7 +876,7 @@ export default function FleetPage() {
               Ready to Upgrade Your Ride?
             </h2>
             <p className="text-xl text-white/90 mb-10 max-w-xl mx-auto">
-              Join the drivers who chose better equipment, better support, and a better career path.
+              Late-model Freightliners and Volvos, an APU in every truck, and a dispatcher who picks up.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button 
@@ -1078,13 +902,14 @@ export default function FleetPage() {
               </Button>
             </div>
             <p className="mt-6 text-white/90 text-sm">
-              Takes 2 minutes • Response within 24 hours • No commitment to apply
+              Response within 24 hours on business days • No commitment to apply
             </p>
-          </motion.div>
+          </Reveal>
         </div>
       </section>
 
       <RelatedLinks
+        tone="dark"
         title="Book the equipment"
         intro="Specs are one thing — here's how you actually put freight on it."
         links={freightLinks(["/fleet"])}

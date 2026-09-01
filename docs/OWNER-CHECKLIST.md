@@ -66,6 +66,70 @@ forced dispatch), so the cards did not thin out. The $425K / $1M+ **five-year pr
 on /pay-rates stayed — labeled projections — but should derive from `PAY_RATES` constants
 instead of being hardcoded; that is agent backlog, not yours.
 
+### Second sweep, 2026-08-30
+
+An eight-dimension audit of the marketing site found 149 verified problems. You answered
+four questions on the ones only you could settle, and those answers are already applied:
+**no** paid time off / paid holidays / family leave; the **fuel card and its named chains
+are real**, and so are the maintenance and tire discounts; **$1M liability, the 2023-2025
+model years and the APU-in-every-truck claims are correct**; **/load-board deleted** (it
+rendered five invented loads). Everything below came off the site because no document in
+the repo backs it — same rule, same guard test, same two-step to bring it back.
+
+| Removed claim | Where it lived | Comes back when you provide |
+|---|---|---|
+| Paid time off, paid holidays "at premium rates", family leave | /benefits cards, FAQ, page metadata | A written policy — you confirmed these don't exist yet |
+| "Full benefits package" | /veterans card, /pay-rates card | The plan documents (this is the July purge reappearing in two places it was missed) |
+| "Veteran Priority" / "Veteran Priority Processing" | /veterans CTA labels ×2 | A written veteran hiring-preference policy |
+| "A+ safety rating with FMCSA" + "Zero out-of-service violations in our history" | FAQ, served as FAQPage rich-result data | Nothing can: FMCSA issues Satisfactory/Conditional/Unsatisfactory, never a letter grade. The SAFER record is public and now linked instead |
+| "we track and guarantee it" (home time) | FAQ | A tracking mechanism that exists |
+| "In-House Shop", "ASE-certified technicians", "most repairs same-day" | /fleet ×3, incl. FAQ rich-result data | A shop lease + the technicians' certificates. You did **not** select this one |
+| "roadside assistance within 4 hours on average", "cover all costs", rental equipment | /fleet FAQ and layout JSON-LD | Measured response times and a written breakdown-cost policy with its exclusions |
+| "equipment upgrade opportunities after 6 months" | /fleet FAQ | A written equipment-assignment policy |
+| "15,000+ locations", "instant approval", "card arrives in 3-5 business days", "no credit checks" | /fuel-program ×4 | The fuel-card issuer's published network size and written terms. **The card and the eight chains stay** — you confirmed those |
+| "save hundreds per month", "up to 50¢/gal", "save thousands annually" | /fuel-program, FAQ | Your last quarter of fuel statements. Until then the calculator does this from the driver's own gallons, which is honest by construction |
+| "Year-round loads from top shippers", "Premium Lanes" | /benefits | Named shippers who agree to be named, or a real dedicated lane |
+| Invented "Industry Average" column (8 rows) + "Most companies offer 70-85%" | /benefits table, FAQ, homepage WhySwitch | A published industry survey we can cite inline with its year |
+| Five fabricated loads, "Active Loads" counter, "$14K total value" | /load-board — **page deleted**, redirects to /routes | Nothing: real posted capacity already renders on /routes from the hub |
+| "Founded in 2016", "grown to 15+ trucks" | FAQ | Nothing — constants say 2014 and 15; the FAQ was simply wrong |
+| "$1,500 sign-on bonus" | /veterans, JobDetailsDialog | Nothing — `PAY_RATES` says $1,000 and every other page agreed |
+
+### Third sweep, 2026-08-30 — you answered six more
+
+A re-audit after the second sweep found the same class of defect in places the
+sweep hadn't looked, including two on the homepage. Your answers, applied:
+
+| You said | What changed |
+|---|---|
+| "Shippers you already recognize" and DAT verified carrier are **both real** | Kept, unchanged. Recorded here as owner-attested so the next audit stops flagging them — if either is a stretch, say so and they come off |
+| **24/7 dispatch is genuine** | Kept, and now stated once in `SUPPORT` in `constants.ts` instead of hand-typed on eighteen surfaces |
+| **Reword all 48 state pages** | The 45 template pages told every driver "we run {their corridors} every week" — a Maine driver was told we run I-95 through Bangor weekly. Now: we hire drivers who live there, and we run all 48 states. Every page and sitemap entry kept |
+| **No rider or pet policy in writing** | Both cards off /benefits. The pre-qualification form still asks — screening isn't advertising |
+| **Don't publish how long the form takes** | Ten claims ("60 seconds", "about a minute", "2 minutes") replaced with what the form actually asks for |
+| **24-hour callback is real** | Kept, now qualified "on business days" |
+
+Also removed, no question needed: an "A+ safety rating with FMCSA" and "zero
+out-of-service violations" (both served to Google as FAQ rich-result data — FMCSA
+issues Satisfactory/Conditional/Unsatisfactory and never a letter grade), a
+five-stage hiring SLA nothing measures, two fleet averages nothing computes, and
+a "dedicated maintenance team" — the in-house shop you said doesn't exist, in
+softer words. Two banned claims had come back on the **homepage** as paraphrases
+("In-house mechanical support", "FMCSA safety-rated fleet"), so the guard test
+now matches the claim however it is worded, not just the exact string.
+
+**Still needs you.**
+
+1. **The COI.** It restores the `$1M+ Liability Coverage` credential and the
+   homepage Insured tile. The prose claim stays on /brokers, /shippers, /quote and
+   /trust on your say-so; the guarded credential needs the document.
+2. **A 3 MB video, `hero-american-fleet.mp4`,** sits in `public/` referenced by
+   nothing — it was behind a flag that was never switched on. Use it as the /fleet
+   hero or delete it; running a video hero is a real trade against page speed, so
+   it is your call rather than ours.
+3. **The 2023-2025 fleet claim expires on its own.** A 2023 truck is three years
+   old in 2026, so "no truck older than 3 years" stops being true during 2026.
+   Tell us when the roster changes and `EQUIPMENT` in `constants.ts` moves with it.
+
 ## Accounts / money / people
 
 | Action | Why | Added |
