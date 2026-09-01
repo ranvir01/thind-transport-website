@@ -3,10 +3,17 @@
  * defect → truck grounded + work order; office certifies the repair; the
  * next pre-trip review sign-off releases the truck to 'active'.
  *
+ * Reseeds demo data first (see reseed in e2e-lib.mjs) — the run grounds
+ * truck 101, certifies a repair, then releases it. Without its own reseed
+ * a prior DVIR (or any fleet-mutating smoke) leaves the truck grounded or
+ * awaiting review, and step 1 cannot file a fresh post-trip. e2e-run-all
+ * executes scripts in sorted name order, so this inherits whatever the
+ * previous smoke left behind when run in isolation or after a failed loop.
+ *
  * Usage: node scripts/e2e-dvir-smoke.mjs [outputDir]
  */
 import { mkdirSync } from "node:fs"
-import { launchBrowser, BASE, clickByText, waitForText, textAppears, waitForPath, login, makeShot } from "./e2e-lib.mjs"
+import { launchBrowser, BASE, clickByText, waitForText, textAppears, waitForPath, login, makeShot, reseed } from "./e2e-lib.mjs"
 
 const OUT = process.argv[2] ?? "e2e-shots-dvir"
 mkdirSync(OUT, { recursive: true })
@@ -42,6 +49,7 @@ async function sign(page, fileButtonText) {
 }
 
 async function main() {
+  reseed()
   const browser = await launchBrowser()
 
   // Driver: post-trip with an unsafe brake defect

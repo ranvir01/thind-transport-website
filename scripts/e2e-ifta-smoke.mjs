@@ -4,10 +4,18 @@
  * rows, the on-screen net tax reconciles with the CSV export, and the
  * draft -> reviewed -> filed status flow advances.
  *
+ * Reseeds demo data first (see reseed in e2e-lib.mjs) — the run computes a
+ * quarter, then marks it reviewed and filed. Recomputing an already-filed
+ * quarter pops window.confirm(); without a reseed a rerun against a dirty
+ * rig hangs at step 3/7 (Puppeteer has a dialog handler, but the worksheet
+ * assertions still expect a fresh draft). e2e-run-all executes scripts in
+ * sorted name order, so without its own reseed this inherits whatever the
+ * previous smoke left behind.
+ *
  * Usage: node scripts/e2e-ifta-smoke.mjs [outputDir]
  */
 import { mkdirSync } from "node:fs"
-import { launchBrowser, BASE, failures, check, clickByText, waitForText, textGone, login, makeShot, realConsoleErrors } from "./e2e-lib.mjs"
+import { launchBrowser, BASE, failures, check, clickByText, waitForText, textGone, login, makeShot, realConsoleErrors, reseed } from "./e2e-lib.mjs"
 
 const OUT = process.argv[2] ?? "e2e-shots-ifta"
 mkdirSync(OUT, { recursive: true })
@@ -22,6 +30,7 @@ const priorQuarterKey = () => {
 }
 
 async function main() {
+  reseed()
   const browser = await launchBrowser()
   const page = await browser.newPage()
   await page.setViewport({ width: 1440, height: 900 })

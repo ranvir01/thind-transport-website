@@ -19,7 +19,7 @@
  *
  * State-consuming smokes (dispatch, invoices, settlements, advances,
  * compliance, messages, expenses, fuel, customers, loads, fleet, tasks,
- * office, safety, reports) call
+ * office, safety, reports, dvir, recruiting, ifta) call
  * reseed() themselves, so no manual seed:demo between runs on a local rig.
  *
  * Copy `.env.example` → `.env.local` for local runs. Against a localhost BASE,

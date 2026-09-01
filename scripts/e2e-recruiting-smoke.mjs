@@ -3,16 +3,26 @@
  * extended and finger-signed → orientation completed → converted to a
  * dispatch-legal driver with the DQ file pre-loaded and the referral payable.
  *
+ * Reseeds demo data first (see reseed in e2e-lib.mjs) — the run adds
+ * "Maria Gonzales" under a fixed name and never removes her. Every lookup
+ * is a `.find()` on the first matching card. Run it twice and there are two
+ * Marias in different stages — the drag grabs whichever sits first, and the
+ * orientation counter reads a different applicant. That is how it failed:
+ * "card not found" on one run, "orientation item 5/5" timing out on the
+ * next. e2e-run-all executes scripts in sorted name order, so without its
+ * own reseed this script inherits whatever the previous smoke left behind.
+ *
  * Usage: node scripts/e2e-recruiting-smoke.mjs [outputDir]
  */
 import { mkdirSync } from "node:fs"
-import { launchBrowser, BASE, failures, check, clickByText, waitForText, textAppears, textGone, login, makeShot } from "./e2e-lib.mjs"
+import { launchBrowser, BASE, failures, check, clickByText, waitForText, textAppears, textGone, login, makeShot, reseed } from "./e2e-lib.mjs"
 
 const OUT = process.argv[2] ?? "e2e-shots-recruiting"
 mkdirSync(OUT, { recursive: true })
 const shot = makeShot(OUT)
 
 async function main() {
+  reseed()
   const browser = await launchBrowser()
   const page = await browser.newPage()
   await page.setViewport({ width: 1440, height: 950 })
