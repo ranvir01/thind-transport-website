@@ -623,6 +623,12 @@ async function main() {
 
   // ---- Position pings: I-5 trail for in-transit truck + parked dots ----
   console.log("Creating position pings…")
+  // The live trail — Kent, heading south down I-5 — belongs to the in-transit
+  // Kent → Los Angeles load, which rides truck index 1 (#102, makeLoad above).
+  // It used to be written to truck 0 (#101), which is on the DISPATCHED Kent →
+  // Boise load, so the demo's one rolling truck had no fresh position and the
+  // /track page could never show an ETA out of the box. Truck 0's last
+  // position now comes from the IFTA loops like every other parked truck.
   const i5Trail = [
     [47.38, -122.23], [47.0, -122.6], [46.6, -122.9], [46.1, -122.9], [45.6, -122.7],
     [45.2, -122.8], [44.6, -123.0], [44.0, -123.1], [43.2, -123.35], [42.4, -122.9],
@@ -632,7 +638,7 @@ async function main() {
     await q(
       `INSERT INTO hub.position_pings (carrier_id, truck_id, ts, lat, lng, odometer, source)
        VALUES ($1,$2,$3,$4,$5,$6,'demo')`,
-      [CARRIER, truckIds[0], new Date(Date.now() - (i5Trail.length - i) * 35 * 60000).toISOString(),
+      [CARRIER, truckIds[1], new Date(Date.now() - (i5Trail.length - i) * 35 * 60000).toISOString(),
         i5Trail[i][0], i5Trail[i][1], 182000 + i * 38]
     )
   }
