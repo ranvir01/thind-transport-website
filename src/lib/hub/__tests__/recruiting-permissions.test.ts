@@ -46,7 +46,7 @@ vi.mock("@/lib/mailer", () => ({
   mailFrom: vi.fn(() => "carrier@example.com"),
 }))
 
-import { addApplicantAction, attachReferralAction, convertApplicantAction } from "@/app/hub/_actions/recruiting"
+import { addApplicantAction, attachReferralAction, convertApplicantAction, createOfferAction } from "@/app/hub/_actions/recruiting"
 import { vetCustomerAction } from "@/app/hub/_actions/vetting"
 import { invitePortalUserAction } from "@/app/hub/_actions/portal"
 import { logAudit } from "@/lib/hub/audit"
@@ -67,6 +67,39 @@ describe("attachReferralAction", () => {
     expect(logAuditMock).toHaveBeenCalledWith(
       expect.objectContaining({ entityType: "referral", action: "attached" })
     )
+  })
+})
+
+describe("createOfferAction", () => {
+  it("logs an audit entry when an offer is created (money-adjacent pay summary)", async () => {
+    const result = await createOfferAction("a1", {
+      paySummary: "$0.62/mi + $1500 weekly",
+      startDate: "2026-09-08",
+      body: "Welcome aboard.",
+    })
+    expect(result).toEqual({ ok: true, id: "offer-1" })
+    expect(logAuditMock).toHaveBeenCalledTimes(1)
+    expect(logAuditMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        carrierId: "carrier-1",
+        actorId: "u1",
+        actorName: "Accountant",
+        entityType: "offer",
+        entityId: "offer-1",
+        action: "created",
+        newValue: {
+          applicantId: "a1",
+          paySummary: "$0.62/mi + $1500 weekly",
+          startDate: "2026-09-08",
+        },
+      })
+    )
+  })
+
+  it("skips the audit log when pay summary or letter text is missing", async () => {
+    const result = await createOfferAction("a1", { paySummary: "   ", body: "Welcome" })
+    expect(result.ok).toBe(false)
+    expect(logAuditMock).not.toHaveBeenCalled()
   })
 })
 

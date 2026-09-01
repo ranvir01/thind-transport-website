@@ -93,13 +93,20 @@ export async function createOfferAction(
     if (!input.paySummary.trim() || !input.body.trim()) {
       return { ok: false, error: "Pay summary and the letter text are both needed" }
     }
+    const paySummary = input.paySummary.trim()
+    const startDate = input.startDate || null
     const id = await createOffer(
       user.carrierId,
       applicantId,
-      { paySummary: input.paySummary.trim(), startDate: input.startDate || null, body: input.body.trim() },
+      { paySummary, startDate, body: input.body.trim() },
       user.name
     )
     await moveApplicantStage(user.carrierId, applicantId, "offer", user.name, "Offer extended")
+    await logAudit({
+      carrierId: user.carrierId, actorId: user.id, actorName: user.name,
+      entityType: "offer", entityId: id, action: "created",
+      newValue: { applicantId, paySummary, startDate },
+    })
     revalidatePath(`/hub/recruiting/${applicantId}`)
     revalidatePath("/hub/recruiting")
     return { ok: true, id }
