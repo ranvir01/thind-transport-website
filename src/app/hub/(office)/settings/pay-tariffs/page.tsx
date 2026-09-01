@@ -1,6 +1,7 @@
 import { revalidatePath } from "next/cache"
 import { requirePermissionPage } from "@/lib/hub/session"
-import { hubDbAvailable, query } from "@/lib/hub/db"
+import { query } from "@/lib/hub/db"
+import { hubDbAvailable } from "@/lib/hub/db-available"
 import { dollarsToCents, fmtCentsExact } from "@/lib/hub/types"
 import { BackLink, PageHeader, Panel, fieldCls, labelCls } from "@/components/hub/ui"
 

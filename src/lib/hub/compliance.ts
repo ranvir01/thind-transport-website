@@ -1,4 +1,5 @@
-import { hubDbAvailable, query } from "./db"
+import { query } from "./db"
+import { hubDbAvailable } from "./db-available"
 import { fallbackComplianceEntries } from "./sandbox-fallback"
 import { iftaFilingComplianceEntries } from "./ifta"
 import { form2290ComplianceEntries } from "./hvut-compliance"

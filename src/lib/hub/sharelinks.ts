@@ -1,5 +1,6 @@
 import { randomBytes } from "crypto"
-import { hubDbAvailable, query, queryOne } from "./db"
+import { query, queryOne } from "./db"
+import { hubDbAvailable } from "./db-available"
 import { THIND_SANDBOX_ID, fallbackCarriers, fallbackLoads } from "./sandbox-fallback"
 import { assertCarrierRefs } from "./tenancy"
 import type { Load, Stop } from "./types"

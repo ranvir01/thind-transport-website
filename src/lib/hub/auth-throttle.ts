@@ -10,7 +10,8 @@
  * `scope:key`, so hammering signup with someone else's address can never
  * lock that person out of logging in.
  */
-import { hubDbAvailable, query, queryOne } from "./db"
+import { query, queryOne } from "./db"
+import { hubDbAvailable } from "./db-available"
 
 export type ThrottleScope = "login" | "signup" | "public-form"
 

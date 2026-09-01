@@ -1,25 +1,14 @@
 #!/usr/bin/env node
-import { readFileSync, existsSync } from "node:fs"
-import path from "node:path"
 import pg from "pg"
+import { loadEnvLocal } from "./env-local.mjs"
 
 export const SANDBOX_CARRIERS = [
   "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
   "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
 ]
 
-export function loadEnvLocal() {
-  if (process.env.POSTGRES_URL) return
-  const envPath = path.join(process.cwd(), ".env.local")
-  if (!existsSync(envPath)) return
-  for (const line of readFileSync(envPath, "utf-8").split("\n")) {
-    const match = line.match(/^([A-Z0-9_]+)=(.*)$/)
-    if (match && !process.env[match[1]]) process.env[match[1]] = match[2]
-  }
-}
-
 export async function connect() {
-  loadEnvLocal()
+  loadEnvLocal({ skipWhenSet: "POSTGRES_URL" })
   const url = process.env.POSTGRES_URL
   if (!url) return null
   const ssl = /localhost|127\.0\.0\.1/.test(url) ? undefined : { rejectUnauthorized: false }

@@ -1,4 +1,5 @@
-import { hubDbAvailable, query, queryOne } from "./db"
+import { query, queryOne } from "./db"
+import { hubDbAvailable } from "./db-available"
 import { fallbackTrailers, fallbackTrucks } from "./sandbox-fallback"
 import { assertCarrierRefs } from "./tenancy"
 import type { Trailer, Truck } from "./types"

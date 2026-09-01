@@ -122,6 +122,7 @@ describe("no file re-introduces its own .env.local parser", () => {
       "scripts/fix-legacy-signatures.mjs",
       "scripts/go-live-check.mjs",
       "scripts/hub-migrate.mjs",
+      "scripts/sandbox-reset.mjs",
       "scripts/seed-demo.mjs",
       "src/lib/hub/__tests__/cross-tenant-harness.test.ts",
       "src/lib/hub/__tests__/driver-file-isolation.test.ts",

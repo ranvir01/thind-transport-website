@@ -1,4 +1,5 @@
-import { hubDbAvailable, query } from "./db"
+import { query } from "./db"
+import { hubDbAvailable } from "./db-available"
 import { logAudit } from "./audit"
 import { fallbackDrivers, fallbackInvoices, fallbackLoads, fallbackTrucks } from "./sandbox-fallback"
 import { assertCarrierRefs } from "./tenancy"

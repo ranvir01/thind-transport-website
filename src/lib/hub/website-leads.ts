@@ -5,7 +5,8 @@
  * driver an error because our storage hiccuped (they still see success if
  * either DB or email worked).
  */
-import { query, queryOne, hubDbAvailable } from "./db"
+import { query, queryOne } from "./db"
+import { hubDbAvailable } from "./db-available"
 import type { Attribution } from "@/lib/attribution"
 
 /**

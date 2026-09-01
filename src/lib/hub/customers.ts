@@ -1,4 +1,5 @@
-import { hubDbAvailable, query, queryOne } from "./db"
+import { query, queryOne } from "./db"
+import { hubDbAvailable } from "./db-available"
 import { fallbackCustomers } from "./sandbox-fallback"
 import type { Contact, Customer } from "./types"
 

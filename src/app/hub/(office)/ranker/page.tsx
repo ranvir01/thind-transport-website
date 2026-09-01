@@ -1,5 +1,6 @@
 import { requireOfficeUser } from "@/lib/hub/session"
-import { hubDbAvailable, query } from "@/lib/hub/db"
+import { query } from "@/lib/hub/db"
+import { hubDbAvailable } from "@/lib/hub/db-available"
 import { fallbackCandidates } from "@/lib/hub/sandbox-fallback"
 import { fmtCents } from "@/lib/hub/types"
 import { Panel, PageHeader } from "@/components/hub/ui"

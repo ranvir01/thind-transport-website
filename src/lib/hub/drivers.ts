@@ -1,4 +1,5 @@
-import { hubDbAvailable, query, queryOne } from "./db"
+import { query, queryOne } from "./db"
+import { hubDbAvailable } from "./db-available"
 import { fallbackDrivers } from "./sandbox-fallback"
 import { syncDefaultPayRules } from "./pay-rules-db"
 import type { Driver } from "./types"

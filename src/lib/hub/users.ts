@@ -1,4 +1,5 @@
-import { query, queryOne, hubDbAvailable } from "./db"
+import { query, queryOne } from "./db"
+import { hubDbAvailable } from "./db-available"
 import type { HubRole, HubUser } from "./types"
 
 export async function findHubUserByEmail(email: string): Promise<(HubUser & { password_hash: string }) | null> {

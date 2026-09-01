@@ -1,4 +1,5 @@
-import { hubDbAvailable, query } from "./db"
+import { query } from "./db"
+import { hubDbAvailable } from "./db-available"
 import { fallbackFuelTransactions, fallbackTrucks } from "./sandbox-fallback"
 import { dollarsToCents, type FuelTransaction } from "./types"
 

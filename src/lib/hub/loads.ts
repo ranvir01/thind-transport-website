@@ -1,4 +1,5 @@
-import { hubDb, hubDbAvailable, query, queryOne } from "./db"
+import { hubDb, query, queryOne } from "./db"
+import { hubDbAvailable } from "./db-available"
 import { fallbackDashboardStats, fallbackExpiringItems, fallbackLoads } from "./sandbox-fallback"
 import { facilityDedupeKey } from "./facilities"
 import { notifyDriver } from "./notify"

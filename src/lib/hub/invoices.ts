@@ -1,4 +1,5 @@
-import { query, queryOne, hubDb, hubDbAvailable } from "./db"
+import { query, queryOne, hubDb } from "./db"
+import { hubDbAvailable } from "./db-available"
 import { fallbackAgingSummary, fallbackInvoices } from "./sandbox-fallback"
 import { getCarrier, getCarrierSettings, nextInvoiceNumber } from "./settings"
 import { getLoad, getLoadStops, changeLoadStatus } from "./loads"
