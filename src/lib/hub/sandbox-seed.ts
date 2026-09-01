@@ -328,7 +328,7 @@ export async function seedSandbox(): Promise<void> {
     type LoadPlan = {
       idx: number; status: string; lane: (typeof LANES)[number]; customer: (typeof customerIds)[number]
       equipment: string; driverIdx: number | null; pickupAt: Date; deliveredAt: Date | null
-      linehaul: number; fsc: number; accessorials: { name: string; amountCents: number }[]
+      linehaul: number; fsc: number; accessorials: { label: string; amount_cents: number }[]
       loadedMiles: number; deadheadMiles: number
       // Shift Mode pacing overrides (set by the pacing pass below).
       departedAt?: Date; dropApptAt?: Date; podAt?: Date; createdAt?: Date
@@ -389,7 +389,14 @@ export async function seedSandbox(): Promise<void> {
           deliveredAt = new Date(pickupAt.getTime() + transitDays * DAY)
         }
         const assigned = status !== "quoted" && status !== "cancelled" && !(status === "booked" && chance(0.4))
-        const accessorials = chance(0.08) ? [{ name: "Detention", amountCents: pick([6000, 12000, 18000]) }] : []
+        // Canonical accessorial shape: {label, amount_cents} (types.ts:261).
+        // The seed used to write {name, amountCents}, which every production
+        // reader silently skipped — `a->>'amount_cents'` in today.ts, invoices.ts,
+        // lanes.ts and cash-cycle.ts — so seeded detention never counted toward
+        // "Not invoiced", invoice totals or lane margin, and applyDetentionAccrual
+        // (which matches on a.label) would have appended a SECOND "Detention"
+        // line instead of upserting this one.
+        const accessorials = chance(0.08) ? [{ label: "Detention", amount_cents: pick([6000, 12000, 18000]) }] : []
         // The playable seats always have something live: the broker (Summit)
         // and shipper (Cascade Foods) portals each get a load on the road, and
         // the two driver seats (Jordan, Sam) are behind the wheel of the first
@@ -562,7 +569,7 @@ export async function seedSandbox(): Promise<void> {
       if (!["invoiced", "paid", "settled"].includes(p.status)) return
       const issued = new Date((p.deliveredAt ?? p.pickupAt).getTime() + DAY)
       const due = new Date(issued.getTime() + Number(p.customer.payment_terms_days ?? 30) * DAY)
-      const amount = p.linehaul + p.fsc + p.accessorials.reduce((s, a) => s + a.amountCents, 0)
+      const amount = p.linehaul + p.fsc + p.accessorials.reduce((s, a) => s + a.amount_cents, 0)
       let status: string
       if (p.status === "invoiced") {
         const overdue = due.getTime() < Date.now()

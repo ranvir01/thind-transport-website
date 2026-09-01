@@ -6,13 +6,24 @@
  * Usage: node scripts/e2e-recruiting-smoke.mjs [outputDir]
  */
 import { mkdirSync } from "node:fs"
-import { launchBrowser, BASE, failures, check, clickByText, waitForText, textAppears, textGone, login, makeShot } from "./e2e-lib.mjs"
+import { launchBrowser, BASE, failures, check, clickByText, waitForText, textAppears, textGone, login, makeShot, reseed } from "./e2e-lib.mjs"
 
 const OUT = process.argv[2] ?? "e2e-shots-recruiting"
 mkdirSync(OUT, { recursive: true })
 const shot = makeShot(OUT)
 
 async function main() {
+  // This smoke is not idempotent on its own: it adds "Maria Gonzales" every
+  // run under a FIXED name and never removes her, and every lookup below is a
+  // `.find()` on the first card whose text matches. Run it twice and there are
+  // two Marias in different stages — the drag grabs whichever sits first in the
+  // DOM, and from there the orientation counter is reading a different
+  // applicant's checkboxes. That is exactly how it failed: "card not found" on
+  // one run, "orientation item 5/5" timing out on the next, from the same
+  // cause. Reseeding first is what the other state-consuming smokes do
+  // (see reseed() in e2e-lib.mjs) and it makes the run start from a known
+  // board every time.
+  reseed()
   const browser = await launchBrowser()
   const page = await browser.newPage()
   await page.setViewport({ width: 1440, height: 950 })
