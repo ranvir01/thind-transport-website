@@ -21,22 +21,74 @@ const OUT = process.argv[2] ?? "e2e-shots-messages"
 mkdirSync(OUT, { recursive: true })
 const shot = makeShot(OUT, { fullPage: true })
 
+const COMPOSER = 'textarea[placeholder="Type a message…"]'
+const SEND_BTN = 'button[aria-label="Send"]'
+
+/** Native setter + input event so React's value tracker sees a real edit. */
+async function setComposer(page, value) {
+  await page.$eval(
+    COMPOSER,
+    (el, next) => {
+      const setter = Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, "value").set
+      setter.call(el, next)
+      el.dispatchEvent(new Event("input", { bubbles: true }))
+    },
+    value
+  )
+}
+
 /**
- * Type into the ChatThread composer and press Send. ChatThread's send()
- * awaits sendMessageAction then calls router.refresh() — the sent text only
- * renders once the refresh re-fetches messages from the DB, so waitForText
- * finding it already means the message is persisted server-side; no
- * additional settle time needed.
+ * Fill the ChatThread composer and press Send.
+ *
+ * The textarea is React-controlled (`value={body}`; Send is
+ * `disabled={pending || !body.trim()}`). After a template chip, React
+ * `body` is already non-empty so Send is already enabled. Setting the
+ * marker in the DOM and waiting for `ta.value === marker && !btn.disabled`
+ * can pass before onChange flushes — click then send()s the chip text,
+ * and waitForText(marker) times out. Empty first and wait until Send is
+ * disabled so the next "enabled" transition means React holds `text`.
  */
 async function sendChat(page, text) {
-  await page.click('textarea[placeholder="Type a message…"]')
-  await page.keyboard.down("Control")
-  await page.keyboard.press("KeyA")
-  await page.keyboard.up("Control")
-  await page.keyboard.press("Backspace")
-  await page.type('textarea[placeholder="Type a message…"]', text)
-  await page.click('button[aria-label="Send"]')
-  await waitForText(page, text)
+  await page.waitForSelector(COMPOSER)
+  await setComposer(page, "")
+  await page.waitForFunction(() => {
+    const ta = document.querySelector('textarea[placeholder="Type a message…"]')
+    const btn = document.querySelector('button[aria-label="Send"]')
+    return ta?.value === "" && btn?.disabled === true
+  }, { timeout: 8000 })
+  await setComposer(page, text)
+  await page.waitForFunction(
+    (expected) => {
+      const ta = document.querySelector('textarea[placeholder="Type a message…"]')
+      const btn = document.querySelector('button[aria-label="Send"]')
+      return ta?.value === expected && btn && !btn.disabled
+    },
+    { timeout: 8000 },
+    text
+  )
+  // Evaluate-click the Send control — Puppeteer's layout click can miss
+  // after a chip→body refresh. Enter is the same send() path (onKeyDown).
+  await page.evaluate((sel) => document.querySelector(sel)?.click(), SEND_BTN)
+  const landed = await page
+    .waitForFunction(
+      (t) => document.body.innerText.toLowerCase().includes(t.toLowerCase()),
+      { timeout: 8000 },
+      text
+    )
+    .then(() => true)
+    .catch(() => false)
+  if (!landed) {
+    await page.focus(COMPOSER)
+    await page.keyboard.press("Enter")
+    await waitForText(page, text, 15000)
+  }
+  await page
+    .waitForFunction(() => document.querySelector('textarea[placeholder="Type a message…"]')?.value === "", {
+      timeout: 20000,
+    })
+    .catch(() => {
+      throw new Error("composer did not clear after send")
+    })
 }
 
 async function main() {

@@ -32,7 +32,6 @@ const BANNED: { claim: string; verifiedBy: string }[] = [
   { claim: "priority application status", verifiedBy: "a written recruiting-office policy" },
   { claim: "Immediate Orientation", verifiedBy: "a written orientation schedule" },
   { claim: "Premium Equipment Assignment", verifiedBy: "a written equipment-assignment policy" },
-
   // Second sweep, 2026-08-30. The owner reviewed every claim an eight-dimension
   // audit surfaced and confirmed which are real; these are the ones that are
   // not, plus the ones only a document can settle.
@@ -60,6 +59,11 @@ const BANNED: { claim: string; verifiedBy: string }[] = [
   { claim: "Pet Policy", verifiedBy: "a written pet policy (owner: decided case by case)" },
   { claim: "Highest commission in the industry", verifiedBy: "a published survey of carrier splits" },
   { claim: "Industry leading", verifiedBy: "a published survey; it was sitting in constants.ts" },
+
+  // This PR's recruiting-copy pass — extra literals main does not yet ban.
+  { claim: "Industry leading!", verifiedBy: "a sourced market survey — slogans are banned in recruiting copy" },
+  { claim: "founded in 2016", verifiedBy: "nothing — COMPANY_INFO.founded is 2014" },
+  { claim: "highest paying trucking jobs", verifiedBy: "a sourced market survey — slogans are banned in recruiting copy" },
 ]
 
 /**

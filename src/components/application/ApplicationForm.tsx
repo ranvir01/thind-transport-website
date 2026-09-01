@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { useForm } from "react-hook-form"
@@ -21,7 +21,7 @@ import { cn } from "@/lib/utils"
 
 import { submitApplication } from "@/app/actions/submit-application"
 import { PAY_RATES, COMPANY_INFO } from "@/lib/constants"
-import { applyProgressPercent } from "./apply-progress"
+import { applyProgressPercent, applyPrefFromSearch } from "./apply-progress"
 import { fireLeadCapture } from "./lead-capture"
 import { HONEYPOT_FIELD, readHoneypotValue } from "@/lib/honeypot"
 import { track } from "@vercel/analytics"
@@ -87,6 +87,19 @@ export function ApplicationForm() {
   })
 
   const watchedFields = watch()
+
+  // Deep links from /veterans, /load-board, and the homepage lane cards
+  // (`?type=company|owner&lane=local|regional|otr`) used to be ignored — the
+  // form always pre-selected owner-operator + regional. Honor them once on mount.
+  useEffect(() => {
+    const pref = applyPrefFromSearch(window.location.search)
+    if (pref.driverType) {
+      setValue("driverType", pref.driverType, { shouldValidate: false })
+    }
+    if (pref.routeType) {
+      setValue("routeType", pref.routeType, { shouldValidate: false })
+    }
+  }, [setValue])
 
   // Phone Mask Logic
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -372,9 +385,9 @@ export function ApplicationForm() {
                     <div className="flex-1">
                       <div className="flex items-center justify-between">
                         <div className="font-bold text-gray-900 text-base">Owner Operator</div>
-                        <div className="text-xl text-orange-600 font-black">90% Gross</div>
+                        <div className="text-xl text-orange-600 font-black">{PAY_RATES.ownerOperator.commission} Gross</div>
                       </div>
-                      <div className="text-sm text-gray-500 mt-1 group-hover:text-gray-700 transition-colors">{PAY_RATES.ownerOperator.annualGross} • 2+ years OTR</div>
+                      <div className="text-sm text-gray-500 mt-1 group-hover:text-gray-700 transition-colors">{PAY_RATES.ownerOperator.annualGross} • {PAY_RATES.requirements.otr}</div>
                     </div>
                     <div className={cn(
                       "ml-4 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all",
@@ -394,7 +407,9 @@ export function ApplicationForm() {
                         <div className="font-bold text-gray-900 text-base">Company Driver</div>
                         <div className="text-xl text-orange-600 font-black">{PAY_RATES.companyDriver.regional.perMile}/mi</div>
                       </div>
-                      <div className="text-sm text-gray-500 mt-1 group-hover:text-gray-700 transition-colors">{PAY_RATES.companyDriver.regional.annual} • 1+ year experience</div>
+                      <div className="text-sm text-gray-500 mt-1 group-hover:text-gray-700 transition-colors">
+                        Home {PAY_RATES.companyDriver.local.homeTime.toLowerCase()}, {PAY_RATES.companyDriver.regional.homeTime.toLowerCase()}, or OTR • {PAY_RATES.requirements.companyDriver}
+                      </div>
                     </div>
                     <div className={cn(
                       "ml-4 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all",
@@ -409,7 +424,7 @@ export function ApplicationForm() {
 
               <div className="space-y-4 pt-2">
                 <div className="space-y-2">
-                  <Label htmlFor="cdlClass">CDL Class *</Label>
+                  <p className="text-sm font-medium leading-none">CDL Class *</p>
                   <div className="grid grid-cols-3 gap-3">
                     {["Class A", "Class B", "Class C"].map((cls) => (
                       <label key={cls} className={cn(
@@ -426,7 +441,7 @@ export function ApplicationForm() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="experienceYears">Years Experience *</Label>
+                  <p className="text-sm font-medium leading-none">Years Experience *</p>
                   <div className="grid grid-cols-2 gap-3">
                     {[
                       { val: "1", label: "1 Year" },
@@ -611,16 +626,16 @@ export function ApplicationForm() {
                 </div>
                 
                 <div className="space-y-1">
-                    <Label>Preferred Route</Label>
-                    <div className="flex gap-2 h-12">
-                      {["regional", "otr"].map((type) => (
+                    <p className="text-sm font-medium leading-none">Preferred Route</p>
+                    <div className="flex gap-2">
+                      {(["local", "regional", "otr"] as const).map((type) => (
                         <label key={type} className={cn(
-                          "flex-1 flex items-center justify-center border rounded-lg cursor-pointer text-base capitalize transition-all",
+                          "flex-1 flex min-h-[44px] items-center justify-center border rounded-lg cursor-pointer text-sm sm:text-base capitalize transition-all py-3",
                           watchedFields.routeType === type ? "bg-orange-50 border-orange-500 text-orange-700 font-medium" : "bg-white border-gray-200 hover:border-gray-300",
                           errors.routeType ? "border-red-500" : ""
                         )}>
                           <input type="radio" {...register("routeType")} value={type} className="sr-only" />
-                          {type === 'otr' ? 'OTR' : 'Regional'}
+                          {type === "otr" ? "OTR" : type === "local" ? "Local" : "Regional"}
                         </label>
                       ))}
                     </div>

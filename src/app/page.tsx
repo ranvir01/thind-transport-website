@@ -10,9 +10,10 @@ import { OperationSection } from "@/components/home/OperationSection"
 import { DispatchBand } from "@/components/home/DispatchBand"
 import { PhotoBand } from "@/components/home/PhotoBand"
 import { DeferredApplicationForm, DeferredProfitCalculator, DeferredQuickQualify } from "@/components/home/DeferredHomeSections"
+import { HomeTimeLanes } from "@/components/home/HomeTimeLanes"
 import { WhySwitch } from "@/components/features/WhySwitch"
-import Link from "next/link"
 import { COMPANY_INFO } from "@/lib/constants"
+import Link from "next/link"
 
 export default function Home() {
   return (
@@ -22,6 +23,7 @@ export default function Home() {
       {/* Three doors, immediately after the hero — see AudienceSelector for why
           this is inline rather than a blocking gate. */}
       <AudienceSelector />
+      <HomeTimeLanes />
 
       <TrustStrip />
 

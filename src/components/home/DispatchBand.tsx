@@ -1,7 +1,7 @@
 import Image from "next/image"
 import Link from "next/link"
 import { Phone, ArrowRight, Headphones } from "lucide-react"
-import { COMPANY_INFO } from "@/lib/constants"
+import { COMPANY_INFO, WORKPLACE } from "@/lib/constants"
 import { Reveal } from "@/components/ui/Reveal"
 
 export function DispatchBand() {
@@ -37,7 +37,8 @@ export function DispatchBand() {
             <p className="mb-8 max-w-xl text-lg text-steel-200">
               No phone trees, no overseas queue, no being treated like a truck
               number. When you call Thind, you reach people who know your name,
-              your lanes, and your loads &mdash; days, nights, and weekends.
+              your lanes, and your loads &mdash; days, nights, and weekends.{" "}
+              {WORKPLACE.languages}
             </p>
             <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
               <a

@@ -48,4 +48,10 @@ describe("apply form sources company facts from constants", () => {
     expect(apply).not.toMatch(/tel:\+?1?206/)
     expect(apply).not.toContain("765-6300")
   })
+
+  it("offers Local as a preferred-route option and sources the O/O split from PAY_RATES", () => {
+    expect(apply).toContain('"local"')
+    expect(apply).toContain("PAY_RATES.ownerOperator.commission")
+    expect(apply).not.toContain("90% Gross")
+  })
 })
