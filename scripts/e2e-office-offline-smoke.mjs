@@ -149,6 +149,29 @@ async function main() {
     }
     await shot(page, "05-after-reload")
 
+    console.log("8. Offline arrival: the stop-timestamp intent carries the tap-time through replay")
+    const hasArrive = await page.evaluate(() =>
+      [...document.querySelectorAll("button")].some((b) => b.textContent.trim() === "Mark arrived")
+    )
+    if (hasArrive) {
+      await page.setOfflineMode(true)
+      await page.waitForFunction(() => navigator.onLine === false, { timeout: 5000 })
+      await clickByText(page, "Mark arrived")
+      const arrivalQueued = await textAppears(page, "No signal — time saved, sends automatically")
+      check(arrivalQueued, "offline arrival tap shows the 'time saved' toast")
+      const arrivalCount = await officeQueueCount(page)
+      check(arrivalCount === 1, `arrival intent queued in hauldesk-office (got ${arrivalCount})`)
+      await page.setOfflineMode(false)
+      await page.waitForFunction(() => navigator.onLine === true, { timeout: 5000 })
+      const arrivalSent = await textAppears(page, "Back online — 1 saved update sent", 15000)
+      check(arrivalSent, "queued arrival replays and the server accepts it (not 'couldn't be sent')")
+      const arrivalDrained = await officeQueueCount(page)
+      check(arrivalDrained === 0, `queue empty after the arrival replays (got ${arrivalDrained})`)
+      await shot(page, "06-arrival-replayed")
+    } else {
+      console.log("   (no open stop on this load — arrival step skipped)")
+    }
+
     console.log(`\n${failures.length === 0 ? "All office offline-queue smoke checks passed ✔" : `${failures.length} check(s) FAILED`}`)
     if (failures.length > 0) process.exitCode = 1
   } catch (err) {

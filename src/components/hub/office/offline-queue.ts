@@ -11,11 +11,7 @@
  * - cancels — a cancel replayed hours later could race an office approval
  *   (the driver queue carves these out for the same reason);
  * - decideAdvanceAction — a money decision must reflect the moment it's
- *   made, not the moment the phone finds signal;
- * - stopTimestampAction — the office variant stamps server time, so a late
- *   replay would misdate arrivals and the detention billing that runs off
- *   them (the driver action solved this with a tap-time `at` param; office
- *   parity is future work, recorded in the backlog).
+ *   made, not the moment the phone finds signal.
  */
 import { createOfflineQueue } from "@/components/hub/offline/queue-core"
 
@@ -28,6 +24,13 @@ export interface OfficeIntentPayloads {
   "check-call": { loadId: string; note: string }
   "task-complete": { taskId: string }
   "task-checklist": { taskId: string; index: number; done: boolean }
+  /**
+   * `at` is the tap-time, captured on the phone — a replay hours later must
+   * record when the truck actually arrived/departed, not when the queue
+   * synced, because detention billing runs off it (same rule as the driver
+   * queue's "stop" intent; the server distrusts future values).
+   */
+  "stop-timestamp": { stopId: string; loadId: string; field: "arrived_at" | "departed_at"; at: string }
 }
 
 export type OfficeIntentKind = keyof OfficeIntentPayloads
