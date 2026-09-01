@@ -34,8 +34,8 @@ via Fire Cursor (D-015 reversed D-011; D-016 drops the teach-a-task gate).
 | **Dex** | IC office/hub/TMS — Fire Cursor | [`dex-ic.instructions.md`](dex-ic.instructions.md) | GitHub | none |
 | **Rex** | IC driver/recruiting — Fire Cursor | [`rex-ic.instructions.md`](rex-ic.instructions.md) | GitHub | none |
 | **Steve** | Staff SRE | [`steve-deploy-ci.instructions.md`](steve-deploy-ci.instructions.md) | GitHub, Vercel | none |
-| **Jeff** | Head of RevOps | [`jeff-revops.instructions.md`](jeff-revops.instructions.md) | Gmail, Dropbox; browser for PDFs | loadboard 8:30pm PT daily |
-| **Rav** | Talent Scout — hunt + apply, Auto Review | [`rav-career-coach.instructions.md`](rav-career-coach.instructions.md) | GitHub, LinkedIn | weekday hunt |
+| **Jeff** | Head of RevOps | [`jeff-revops.instructions.md`](jeff-revops.instructions.md) | Gmail, Dropbox; browser for PDFs + RTS | loadboard 8:30pm PT daily; RTS recon every other day 9pm PT |
+| **Rav** | Talent Scout — standing apply, cap 6-7 | [`rav-career-coach.instructions.md`](rav-career-coach.instructions.md) | GitHub; LinkedIn in the browser | apply-every-2-days 4:30am PT |
 | **Labs** | Experiments — disposable demos | [`labs-experiments.instructions.md`](labs-experiments.instructions.md) | GitHub | none |
 | **Ridge** | Researcher — Fable vs Opus vs Grok 4.6 vs Composer | [`ridge-research.instructions.md`](ridge-research.instructions.md) | GitHub | after Scout if the bookmark is about models |
 | **Bee** | BLS CoS — Fire Cursor, never Claude Code | [`bee-bls.instructions.md`](bee-bls.instructions.md) | GitHub | none until fired |
@@ -70,8 +70,10 @@ Chat is history. The file is memory. One writer per shared file.
 ## Step 1 — give gogo the pack (preferred) or paste each Bot
 
 **Preferred:** paste [`GOGO-START.md`](GOGO-START.md) into the live **gogo**
-1:1. That paste is owner-yes for the 14 seats. gogo + Wright create or replace
-Bots, post group charters, and mkdir `/workspace`.
+1:1. That paste is owner-yes for the 14 seats. gogo + Wright migrate the live
+four-bot **Big team** (gogo, Steve, Jeff, Rav ex-Lin keep their connectors and
+proven routines; the blank "New Bot" stub becomes **Em**), create the other
+nine, post group charters, and mkdir `/workspace`.
 
 **Manual fallback:** each Bot → Bot actions → Edit Profile → Instructions →
 replace with its file above → Save. Paste in the Bot's own profile (or 1:1),
@@ -84,8 +86,9 @@ Apply order if doing it by hand (so the Grok meter survives):
 2. Day 2: Em + Dex + Rex; move Steve into **Hub**; Fire Cursor SOP is in the
    paste — no teach-a-task required; cap 6.
 3. Day 3: Labs + Ridge; create **Labs**; first bookmark sweep (manual, then routine).
-4. Day 4: Bee + My (no Claude Code on BLS). Jeff + Rav pastes; create **Money**
-   and **Career**. LinkedIn on Rav.
+4. Day 4: Bee + My (no Claude Code on BLS). Jeff + Rav re-pastes keep their
+   live routines; create **Money** and **Career**. Rav applies in the browser
+   (no LinkedIn connector exists — takeover only for login/2FA).
 5. Day 5: Fire Claude only if Finch says the Max 5x window is idle (hub, Em);
    gogo posts one HQ digest; you label new `should` issues.
 
@@ -109,10 +112,12 @@ Desktop: Settings (`Cmd/Ctrl+,`).
      git push / merge; overwrite or Replace a Dropbox file; purchases; changing
      a production dashboard.
    - Do **not** add “always allow everything in the browser.”
-4. **Plugins:** GitHub, Vercel, Gmail, Dropbox, **X** (Scout, read-only),
-   **LinkedIn** (Rav). Airtable is retired — do not sign it in. Type `@` to
-   attach a connector; `/` to run a saved skill. After each Bot saves its
-   starter skill, open **Plugins → Yours** and enable that skill on that Bot.
+4. **Plugins:** GitHub, Vercel, Gmail, Dropbox, **X** (Scout, read-only).
+   Rav's LinkedIn is browser-only (no connector). Airtable is retired — do not
+   sign it in; the duplicate "thind transport" Gmail connector needs reauth or
+   removal. Type `@` to attach a connector; `/` to run a saved skill. After
+   each Bot saves its starter skill, open **Plugins → Yours** and enable that
+   skill on that Bot.
 5. Do not share these Bots (a public link exposes the description).
 6. Do not install random public Grok templates.
 
@@ -160,12 +165,14 @@ hard-stop.
 ## Done when
 
 - [ ] GOGO-START pasted into live gogo, or all 14 Bots carry the new pastes
+- [ ] Live routines survived: gogo watch, Jeff 8:30pm + RTS recon + Sep 3
+      one-shot, Rav 4:30am apply
 - [ ] Six groups have the **full** charters in GROUPS.md; Big team retired
 - [ ] Step 3 settings saved (timezone, local computer Never, Auto-review)
 - [ ] `/workspace/org/board.md` and `/workspace/hub/board.md` exist
 - [ ] Fire Cursor SOP used at least once (skill saved); Fire Claude only if
       Finch said the window is idle
-- [ ] X plugin on Scout; LinkedIn on Rav; Airtable stays disconnected
+- [ ] X plugin on Scout; Airtable stays disconnected
 - [ ] Each Bot saved and **enabled** its starter skill
 - [ ] gogo's listener, Finch's morning line, Scout 16:00 PT, Jeff 8:30pm PT
-      each had a Test run
+      each had a Test run (existing live routines skip the re-test)

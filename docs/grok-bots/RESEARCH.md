@@ -110,6 +110,7 @@ Owner asked to go all-out with Grok Bot on Cursor Ultra ($200) + Claude Max 5x
 | [saboo / OpenBot](https://github.com/CopilotKit/openbot) | Handoff-as-file, recording | OpenBot as a second runtime |
 | [PM guide](https://x.ai/bot/guides/grok-bot-for-pms) | CoS + EM (does not code) + ICs who spin Cloud Agents; Recruiter hunts AND manages the loop; Friday offload retro | Five hub ICs day one |
 | [GTM guide](https://x.ai/bot/guides/grok-bot-for-gtm) | gogo proposes bots; anti-slop; clean unused routines; prospecting overnight with a morning review list; media rundown state file | Company LinkedIn/X posting; Instantly swarm |
+| Live-fleet brief (owner paste, 2026-08-31 20:03 PT) | Jeff's proven RTS recon (every-other-day, columns L–P, real RTS fee), Chrome/deep-link discipline, Paid-Status-formula rule; Rav's standing-approval loop (any job in the bar, cap 6-7, 36h skip, 4:30am PT) and locked resume/LinkedIn rules; Steve's Vercel ids; blank "New Bot" stub reused as Em; the five live routines survive the migration | Jeff's Airtable click lane (D-014 retired it); Big team as the only channel; gogo launching cloud agents herself; a per-application Auto Review gate on the capped apply batch |
 
 Also took: Finch 70/90 governor so Ultra/Max/Grok meters are used hard and not
 blown; Fire Cursor / Fire Claude (reverses D-011 click rule); Wright
@@ -122,13 +123,13 @@ Ridge model cards.
 |---|---|
 | GTM **weekly media rundown** (state file, consume content, silent if nothing new) | Scout `_seen.md` + “read the post AND the link” + one-line end |
 | Bookmark digest (ID-level seen, action on every keep) | Scout card includes a copy-paste Labs prompt (Goal / Files / Done when / Verify) |
-| PM **Recruiter** + GTM **prospecting overnight** | Rav daily hunt + apply + Auto Review review list |
+| PM **Recruiter** + GTM **prospecting overnight** + live standing approval (owner 2026-08-31) | Rav keeps the live loop: `apply-every-2-days` 4:30am PT, cap 6-7, 36h skip, forced-lie skip bar, locked resume/LinkedIn — now written into the paste so a re-paste cannot lose it |
 | PM **eng ICs spin Cloud Agents** + Cursor docs (browser, `@cursor`, API) | `templates/fire-cursor.md` + Dex/Rex/Bee/Steve pastes. Browser default. API only with a secret card. No wait for Teach a task |
 | Mobile studio **written job = teach**; handoffs without routing through the owner | Group **full** charters; GOGO-START executes the 14 without a second yes |
 | Design **Experiments** | Labs keep-or-kill unchanged; Scout must send a runnable prompt, not a recap |
 | Owner: software still under development | Strip the TMS product code-name from every bot body; group **Hub**; `/workspace/hub/board.md` |
 | Owner: BLS fully Cursor | Bee never opens `claude.ai/code` |
-| Owner: give the start pack to live gogo | `GOGO-START.md` is owner-yes for the 14 |
+| Owner: give the start pack to live gogo | `GOGO-START.md` is owner-yes for the 14; it migrates the live four (ids in the pack), reuses the blank stub as Em, and keeps the five live routines |
 
 Still rejected: SSH-tunnel jailbreak, always-allow-the-browser, Dropbox
 Replace, Airtable, Notion hub, LangGraph/CrewAI, extra Grok on-demand without

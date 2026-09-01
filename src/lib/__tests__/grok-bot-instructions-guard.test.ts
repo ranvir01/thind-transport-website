@@ -116,6 +116,11 @@ describe("grok-bot instruction files (14-seat org, paste-ready, ≤4k)", () => {
     expect(start).toMatch(/14/)
     expect(start).toMatch(/GROUPS\.md/)
     expect(start).toMatch(/\/workspace\/hub\/board\.md/)
+    expect(start).toMatch(/Big team/)
+    expect(start).toMatch(/New Bot/)
+    expect(start).toMatch(/apply-every-2-days/)
+    expect(start).toMatch(/rts-payment-recon/)
+    expect(start).toMatch(/github-repo-watch/)
     expect(start).not.toMatch(/LoadOff/)
   })
 
@@ -222,6 +227,7 @@ describe("grok-bot instruction files (14-seat org, paste-ready, ≤4k)", () => {
     expect(steve).toMatch(/\/workspace\/platform\/last\.md/)
     expect(steve).toMatch(/Fire Cursor/)
     expect(steve).toMatch(/\/workspace\/hub\/board\.md/)
+    expect(steve).toMatch(/rjkind01-gmailcoms-projects/)
   })
 
   it("Jeff never mixes the two companies and owns the 8:30pm PT loadboard", () => {
@@ -245,9 +251,14 @@ describe("grok-bot instruction files (14-seat org, paste-ready, ≤4k)", () => {
     expect(jeff).toMatch(/BROWSER/)
     expect(jeff).toMatch(/\/workspace\/loadboard\/last-run\.md/)
     expect(jeff).toMatch(/Idempotent/)
+    expect(jeff).toMatch(/RTS/)
+    expect(jeff).toMatch(/every other calendar day/)
+    expect(jeff).toMatch(/never paste RTS deep links|never paste.*deep links/i)
+    expect(jeff).toMatch(/DEPOSIT DATE/)
+    expect(jeff).toMatch(/Held\/Denied/)
   })
 
-  it("Rav hunts and applies with Auto Review; proof-only claims; no product or AI-tool names", () => {
+  it("Rav runs the live standing-approval apply loop; proof-only claims; no product or AI-tool names", () => {
     const rav = read("rav-career-coach.instructions.md")
     expect(rav).toMatch(/proof/i)
     expect(rav).toMatch(/LinkedIn/)
@@ -264,6 +275,13 @@ describe("grok-bot instruction files (14-seat org, paste-ready, ≤4k)", () => {
     expect(rav).toMatch(/\/workspace\/career\//)
     expect(rav).toMatch(/Apply|apply/)
     expect(rav).toMatch(/Auto Review/)
+    expect(rav).toMatch(/6-7/)
+    expect(rav).toMatch(/36 hours|36h/)
+    expect(rav).toMatch(/4:30am PT/)
+    expect(rav).toMatch(/100K/)
+    expect(rav).toMatch(/never Postgres RLS/i)
+    expect(rav).toMatch(/2,529/)
+    expect(rav).toMatch(/Thind_Ranvir_Universal_Resume\.pdf/)
     expect(rav).not.toMatch(/Never post, apply, email/)
     expect(rav).not.toMatch(/No LinkedIn connector/)
   })
