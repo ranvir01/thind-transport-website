@@ -1,172 +1,183 @@
-# THE FILE — create the other Bots, open group chats, cover every project
+# THE FILE — paste the 14-seat Grok org and the six groups
 
 **This is that file.** Path: `docs/grok-bots/SETUP.md`
 
-Do not hunt `SPAWN.md` / `GROUPS.md` / `README.md` first. Those are pieces.
-This page is the whole job: retitle every Bot with a real job title, create
-specialists for LoadOff, BLS, and other `ranvir01` projects, open the group
-chats, and stand up the Claude implementation board.
+Live roster (**D-015** + **D-016**, owner 2026-09-01): **14 bots, 6 groups**
+(HQ, Hub, Money, Career, Labs, Clients). Never name the TMS product in bot
+chat, LinkedIn, or email — say **the hub** or `thindtransport.com/hub`. gogo
+is the only org-wide Chief of Staff. Em owns hub coding dispatch. Dex + Rex
+Fire Cursor from a **written SOP** ([`templates/fire-cursor.md`](templates/fire-cursor.md));
+do not wait for a Teach a task. Bee runs BLS on Cursor only (no Claude Code).
+Rav hunts and applies; Auto Review holds send. Wright creates more bots **only
+after Ranvir says yes**, except a **GOGO-START** paste which **is** the yes
+for these 14 seats. Research: [`RESEARCH.md`](RESEARCH.md). Queue:
+collaborator-labeled GitHub `should` issues
+([`docs/ops/PORTFOLIO.md`](../ops/PORTFOLIO.md)). Routing:
+[`docs/ops/MODEL-ROUTING.md`](../ops/MODEL-ROUTING.md). Bench:
+[`SPAWN.md`](SPAWN.md). Channels: [`GROUPS.md`](GROUPS.md) — paste the
+**full** charters, not one-liners. Operator pack for the live gogo Bot:
+[`GOGO-START.md`](GOGO-START.md).
 
-Repo: `github.com/ranvir01/thind-transport-website` (on `main`, or the open fleet PR if this file is not on `main` yet).
+Grok never git-pushes. Scheduled code stays on Claude Corps (D-007, 9 tasks)
+for the **home repo only**. Bounded ad-hoc fixes go to **Cursor cloud agents**
+via Fire Cursor (D-015 reversed D-011; D-016 drops the teach-a-task gate).
+Token rule ([Morgan Linton](https://x.com/morganlinton/status/2094413837290369028)):
+waste is **context bloat**. Atomic seats, short 1:1s, dispatch instead of
+doing the work in-thread, connectors over screenshot-scraping, event
+listeners over polling, routines only when they can act. Finch flags leaks.
 
-You already have a Bot titled Watcher. **Rename it to Technical Program Manager**,
-then paste the new instructions. That TPM is ordered to **create the rest**.
-Grok never git-pushes. **Claude still writes code** (D-007). D-008: Grok may
-spawn project-titled specialists; **Engineering Communications Lead** publishes
-what Claude did, is doing, and should do next.
+## Roster (14 seats)
 
-Connectors to start: **Google, GitHub, Dropbox, LinkedIn, Vercel**.
+| Bot | Role | Paste | Connectors | Routine |
+|---|---|---|---|---|
+| **gogo** | Org Chief of Staff | [`gogo-cos.instructions.md`](gogo-cos.instructions.md) | GitHub, Gmail, Calendar | GitHub watch pr-opened / pr-merged / ci-failed; Friday retro |
+| **Finch** | FinOps / model router — 70/90 governor | [`finch-finops.instructions.md`](finch-finops.instructions.md) | GitHub | Weekday morning usage line |
+| **Wright** | Botwright — 14 seats from GOGO-START; 15th after yes | [`wright-botwright.instructions.md`](wright-botwright.instructions.md) | none | Monthly unused-routine sweep |
+| **Scout** | X bookmarks → idea cards (state file + consume) | [`scout-bookmarks.instructions.md`](scout-bookmarks.instructions.md) | X (read-only) | Weekday 16:00 PT |
+| **Em** | Hub Eng Mgr — only writer of `/workspace/hub/board.md` | [`em-engmgr.instructions.md`](em-engmgr.instructions.md) | GitHub | none |
+| **Dex** | IC office/hub/TMS — Fire Cursor | [`dex-ic.instructions.md`](dex-ic.instructions.md) | GitHub | none |
+| **Rex** | IC driver/recruiting — Fire Cursor | [`rex-ic.instructions.md`](rex-ic.instructions.md) | GitHub | none |
+| **Steve** | Staff SRE | [`steve-deploy-ci.instructions.md`](steve-deploy-ci.instructions.md) | GitHub, Vercel | none |
+| **Jeff** | Head of RevOps | [`jeff-revops.instructions.md`](jeff-revops.instructions.md) | Gmail, Dropbox; browser for PDFs + RTS | loadboard 8:30pm PT daily; RTS recon every other day 9pm PT |
+| **Rav** | Talent Scout — standing apply, cap 6-7 | [`rav-career-coach.instructions.md`](rav-career-coach.instructions.md) | GitHub; LinkedIn in the browser | apply-every-2-days 4:30am PT |
+| **Labs** | Experiments — disposable demos | [`labs-experiments.instructions.md`](labs-experiments.instructions.md) | GitHub | none |
+| **Ridge** | Researcher — Fable vs Opus vs Grok 4.6 vs Composer | [`ridge-research.instructions.md`](ridge-research.instructions.md) | GitHub | after Scout if the bookmark is about models |
+| **Bee** | BLS CoS — Fire Cursor, never Claude Code | [`bee-bls.instructions.md`](bee-bls.instructions.md) | GitHub | none until fired |
+| **My** | MyConsulting CoS — quiet | [`my-myco.instructions.md`](my-myco.instructions.md) | GitHub | none until fired |
 
-If the Grok app refuses a 5th or 6th named Bot, stop after the priority list
-in Step 2 and put leftover product work on TPM + Engineering Communications Lead
-until a slot frees.
+Facts baked in: `bls-website` is on **Netlify**; Dropbox is authenticated;
+**Airtable software is retired** (D-014); Thind = **thindcarrier**, ATS =
+**atstransport24**, never mixed; Form 2290 due **2026-08-31** and the
+AR Payments bank are owner-only; Gmail connector **cannot download PDF bytes**;
+Cursor Ultra is $200/mo; Claude Max 5x is $100/mo; Fire Cursor cap starts at
+**6/week** combined Dex+Rex (Finch may raise or cut). Bee's BLS agents are a
+separate cap Finch names.
 
----
+## How work moves (files, not chat)
 
-## Standing roster (real job titles)
-
-| Title (exact Bot name) | Job | Paste into Instructions |
+| Path | Owner | What |
 |---|---|---|
-| **Technical Program Manager** (rename Watcher) | Routes the portfolio. Spawns specialists. Default = LoadOff. | [`watcher.instructions.md`](watcher.instructions.md) |
-| **Staff Platform Engineer** | SRE / DevOps: GitHub Actions + Vercel across `ranvir01` | [`vercel-github.instructions.md`](vercel-github.instructions.md) |
-| **Revenue Operations Analyst** | AR Payments click paths + Dropbox Excel | [`airtable-coach.instructions.md`](airtable-coach.instructions.md) |
-| **Staff Product Engineer (LoadOff)** | Home product: hub, apply funnel, production UX | [`loadoff-engineer.instructions.md`](loadoff-engineer.instructions.md) |
-| **Software Engineer (BLS)** | `bls-website` product | [`bls-engineer.instructions.md`](bls-engineer.instructions.md) |
-| **Engineering Communications Lead** | Claude liaison. Board: HAPPENED / IN FLIGHT / SHOULD | [`eng-comms.instructions.md`](eng-comms.instructions.md) |
+| `/workspace/org/board.md` | gogo | one in-flight org SHOULD |
+| `/workspace/org/usage.md` | Finch | meters + today's model |
+| `/workspace/org/models.md` | Ridge | Fable / Opus / Grok 4.6 / Composer card + launch path |
+| `/workspace/org/pastes/` | Wright / gogo | copies of the 14 instruction files |
+| `/workspace/hub/board.md` | Em only | one in-flight hub SHOULD |
+| `/workspace/platform/last.md` | Steve | last sweep |
+| `/workspace/loadboard/last-scan.md` | Jeff | 8:30pm loadboard (skill Loadboard entry only) |
+| `/workspace/loadboard/last-recon.md` | Jeff | 9pm RTS recon (skill RTS recon only) |
+| `/workspace/career/` | Rav | applications log + packets |
+| `/workspace/labs/ideas/` | Scout | `_seen.md` + bookmark cards |
+| `/workspace/labs/demos/` | Labs | keep-or-kill notes |
 
-On-demand (TPM creates when a repo is active; **not** added to Staff):
+Chat is history. The file is memory. One writer per shared file.
+**Memory is not the record.** Reopen the source.
 
-| Title | Job | Paste |
-|---|---|---|
-| **Software Engineer ({repo})** | Any other `github.com/ranvir01/{repo}` | [`project-engineer.instructions.md`](project-engineer.instructions.md) — replace `REPO` |
+## Step 1 — give gogo the pack (preferred) or paste each Bot
 
-Old nicknames (Watcher, Deploy / CI, Airtable coach) are retired. Use the titles above in the Grok app.
+**Preferred:** paste [`GOGO-START.md`](GOGO-START.md) into the live **gogo**
+1:1. That paste is owner-yes for the 14 seats. gogo + Wright migrate the live
+four-bot **Big team** (gogo, Steve, Jeff, Rav ex-Lin keep their connectors and
+proven routines; the blank "New Bot" stub becomes **Em**), create the other
+nine, post group charters, and mkdir `/workspace`.
 
----
+**Manual fallback:** each Bot → Bot actions → Edit Profile → Instructions →
+replace with its file above → Save. Paste in the Bot's own profile (or 1:1),
+not in a group. Pin **gogo** and **Jeff**. Turn **Notifications** on for
+**gogo**, **Jeff**, and **Finch**.
 
-## Group chats (2–6 Bots)
+Apply order if doing it by hand (so the Grok meter survives):
 
-| Group | Members | Covers |
-|---|---|---|
-| **LoadOff engineering** | TPM + Staff Product Engineer (LoadOff) + Staff Platform Engineer + Engineering Communications Lead | Home repo product + platform + Claude board |
-| **BLS engineering** | TPM + Software Engineer (BLS) + Staff Platform Engineer | `bls-website` |
-| **Back office** | TPM + Revenue Operations Analyst | Airtable + Dropbox Excel |
-| **Claude stand-up** | TPM + Engineering Communications Lead | All implementation: happened / in flight / should |
-| **Staff** | the six standing titles only | Cross-project. Do not add `{repo}` SEs here (cap 6) |
-| **Engineering — {repo}** | TPM + Software Engineer ({repo}) | One extra project |
+1. Day 1: gogo + Finch + Wright + Scout; create **HQ**; connect **X** for Scout.
+2. Day 2: Em + Dex + Rex; move Steve into **Hub**; Fire Cursor SOP is in the
+   paste — no teach-a-task required; cap 6.
+3. Day 3: Labs + Ridge; create **Labs**; first bookmark sweep (manual, then routine).
+4. Day 4: Bee + My (no Claude Code on BLS). Jeff + Rav re-pastes keep their
+   live routines; create **Money** and **Career**. Rav applies in the browser
+   (no LinkedIn connector exists — takeover only for login/2FA).
+5. Day 5: Fire Claude only if Finch says the Max 5x window is idle (hub, Em);
+   gogo posts one HQ digest; you label new `should` issues.
 
----
+If Finch hard-stops, Wright pauses routines — does not spawn.
 
-## Projects this team handles
+## Step 2 — post the six group charters
 
-| Project | Where | Standing owner | Claude |
-|---|---|---|---|
-| **Thind Transport / LoadOff** (default) | `github.com/ranvir01/thind-transport-website`, `thindtransport.com/hub` | Staff Product Engineer (LoadOff) | Corps writes this git |
-| **BLS** | `github.com/ranvir01/bls-website` | Software Engineer (BLS) | paste-ready SHOULD prompt |
-| **Other `ranvir01` GitHub** | `github.com/ranvir01/*` | TPM spawns Software Engineer ({repo}) | same |
-| **AR Payments** | Airtable `app0RJwxcpO3RS3X7` | Revenue Operations Analyst | only if code/SMTP/cron |
-| **Dropbox Excel** | ATS + Thind Master | Revenue Operations Analyst | same |
-| **LinkedIn career** | WA hybrid/remote AI-integration roles | TPM (watch only; do not post unless asked) | n/a |
+Retire the old **Big team** kickoff. Create six groups and paste the **full**
+matching charter from [`GROUPS.md`](GROUPS.md) into each group's instructions.
+Keep each group at 2–6 bots where the roster allows (Money and Career are
+single-seat on purpose).
 
-**Out of charter:** Frybox, roofing, Tabletop Village — do not spawn SEs for those.
+## Step 3 — account settings (once)
 
-A later `ranvir01` repo with recent commits is in charter: TPM creates **Software Engineer ({repo})** and group **Engineering — {repo}**.
+Desktop: Settings (`Cmd/Ctrl+,`).
 
-Dated inventory of every `ranvir01` repo — who owns it, who writes its git,
-which group, plus the stub-first Omni Analytics reporting lane (D-009):
-[`../ops/PORTFOLIO.md`](../ops/PORTFOLIO.md).
+1. **Agent → Timezone** = `America/Los_Angeles` (Jeff 8:30pm PT, Scout 16:00 PT).
+2. **Agent → Execution on Local Computer** = **Never allowed**.
+3. **Agent → Auto-review** (when the control exists):
+   - **Require Approval:** send any external email; post or apply on LinkedIn;
+     git push / merge; overwrite or Replace a Dropbox file; purchases; changing
+     a production dashboard.
+   - Do **not** add “always allow everything in the browser.”
+4. **Plugins:** GitHub, Vercel, Gmail, Dropbox, **X** (Scout, read-only).
+   Rav's LinkedIn is browser-only (no connector). Airtable is retired — do not
+   sign it in; the duplicate "thind transport" Gmail connector needs reauth or
+   removal. Type `@` to attach a connector; `/` to run a saved skill. After
+   each Bot saves its starter skill, open **Plugins → Yours** and enable that
+   skill on that Bot.
+5. Do not share these Bots (a public link exposes the description).
+6. Do not install random public Grok templates.
 
----
+Password / passkey / 2FA / CAPTCHA / payment: open **Agent Computer**, take
+control, complete only that step, return control. Never paste secrets in chat.
+If the Bot misses the handoff, tell it “hand me your computer.”
 
-## Step 1 — retitle the Watcher and paste TPM instructions
+## Step 4 — Fire Cursor / Fire Claude (written SOP; Teach a task optional)
 
-In the Grok Bot app: open the existing Watcher → rename to **Technical Program Manager** → Instructions → replace everything with [`watcher.instructions.md`](watcher.instructions.md) → Save.
+Desktop, 1:1, computer view visible, **no secrets on screen**.
 
-That paste orders the TPM to spawn the rest, including project SEs, and to @Engineering Communications Lead on all Claude work.
+**Fire Cursor** is already in Dex / Rex / Bee / Steve pastes. They open
+`cursor.com/agents`, clone the last green agent on that repo, or New agent →
+Goal / Files / Done when / Verify → Start. Optional GitHub `@cursor` on the
+issue. Full SOP: [`templates/fire-cursor.md`](templates/fire-cursor.md). After
+the first green run, tell the Bot “**save this method as a skill**” named
+Fire Cursor. If **Teach a task** is offered, record that click-path once
+(≤10 min) to lock the skill — optional, not a gate.
 
----
+**Fire Claude:** open `claude.ai/code` → new session → same brief → Start.
+Save as skill **Fire Claude**. Enable it on **Em only**, hub only, and only
+when Finch says the Max 5x window is idle. Do not duplicate a ticket already
+on the live 9-task Claude fleet. **Bee never uses this.**
 
-## Step 2 — create the other Bots (or send this to the TPM)
+Review the draft skill; add Finch's cap and "never merge" — a recording will
+miss those.
 
-Priority if slots run out: **Engineering Communications Lead first**, then Staff Platform Engineer, Revenue Operations Analyst, Staff Product Engineer (LoadOff), Software Engineer (BLS), then `{repo}` SEs.
+## Step 5 — durability (skills; routines stay listed)
 
-Either create them yourself, **or** send the TPM this block (same as [`SPAWN.md`](SPAWN.md)):
+**Memory.** Stable preferences only. Changing facts live in the repo or
+`/workspace/*`. Every paste pins “memory is not the record.”
 
-```
-Rename yourself to Technical Program Manager if you have not. Create these sibling Grok Bots with the exact titles. Paste each instructions file from github.com/ranvir01/thind-transport-website docs/grok-bots/. Claude still writes git. You never git push.
+**Skills.** Run the job once, correct it, then: “save this method as a skill”
+with all six parts (when / inputs / steps / validate / return / approval).
+Starter skills: gogo **Dispatch**, Finch **Usage card**, Wright **Stamp seat**,
+Scout **Bookmark card**, Em **Decompose**, Dex/Rex/Bee **Fire Cursor**, Steve
+**Platform sweep**, Jeff **Loadboard entry**, Rav **Fit check** + **Apply packet**,
+Labs **Disposable demo**, Ridge **Model card**.
 
-1. Staff Platform Engineer — vercel-github.instructions.md — connectors GitHub, Vercel.
-2. Revenue Operations Analyst — airtable-coach.instructions.md
-3. Staff Product Engineer (LoadOff) — loadoff-engineer.instructions.md
-4. Software Engineer (BLS) — bls-engineer.instructions.md
-5. Engineering Communications Lead — eng-comms.instructions.md — Claude liaison; do not skip.
-
-Then look at github.com/ranvir01 for other repos with recent activity. Skip thind-transport-website, bls-website, Frybox, roofing, Tabletop Village. For each remaining repo, create Software Engineer (REPO) from project-engineer.instructions.md (replace REPO).
-
-If the product refuses another named Bot, stop and list who is missing. Confirm titles, connectors, and stop.
-```
-
----
-
-## Step 3 — open the group chats
-
-Grok groups hold 2–6 Bots. They @mention and hand off so you are not the router.
-
-**Desktop:** sidebar **New** → **New chat** → select the Bots for that group → open → rename.  
-**iPhone:** **+** → **New Group Chat** → select the Bots → rename.
-
-Create these (names matter):
-
-1. **LoadOff engineering** — TPM + Staff Product Engineer (LoadOff) + Staff Platform Engineer + Engineering Communications Lead
-2. **BLS engineering** — TPM + Software Engineer (BLS) + Staff Platform Engineer
-3. **Back office** — TPM + Revenue Operations Analyst
-4. **Claude stand-up** — TPM + Engineering Communications Lead
-5. **Staff** — all six standing titles
-6. **Engineering — {repo}** — one per extra project SE the TPM created
-
----
-
-## Step 4 — first message in each group (paste once)
-
-### LoadOff engineering
-
-```
-@Technical Program Manager route. @Staff Product Engineer (LoadOff) own github.com/ranvir01/thind-transport-website and LoadOff at thindtransport.com/hub. @Staff Platform Engineer own GitHub Actions and Vercel. @Engineering Communications Lead own the Claude board: HAPPENED / IN FLIGHT / SHOULD, plus paste-ready Claude prompts. Never git push. @everyone only if production is red. Connectors first: Google, GitHub, Dropbox, LinkedIn, Vercel.
-```
-
-### BLS engineering
-
-```
-@Software Engineer (BLS) own github.com/ranvir01/bls-website. @Staff Platform Engineer own Actions and Vercel for that project. @Technical Program Manager route. Code/tests/features: @Engineering Communications Lead with a SHOULD prompt (goal + files + done when). Never git push.
-```
-
-### Back office
-
-```
-@Technical Program Manager own Dropbox Excel Master (ATS + Thind) and routing. @Revenue Operations Analyst own Airtable app0RJwxcpO3RS3X7 click paths (≤6 steps, computer not phone). Never tick Highlight. Never rearrange views. Never Omni prompts. If a fix needs code, @Engineering Communications Lead. @everyone only if invoice counters or the 1,000-record cap are broken.
-```
-
-### Claude stand-up
-
-```
-This thread is the implementation board. @Engineering Communications Lead: post HAPPENED (what Claude/Cursor/drain already landed, with PR or sha), IN FLIGHT (open claude/* and cursor/* , red Actions, failed Vercel), and SHOULD (one paste-ready Claude prompt: Goal / Files / Done when). @Technical Program Manager routes. Cover LoadOff first, then BLS, then other ranvir01 repos. OWNER-WORKSHEET items (Form 2290, SMTP, Airtable billing) stay human — do not put those on Claude. Never git push. Never nag. Silence when nothing changed.
-```
-
-### Staff
-
-```
-Staff is the six standing roles: Technical Program Manager, Staff Platform Engineer, Revenue Operations Analyst, Staff Product Engineer (LoadOff), Software Engineer (BLS), Engineering Communications Lead. Do not add Software Engineer ({repo}) here — those get their own Engineering — {repo} group (6-Bot cap). Default: Thind Transport / LoadOff. Also: bls-website, other ranvir01 repos, Dropbox Excel, LinkedIn career (no posting unless asked). Claude writes git. Engineering Communications Lead publishes every implementation that happened, is in flight, or should happen. One owner per stage. Never git push. Come back only for Form 2290, SMTP, Airtable billing, Cursor Untitled.
-```
-
----
+**Routines.** After any edit: **Test run** on desktop. On a missing source,
+report and stop, never retry in a loop, never reuse stale data. Adding a
+routine means Finch still has meter left — Wright does not spawn during a
+hard-stop.
 
 ## Done when
 
-- [ ] Existing Watcher renamed to **Technical Program Manager**; instructions = `watcher.instructions.md`
-- [ ] Bots exist with the five other standing titles (Platform, RevOps, LoadOff PE, BLS SE, Eng Comms)
-- [ ] Engineering Communications Lead has posted (or is ready to post) HAPPENED / IN FLIGHT / SHOULD in **Claude stand-up**
-- [ ] TPM created **Software Engineer ({repo})** for other active `ranvir01` repos (or listed none)
-- [ ] Groups exist and got the first messages above
-- [ ] Connectors signed in: Google, GitHub, Dropbox, LinkedIn, Vercel
-
-After this, you do not need to come back to a Cursor agent for Grok setup. Code work still lands in Claude (or a Cursor session). Dated human items stay on [`docs/ops/OWNER-WORKSHEET.md`](../ops/OWNER-WORKSHEET.md).
+- [ ] GOGO-START pasted into live gogo, or all 14 Bots carry the new pastes
+- [ ] Live routines survived: gogo watch, Jeff 8:30pm + RTS recon + Sep 3
+      one-shot, Rav 4:30am apply
+- [ ] Six groups have the **full** charters in GROUPS.md; Big team retired
+- [ ] Step 3 settings saved (timezone, local computer Never, Auto-review)
+- [ ] `/workspace/org/board.md` and `/workspace/hub/board.md` exist
+- [ ] Fire Cursor SOP used at least once (skill saved); Fire Claude only if
+      Finch said the window is idle
+- [ ] X plugin on Scout; Airtable stays disconnected
+- [ ] Each Bot saved and **enabled** its starter skill
+- [ ] gogo's listener, Finch's morning line, Scout 16:00 PT, Jeff 8:30pm PT
+      each had a Test run (existing live routines skip the re-test)

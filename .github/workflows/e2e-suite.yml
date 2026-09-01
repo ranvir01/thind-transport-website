@@ -44,6 +44,7 @@ on:
 
 permissions:
   contents: read
+  issues: write
 
 concurrency:
   group: e2e-${{ github.workflow }}-${{ github.ref }}
@@ -210,3 +211,25 @@ jobs:
             e2e-shots*/
             e2e-sweep/
             server.log
+
+  file-red-issue:
+    if: always() && (needs.unit.result == 'failure' || needs.e2e.result == 'failure')
+    needs: [unit, e2e]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: File or comment the pinned E2E/unit red issue
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_ISSUE_TITLE: "[fleet] E2E suite red"
+          GH_ISSUE_BODY: "e2e-suite.yml went red. Unit=${{ needs.unit.result }} e2e=${{ needs.e2e.result }}. Create-or-comment is idempotent by this title."
+          GH_ISSUE_COMMENT: "Still red. Unit=${{ needs.unit.result }} e2e=${{ needs.e2e.result }}. Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          GH_ISSUE_LABELS: "should,venture:loadoff"
+        run: node scripts/ensure-github-issue.mjs

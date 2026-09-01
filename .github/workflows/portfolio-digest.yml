@@ -1,0 +1,33 @@
+# Friday portfolio digest — one create-or-update issue so the queue is
+# visible without opening four dashboards. Minute :41 is clear of the
+# hourly loop and of reserved D-003 minutes (:07/:13/:37). See
+# docs/ops/FLEET.md and docs/ops/AGENT_INTEROP.md §1.
+
+name: Portfolio digest
+
+on:
+  schedule:
+    - cron: "41 20 * * 5"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: portfolio-digest
+  cancel-in-progress: true
+
+jobs:
+  digest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Compile open should / needs-owner into the digest issue
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: node scripts/portfolio-digest.mjs

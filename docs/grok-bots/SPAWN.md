@@ -1,28 +1,47 @@
-# One-shot — paste this to Technical Program Manager
+# Spawn registry — bots Wright may create
 
-**Whole setup:** [`SETUP.md`](SETUP.md)
+Wright writes a ≤4000 paste from [`templates/`](templates/) and creates the Bot
+in the Grok app. A **GOGO-START** paste from Ranvir **is** the yes for the 14
+named seats in [`SETUP.md`](SETUP.md). A **15th** seat still needs gogo to
+quote Ranvir and Ranvir to reply yes — only after that yes. This file is the
+bench. It is not a license to spawn the week-2 seats.
 
-This block is only the "create the specialists" slice. Claude still writes git (D-007). D-008: spawn project-titled Bots; Engineering Communications Lead owns the implementation board.
+Live seats (14) are listed in [`SETUP.md`](SETUP.md). Do not duplicate them.
 
-Rename yourself to **Technical Program Manager** if you are still titled Watcher. Then create these sibling Grok Bots with the **exact titles**. Paste each instructions file from `github.com/ranvir01/thind-transport-website` `docs/grok-bots/` (raw file on `main`, or the open PR if not on main yet). You never git push.
+GitHub `venture:*` labels (repo routing only — never speak them in LinkedIn,
+email, or bot chat to outsiders): `venture:loadoff` (home hub),
+`venture:ar-payments`, `venture:bls`, `venture:myco`, `venture:career`.
 
-1. **Staff Platform Engineer** — `vercel-github.instructions.md` — connectors GitHub, Vercel.
-2. **Revenue Operations Analyst** — `airtable-coach.instructions.md`
-3. **Staff Product Engineer (LoadOff)** — `loadoff-engineer.instructions.md`
-4. **Software Engineer (BLS)** — `bls-engineer.instructions.md`
-5. **Engineering Communications Lead** — `eng-comms.instructions.md` — Claude liaison (HAPPENED / IN FLIGHT / SHOULD). Do not skip.
+## Reuse before spawn
 
-Then look at `github.com/ranvir01` for other repos with recent activity. Skip `thind-transport-website`, `bls-website`, Frybox, roofing, Tabletop Village. For each remaining repo, create **Software Engineer (REPO)** from `project-engineer.instructions.md` (replace REPO).
+1. Is there already a bot whose job covers this? Assign that bot.
+2. Would a new **skill** on an existing bot do it? Teach that instead.
+3. Would a GitHub `should` issue + Fire Cursor do it? File the issue.
+4. Only then propose a seat, and only if the target group still has a slot
+   (product max 6 bots per channel).
 
-If the product refuses another named Bot, stop and list who is missing. Confirm titles and connectors.
+## Week-2 bench (do not pre-create)
 
-After that: remind the owner (one message) to follow `docs/grok-bots/SETUP.md` Steps 3–4:
+Propose only when Finch reports Cursor first-party **and** Grok week both
+under 50%, and Ranvir says yes.
 
-- **LoadOff engineering** — you + Staff Product Engineer (LoadOff) + Staff Platform Engineer + Engineering Communications Lead
-- **BLS engineering** — you + Software Engineer (BLS) + Staff Platform Engineer
-- **Back office** — you + Revenue Operations Analyst
-- **Claude stand-up** — you + Engineering Communications Lead
-- **Staff** — the six standing titles
-- **Engineering — {repo}** — you + each extra project SE
+| Seat | Template | Group | Job |
+|---|---|---|---|
+| **Max** | [`templates/eng-ic.md`](templates/eng-ic.md) | Hub | Third IC (tests / integrations) |
+| **Ash** | venture-cos shaped as data | Hub | Warehouse / KPI charts (PM-guide Ashley analog) |
+| **Pete** | venture-cos shaped as PM | Hub | RFCs / product notes (PM-guide Pete analog) |
+| **Rek** | venture-cos shaped as recon | Money | RTS recon only — propose **only** if Jeff's scan and recon start colliding in one thread **and** Finch names the Grok meter as the cause. Default is no: two writers on one live xlsx is worse than context bloat. |
 
-How: desktop New chat → select 2–6 Bots; iPhone **+ → New Group Chat**. Do not git push. Do not change Cursor or Claude schedules.
+## Hard no
+
+- Dormant ventures in [`docs/ops/PORTFOLIO.md`](../ops/PORTFOLIO.md) (FryBox,
+  roofing, Tabletop, Gadget Fix, personal investing).
+- Random public Grok templates (they inherit someone else's logins).
+- OpenBot or any second runtime.
+- Spawn during a Finch hard-stop (90% on any meter).
+- A 15th seat without a retired unused routine in the same change.
+- Instantly / HeyReach / Clay-style GTM swarms (too much outbound infra;
+  Rav applies in the browser with Auto Review).
+
+Git writers update this file when a seat is created or retired. Wright drafts
+the patch in `/workspace/org/spawn/` and cannot `git push`.

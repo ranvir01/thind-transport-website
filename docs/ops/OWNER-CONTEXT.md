@@ -39,7 +39,7 @@ per message. Never nag. Never claim verified unless it is.
 Standing product findings (agent-executable):
 
 1. `checkSandboxInvariants()` / `COMMITTED_STATUSES` gap (`booked` omitted).
-2. ~~`runOverdueReminders` empty catch~~ **fixed 2026-08-26** (`failed`/`deferred` + cron 500 + send cap 5).
+2. ~~`runOverdueReminders` empty catch~~ **fixed 2026-08-26 / this fleet branch** (`failed`/`deferred` + cron 500 + send cap 5). Not on `main` until PR #42 merges — do not write a second fix.
 3. DVIR open defects not surfaced (`dvir-open-defect:` automation_key).
 
 Marketing: state pages to WA/OR/ID standard; CA next; no unverifiable claims.
@@ -49,20 +49,22 @@ Marketing: state pages to WA/OR/ID standard; CA next; no unverifiable claims.
 Full clock: [`FLEET.md`](FLEET.md) + [`AGENT_INTEROP.md`](AGENT_INTEROP.md) §1.
 Grok Bot setup (other Bots, group chats, every project): [`docs/grok-bots/SETUP.md`](../grok-bots/SETUP.md).
 
-**Claude Corps is the live scheduled writer** (14 tasks, all enabled, 2026-08-26):
+**Claude Corps is the live scheduled writer** (9 LoadOff-only tasks, all enabled, 2026-08-28):
 
 | # | Task | Cron UTC |
 |---|---|---|
 | 1 | Integrator + drain | `43 */3 * * *` (every 3h, not hourly) |
 | 2 | Prod smoke | `49 16 * * *` |
 | 3 | Nightly E2E | `33 10 * * *` |
-| 4 | Weekly deep audit | `33 10 * * 0` (same minute as nightly on Sunday) |
+| 4 | Weekly deep audit | `53 10 * * 0` (owner paste; was colliding with nightly at 10:33 Sun) |
 | 5 | Meta-governor | `0 12 * * 1` |
 | 6 | Fleet watchdog | `11 15 * * *` |
 | 7 | Marketing lane | `0 8 * * *` → `claude/lane-marketing` |
 | 8 | Weekly outside-auditor | `0 14 * * 1` |
-| 9 | Sim test buddy | `18 */3 * * *` |
-| 10–14 | Airtable lane (brief / panel / infra / watchdog / trial one-shot) | see FLEET.md |
+| 9 | Sim test buddy | `18 */6 * * *` (owner paste; was `*/3`) |
+
+Airtable lane: **retired** (D-014). AR Payments LLC is the holding/billing
+company — [`AR-PAYMENTS.md`](AR-PAYMENTS.md). Excel in Dropbox is the SoR.
 
 **Cursor Automations** (Grok 4.6) — dashboard copies observed **DISABLED**
 2026-08-26: Integrator `880eec29-…`, Prod Smoke `4ad7743c-…`, Deploy + backlog
@@ -72,18 +74,23 @@ already run (office / driver / tests / integrations). Do not import marketing,
 deep-verify, or meta-governor while those Claude tasks are live.
 
 **GitHub Actions** keep `main` moving when Cursor is off: drain `:17`/`:47`,
-liveness `:10`.
+liveness `:10`, portfolio digest Fri `20:41`. Red runs file `should` issues.
 
-**Grok Bot** uses real job titles (Technical Program Manager + specialists for
-LoadOff, BLS, other `ranvir01/*`, RevOps). Engineering Communications Lead
-publishes HAPPENED / IN FLIGHT / SHOULD for Claude. Never git. **The one file:**
-`docs/grok-bots/SETUP.md`.
+**Grok Bot** is the 14-seat org (D-015 / D-016): gogo (org Chief of Staff), Finch
+(FinOps 70/90), Wright (Botwright; 14 from GOGO-START, 15th after yes), Scout
+(X bookmarks), Em (Hub Eng Mgr), Dex + Rex (Fire Cursor), Steve, Jeff, Rav
+(hunt + apply), Labs, Ridge, Bee (BLS, Cursor-only), My. Six groups (HQ Hub
+Money Career Labs Clients). Bounded fixes go to Cursor cloud agents via Fire
+Cursor; Grok never merges and never names the TMS product. Never git. Queue:
+collaborator-labeled `should` issues. **The one file:** `docs/grok-bots/SETUP.md`.
+**Paste into live gogo:** `docs/grok-bots/GOGO-START.md`. Routing:
+`docs/ops/MODEL-ROUTING.md`.
 
-## AR Payments (Airtable back office)
+## AR Payments (holding / billing company)
 
-Base `app0RJwxcpO3RS3X7`. Design law and click-path rules:
+Legal entity, not Airtable. Bank + remittance + two-LLC allocation:
 [`AR-PAYMENTS.md`](AR-PAYMENTS.md). Two human users, Excel-first. Agents never
-violate the two-door rule or the Highlight star.
+mix Thind and ATS workbooks. LoadOff never holds these funds.
 
 ## How agents work here
 

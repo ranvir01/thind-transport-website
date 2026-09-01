@@ -30,7 +30,11 @@ npm run agent:branches
 (Claude every 3h at `:43`; Cursor `:00` when enabled) runs `npm run agent:branches`
 and merges unpicked work into `claude/hauldesk-project-setup-l1luoo`. You do
 **not** need a fixed branch name. Live roster: `docs/ops/FLEET.md`. Grok Bot
-never pushes; do not treat it as a writer.
+(14-seat org: gogo CoS, Em Eng Mgr, Dex/Rex Fire Cursor) never pushes; do not
+treat it as a writer. Em dispatches bounded fixes to Cursor cloud agents from
+collaborator-labeled `should` issues then `Backlog:` trailers — land with
+`Closes #N`; leave yours specific enough to dispatch (goal + files + done-when
+in plain words). Same ticket never on Cursor and this Claude fleet.
 
 **Never:** push directly to `main` (deploy agent only) or `claude/hauldesk-project-setup-l1luoo`
 (integrator only).

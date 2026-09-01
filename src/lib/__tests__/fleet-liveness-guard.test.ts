@@ -64,4 +64,10 @@ describe("fleet-liveness workflow guard", () => {
     expect(workflow).toMatch(/permissions:\s*\n\s+contents:\s+read/)
     expect(workflow).not.toMatch(/git push/)
   })
+
+  it("files a should-issue on stall (issues:write, idempotent by title)", () => {
+    expect(workflow).toMatch(/issues:\s+write/)
+    expect(workflow).toMatch(/scripts\/ensure-github-issue\.mjs/)
+    expect(workflow).toMatch(/\[fleet\] Integrator stalled/)
+  })
 })

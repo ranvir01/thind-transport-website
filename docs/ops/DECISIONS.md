@@ -99,49 +99,181 @@ B) Keep three nicknames (Watcher / Deploy-CI / Airtable coach) and no project SE
 Deferral cost: other projects have no named owner; Claude work stays invisible in Grok.
 Answer: **A — owner 2026-08-26.** Do not shrink the roster without editing this file.
 
-## D-009 | filed:2026-08-27 | class:spend
-Q: Adopt Omni Analytics (omniapp.co — the BI platform, unrelated to Airtable's
-Omni assistant; disambiguation in docs/ops/PORTFOLIO.md) as the portfolio's
-read-only reporting layer? The owner's Cursor install already ships the Omni
-Analytics plugin (model explorer / query / embed over REST), and PORTFOLIO.md
-holds a ready activation runbook. No instance or credentials exist today
-(verified 2026-08-27); Omni is paid, sales-quoted software.
-A) Connect it to LoadOff's Vercel Postgres with read-only credentials: semantic
-model over loads/AR/IFTA, then embed carrier-scoped dashboards in /hub
-(competitors ship reporting modules — docs/research/2026-08b/prompt-11). Cost:
-subscription + ~1h owner setup (org, PAT, `OMNI_BASE_URL`/`OMNI_API_KEY` into
-agent env — values never in git).
-B) Point it at AR Payments for back-office reporting. Weakest case: the Airtable
-Money interface already answers "still owed" daily, and Excel-shaped wins by law.
-C) Defer at zero cost; the lane stays stub-first and paste-ready. Revisit when
-LoadOff has external carrier tenants asking for reports, or a real question
-needs Airtable + Postgres + Excel joined. [recommended]
-Deferral cost: none today — agents keep answering cross-source money questions
-by hand in the Claude stand-up.
-Answer: ____
+## D-009 | filed:2026-08-27 | class:fleet
+Q: Grok Bots run on one shared cloud computer with skills, routines, memory, and
+Teach-a-task (docs.x.ai/grok-bot) — none of which the paste files used. Adopt a
+durability pass: per-Bot starter skills saved after one corrected run, exactly four
+scheduled routines (Claude board daily 07:30 / platform sweep daily 07:00 / Friday
+Dropbox-backup reminder / Monday career scan — `America/Los_Angeles`), the
+reopen-the-source memory rule, plus on-demand **Venture Analyst ({idea})** for
+business ideas with no repo yet (`docs/grok-bots/venture-analyst.instructions.md`)?
+A) Yes — routines are read-only and silent-when-healthy; writes, spend, sends, and
+posts stay behind owner approval; adding a routine means retiring one. [owner request]
+B) Keep Bots chat-only (owner re-triggers every check by hand; memory silently stales).
+Deferral cost: every check stays manual; career and new-idea work has no owner.
+Answer: **A — owner 2026-08-27** (usage efficiency: Grok quota stays scarcer than
+Claude's per D-007; Claude still writes all git). Setup: `docs/grok-bots/SETUP.md` Step 5.
+**Roster and routine table superseded by D-010 the same day** — the owner's live
+team is four bots; the durability rules (skills, memory, report-and-stop) carry over.
 
-## D-010 | filed:2026-08-27 | class:spend
-Q: Pilot the Managed-Agent chat bridge (Anthropic's new Managed Agents × Vercel
-Chat SDK cookbook — evaluation and runbook in docs/ops/CHAT-BRIDGE.md) as the
-always-on owner↔Claude chat surface? Web adapter needs no Slack app or webhook;
-the only credential is Anthropic auth. Runs on the Claude Platform API —
-metered tokens OUTSIDE the claude.ai subscription Claude Corps uses.
-A) Pilot: clone the quickstart into its own tiny repo, web adapter only,
-read-only charter (drafts SHOULD prompts / Backlog items; never pushes git; no
-schedule), with a hard monthly API budget cap set in the Anthropic console
-before the key is minted. Real gain over Remote Control: no machine of ours
-has to be awake, and sessions keep portfolio memory. [recommended — small
-metered cost, no fleet changes, kill switch is deleting one key]
-B) Defer at zero cost; phone comms stay Remote Control + cursor.com + the Grok
-stand-up board. Revisit when the dispatcher needs a chat surface or
-Grok-drafted handoffs wait on the owner more than ~once a day.
-C) Skip entirely; the git bus plus existing phone paths are enough.
-Deferral cost: low — the owner stays the router between "I want X" said on a
-phone and a well-formed item on the git bus.
-Answer: **A — owner 2026-08-28.** v1 app built the same day: adapted from the
-Anthropic quickstart, charter in setup/agent-config.ts, typecheck clean, boot
-and auth-boundary verified. No agent token here can create a GitHub repo
-(403, verified), so the code travels on courier branch
-`cursor/portfolio-chat-code-53f9` (never merge it) until the owner does
-OWNER-WORKSHEET row 7: create the private repo, transplant, set the budget
-cap, mint the key, `npm run setup`. Charter widening stays a new entry here.
+## D-010 | filed:2026-08-27 | class:fleet
+Q: The Grok roster the owner actually runs (owner dump, 2026-08-27) is FOUR named
+bots in ONE group (Big team): gogo (TPM + coding dispatcher; owns the GitHub event
+listener — pr-opened / pr-merged / ci-failed on main), Steve (Deploy/CI), Jeff
+(RevOps: thindcarrier + atstransport24 Gmails, two live Dropbox xlsx, loadboard
+routine 8:30pm PT), Rav (Career Coach: proof-only claims, no LinkedIn connector).
+Owner: no more bots, groups, or routines — usage. Coding path: one in-flight
+SHOULD; bounded repo fixes go to a CURSOR CLOUD AGENT as a PR (Grok reviews,
+never merges); Claude paste only when the owner asks or the work is bigger than
+one PR. Replace the six-title/spawn/venture roster (D-008) and the four-routine
+table (D-009) with this?
+A) Yes — repo docs mirror the live four; instruction files are now gogo-tpm /
+steve-deploy-ci / jeff-revops / rav-career-coach; SPAWN.md, GROUPS.md, and the
+six retired pastes are deleted. [owner dump 2026-08-27]
+B) Keep documenting the aspirational six-bot roster nobody runs.
+Deferral cost: every doc points at bots that do not exist; pastes drift from the
+bots' real working rules (Netlify BLS, live Dropbox path, proof-only career set).
+Answer: **A — owner 2026-08-27.** D-007 stands for scheduled code (Claude Corps);
+bounded ad-hoc fixes go to Cursor cloud agents via gogo's board. Also recorded as
+live truth: `bls-website` is on **Netlify** (deploy state = GitHub commit checks);
+`fleet-liveness.yml` is not live on `main` until the fleet PR merges; Dropbox is
+authenticated (no first-overwrite / lock / whole-file-Replace steps); Airtable
+still needsAuth; SMTP 535 / Form 2290 / Airtable billing never go to Claude or a
+cloud agent.
+
+## D-011 | filed:2026-08-28 | class:fleet
+Q: Owner asked to make the *current* four Grok Bots as useful as possible using
+the product's real capabilities and the research links (docs.x.ai/grok-bot,
+Avi masterclass / av1dlive, RongleCat/awesome-grok-bot, usegrokbot.com,
+botdirectory.ai) — without adding bots (usage). Adopt the capability pass:
+shared `/workspace` filing cabinet (board / platform / loadboard / career) so
+Big team can hand off without attachments; connector-over-browser except Jeff
+must use the **browser for Gmail PDFs** (connector cannot download bytes);
+takeover for secrets; Auto Review Require-Approval on send/post/git/overwrite/buy;
+local computer **Never allowed**; Teach a task + Test run; gogo writes Cursor
+pastes but does not start the agents; reject extra directory bots and the
+usegrokbot SSH-tunnel jailbreak?
+A) Yes — enhance the four pastes + SETUP.md Steps 3–4; record took-vs-rejected
+in `docs/grok-bots/RESEARCH.md`. No fifth bot, no third routine. [owner request]
+B) Leave the four as chat-only descriptions.
+Deferral cost: group stays mute (no attachments), Jeff fails silently on PDFs,
+usage burns on extra bots/routines the directories push.
+Answer: **A — owner 2026-08-28.** Roster ceiling stays D-010.
+
+## D-012 | filed:2026-08-28 | class:fleet
+Q: Wire Claude (9 live tasks), Cursor cloud agents, the Grok four, and GitHub
+Actions into one communication hub. Options: Notion, LangGraph/CrewAI, a
+webhook dispatcher, GitHub Issues as a pull-scan queue, or stay on `Backlog:`
+trailers only. Model routing: keep Cursor agents on `cursor-grok-4.6-high-fast`,
+Claude Opus/Fable for plans + integrator judgment, Sonnet for cheap lanes?
+A) GitHub Issues + repo state + `Backlog:` trailers. Labels: `should` /
+`needs-owner` / `venture:*`. Agents act only on collaborator-labeled `should`
+(public repo — a label is not authorization). No claim-locks, no extra label
+state machine. `npm run agent:backlog` merges open `should` issues above
+trailers. Cursor agents stay `cursor-grok-4.6-high-fast`. Rejected: Notion
+(three new auth surfaces, Grok OAuth already broken, drifts from git),
+LangGraph/CrewAI (schedules + git + issues already orchestrate; a new runtime
+is a fifth writer), webhook-dispatch services, assignee-trigger native agents,
+Airtable software, LoadOff sitting in carrier funds.
+B) Notion hub. C) LangGraph. D) Trailers only.
+Answer: **A — owner 2026-08-28.** Registry: `docs/ops/PORTFOLIO.md`.
+
+## D-013 | filed:2026-08-28 | class:fleet
+Q: Live Claude account has **9** LoadOff-only tasks (snapshot 2026-08-28), not
+the 14 documented with an Airtable lane. Tune the roster: integrator push ON;
+watchdog roster = the real 9 (drop Airtable ghosts); Sunday deep audit
+`33 10 * * 0` → `53 10 * * 0`; sim buddy `18 */3` → `18 */6` and file each
+finding once as a `should` issue; marketing pin `claude-sonnet-5` + push on;
+intake = top `should` else `agent:backlog`; land with `Closes #N`. No new
+tasks. No Airtable task.
+A) Yes — rewrite `docs/claude-routines.md` + FLEET/OWNER-CONTEXT to the live 9;
+owner applies pastes/toggles on claude.ai. [recommended]
+B) Keep documenting 14 tasks nobody runs.
+Answer: **A — owner 2026-08-28.** Paste deltas and toggle checklist live in
+`docs/claude-routines.md` §"Live 9-task fleet".
+
+## D-014 | filed:2026-08-28 | class:fleet
+Q: Airtable software vs AR Payments LLC the legal entity. Owner: Airtable is
+out; AR Payments is the holding/billing company for Thind + ATS — legally
+set up, still needs a bank account and a workflow.
+A) Retire Airtable software everywhere (no Claude lane, Jeff stays off it,
+SETUP/FLEET/worksheets stop asking for Team billing). Rewrite
+`docs/ops/AR-PAYMENTS.md` as the holding-company operating model: Dropbox
+Excel remains SoR; remittance → AR Payments bank once opened; LoadOff never
+holds funds; do not factor other people's freight. [recommended]
+B) Rebuild the Airtable lane. C) Retire the LLC too.
+Answer: **A — owner 2026-08-28.** Bank account is owner-only
+(`OWNER-WORKSHEET.md`).
+
+## D-015 | filed:2026-09-01 | class:fleet
+Q: Owner upgraded to Cursor Ultra ($200/mo) and Claude Max 5x ($100/mo) and
+asked to go all-out with Grok Bot: org-wide Chief of Staff, a leader per
+active venture, workers in a loop, bots that Fire Cursor (`cursor.com/agents`)
+and Fire Claude (`claude.ai/code`) in the browser, a FinOps/model router, a
+bot that creates other bots, X-bookmark → demo factory, researcher for Fable
+vs Opus vs Grok 4.6 vs Composer. Reverse D-010's four-bot freeze and D-011's
+“gogo writes the paste; Ranvir clicks”?
+A) Yes — 14 seats, 6 groups (HQ LoadOff Money Career Labs Clients). gogo is
+the only org-wide CoS. Em is LoadOff Eng Mgr (does not code; only writer of
+`/workspace/loadoff/board.md`). Dex + Rex Fire Cursor (start 6/week combined).
+Finch owns 70/90 meters and MODEL-ROUTING.md. Wright stamps bots from our
+templates only after Ranvir says yes. Scout + Labs + Ridge run the bookmark →
+demo → model-card loop. Bee / My are quiet venture CoS. Spawn only after
+owner yes. Grok never git-pushes or merges. Reject Notion, OpenBot-as-runtime,
+random public templates, hourly attention until week 2, seats for dormant
+ventures. Claude 9-task fleet unchanged; same ticket never on two plans.
+[owner request 2026-09-01]
+B) Keep the four-bot freeze.
+Answer: **A — owner 2026-09-01.** Setup: `docs/grok-bots/SETUP.md`. D-007
+stands for scheduled git. D-012 stands for the GitHub `should` queue. D-014
+stands for Airtable out. D-016 amends the Grok-facing names and Rav/Bee/Fire
+Cursor rules without raising the 14-seat ceiling.
+
+## D-016 | filed:2026-09-01 | class:fleet
+Q: Strip the TMS product code-name from Grok Bot chat (software still under
+development); let Rav hunt and apply with Auto Review; run BLS fully on
+Cursor IDE (no Claude Code); make Fire Cursor a written SOP so ICs do not
+wait to be taught; paste full group charters; give live gogo a GOGO-START
+pack that is owner-yes for the 14 seats?
+A) Yes — group **Hub**, board `/workspace/hub/board.md`. Never name the product
+or which AI tool wrote the code in LinkedIn/email/chat. Rav applies (proof-only
+claims; Auto Review holds send). Bee Fire Cursors `ranvir01/bls-website` and
+never opens `claude.ai/code`. Dex/Rex/Bee clone the last green Cursor cloud
+agent or New agent at `cursor.com/agents` (optional GitHub `@cursor`; API only
+with a secret card). Teach a task is optional after first green. GROUPS.md
+charters are full 6-part blocks. `docs/grok-bots/GOGO-START.md` pasted into
+live gogo **is** the yes for those 14 seats; a 15th still needs a quoted yes.
+GitHub `venture:*` labels stay as routing tokens in SPAWN.md — bots do not
+speak them. Claude 9-task fleet on the home repo unchanged.
+[owner request 2026-09-01]
+B) Keep D-015 names and Rav as draft-only.
+Answer: **A — owner 2026-09-01.** Setup: `docs/grok-bots/SETUP.md` +
+`docs/grok-bots/GOGO-START.md`.
+
+## D-017 | filed:2026-08-27 | class:spend | renumbered:2026-09-01
+Q: Pilot the Managed-Agent chat bridge (Anthropic Managed Agents × Vercel
+Chat SDK cookbook — evaluation and runbook in docs/ops/CHAT-BRIDGE.md) as an
+always-on owner↔Claude chat surface? Web adapter needs no Slack app or
+webhook; the only credential is Anthropic auth. Runs on the Claude Platform
+API — metered tokens OUTSIDE the claude.ai Max 5x the 9-task fleet uses.
+Does **not** replace D-012 (GitHub `should` issues remain the bus) and is
+**not** a 15th Grok seat (D-016).
+A) Pilot: adapted quickstart on courier branch `cursor/portfolio-chat-code-53f9`
+(never merge it); own private repo after owner creates it; web adapter only;
+read-only charter (drafts `should` issue text / Claude prompts / Backlog
+items; never pushes git; no schedule); hard monthly API budget cap in the
+Anthropic console before the key is minted. Finch watches this third meter
+once it exists. [recommended — small metered cost, no fleet-clock row, kill
+switch is deleting one key]
+B) Defer at zero cost; phone comms stay Remote Control + cursor.com + Grok
+Fire Cursor / Fire Claude + the `should` queue.
+C) Skip entirely.
+Deferral cost: low — the owner stays the router between "I want X" on a
+phone and a well-formed item on the D-012 bus.
+Answer: **A — owner 2026-08-28** (this session; originally filed as D-010
+on the stacked PR, renumbered D-017 after the fleet branch reused D-009/D-010
+for the Grok roster). App built and verified the same day (install / tsc /
+boot / Anthropic auth-boundary). Repo create 403s from every agent token
+here — OWNER-WORKSHEET row 10 is the remaining path. Charter widening
+(Slack adapter, write access, a 15th Grok seat) stays a new entry.
+

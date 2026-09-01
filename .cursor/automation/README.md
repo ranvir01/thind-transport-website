@@ -50,7 +50,7 @@ ad-hoc sessions ──────▶ claude/<session> ─┘        prod smoke 
 
 ## Activate / fix (one time, ~15 min)
 
-Claude Corps is the live scheduled writer (14 tasks). These Cursor automations are
+Claude Corps is the live scheduled writer (9 LoadOff-only tasks). These Cursor automations are
 **optional redundancy**. As of 2026-08-26 all four dashboard copies were **disabled**.
 
 1. **If you want Cursor drain/smoke redundancy:** re-enable Integrator, Prod Smoke, and

@@ -1,115 +1,65 @@
-# Portfolio map — every venture, one owner, one lane
+# Portfolio registry — scale filter
 
-*Inventory pulled live from the GitHub API **2026-08-27** (8 repos under
-`ranvir01`). This is the table the Technical Program Manager spawns from —
-the mechanism is [`SETUP.md`](../grok-bots/SETUP.md) Step 2. Re-date when you
-re-pull. The clock lives in [`FLEET.md`](FLEET.md); nothing on this page
-schedules anything.*
+What agents may work, and what they must leave alone. Filed **2026-08-28**
+(D-012). Route GitHub issues with one `venture:*` label.
 
-## Ventures (live pull 2026-08-27)
+A venture is **active** only if it can become a multi-million business **or**
+help millions of people. Local shops, games, and personal investing stay
+dormant by design — same Grok out-of-charter list as FryBox / roofing /
+Tabletop Village.
 
-| Venture | Where | Last push | Grok owner | Who writes its git | Group |
-|---|---|---|---|---|---|
-| **LoadOff / Thind Transport** (default) | [`thind-transport-website`](https://github.com/ranvir01/thind-transport-website) · thindtransport.com/hub | 2026-08-25 | Staff Product Engineer (LoadOff) | Claude Corps; Cursor sessions via `cursor/*` PR | LoadOff engineering |
-| **BLS** | [`bls-website`](https://github.com/ranvir01/bls-website) | 2026-08-26 — most active this week | Software Engineer (BLS) | Claude, via paste-ready SHOULD prompts run in that repo | BLS engineering |
-| **AR Payments** | Airtable `app0RJwxcpO3RS3X7` + Dropbox Excel (ATS + Thind Masters) | live daily | Revenue Operations Analyst | Claude Airtable lane — never this git | Back office |
-| **Career / job applications** | LinkedIn (watch only — never post unless asked) + [`Job-Applications`](https://github.com/ranvir01/Job-Applications) (private, Python, default `master`) | 2026-07-06 | TPM watches LinkedIn; spawn **Software Engineer (Job-Applications)** | Claude prompts run in that repo — never a fourth writer on LoadOff `main` | Engineering — Job-Applications |
-| **MyCo** | [`myco-website`](https://github.com/ranvir01/myco-website) (TS) + [`MyCO_Mike`](https://github.com/ranvir01/MyCO_Mike) (static HTML, default `master`) | 2026-07-11 | **Software Engineer (myco-website)**; MyCO_Mike folds under the same SE | same paste-prompt path | Engineering — myco-website |
-| **Stock research** | [`stock-research`](https://github.com/ranvir01/stock-research) (Python, public) | 2026-07-02 | SE on demand when it moves again | same | Engineering — stock-research (when spawned) |
-| **Trillionaire (UE5 game)** | [`you-are-a-trillionaire`](https://github.com/ranvir01/you-are-a-trillionaire) (private, C#) | 2026-07-06 | SE on demand | same — its own toolchain; LoadOff's TS+Go+Rust rule is LoadOff-scoped | Engineering — you-are-a-trillionaire (when spawned) |
-| **My.AI** | [`My.AI`](https://github.com/ranvir01/My.AI) (private) | 2025-12-24 — dormant | none until it moves | — | — |
+This file is git-writer canon. Grok never edits it. The Friday digest
+(`.github/workflows/portfolio-digest.yml`, `20:41` UTC) groups open `should`
+issues by the labels below.
 
-**Out of charter** (unchanged): Frybox, roofing, Tabletop Village — the
-2026-08-27 pull confirms no such repos exist. Do not spawn SEs or watchers.
+## Active
 
-Spawn rule: a repo pushed within ~60 days gets a named SE
-(`project-engineer.instructions.md`, replace `REPO`). Dormant repos get
-nobody — an SE with nothing to watch is Grok quota spent on silence.
+| Venture | Label | What it is | Repo / live | Who (Grok CoS in bold) |
+|---|---|---|---|---|
+| **LoadOff** | `venture:loadoff` | TMS for small carriers. Primary scale bet. | `ranvir01/thind-transport-website` · thindtransport.com/hub | **Em** (Eng Mgr) + Dex/Rex Fire Cursor + Claude 9-task fleet; gogo routes |
+| **AR Payments LLC** | `venture:ar-payments` | Legal holding / billing company for Thind + ATS. Not a product. Bank + remittance + two-LLC allocation. | [`AR-PAYMENTS.md`](AR-PAYMENTS.md) · Dropbox Excel SoR | **Jeff** (ops); owner (bank). LoadOff never holds funds |
+| **MyConsulting Network** | `venture:myco` | Talent / business marketplace. Quiet. | `ranvir01/myco-website` · Pages at `ranvir01.github.io/myco-website` (cite the repo, not a live product, until myconsulting.network is confirmed up) | **My** (quiet CoS). Owner-fired [`EXPANSION-PROMPT.md`](EXPANSION-PROMPT.md) later. Rav may cite GitHub/Pages as proof |
+| **Career OS** | `venture:career` | Personal WA hybrid/remote AI-integration hunt **now**. Scale *goal* later: the same JD → one-page PDF → tracker loop as a product for millions of applicants. **Do not productize in this repo this sprint.** Parked: [#67](https://github.com/ranvir01/thind-transport-website/issues/67) (`needs-owner`). | private `ranvir01/Job-Applications` + Rav `/workspace/career/` | **Rav** (drafts only, no outreach unless asked) |
+| **BLS** | `venture:bls` | Live client site. Proof + services revenue, not millions of users. | `ranvir01/bls-website` · bluelandscapingservices.com on **Netlify** | **Bee** (quiet CoS). Steve reads GitHub commit checks; expansion paste later |
 
-## Reporting & analytics lane — Omni Analytics (stub-first; D-009)
+Thind Transport + ATS as *trucking companies* are the cash engine that funds
+LoadOff. They are not a `venture:*` of their own — they run through
+`venture:ar-payments` (billing) and `venture:loadoff` (the product they prove).
 
-**Two different Omnis — do not conflate.** [`AR-PAYMENTS.md`](AR-PAYMENTS.md)
-design law 9 ("Never write Omni prompts") is about **Airtable's Omni
-assistant**, and it stays banned. **Omni Analytics** (omniapp.co) is an
-unrelated BI platform; the owner's Cursor install ships an Omni Analytics
-plugin (model explorer, query, content, embed — all REST API). Law 9 stands
-either way: nothing rewrites Airtable views.
+## Dormant by design (no agent coverage)
 
-**Today** the portfolio answers money questions on three disconnected
-surfaces: the Airtable **Money** interface (owner's phone), Load Sheet column
-sums, and LoadOff hub screens over Vercel Postgres. Nothing joins across
-sources; no agent can answer "still owed, by broker, across both carriers,
-next to hub load data" without clicking or scraping.
+- FryBox
+- Roofing
+- Tabletop Village
+- **Gadget Fix** (`ranvir01/MyCO_Mike`, Tukwila phone repair — local shop, fails the millions filter; not the MyCO scale bet)
+- `ranvir01/stock-research` (personal investing)
+- `ranvir01/you-are-a-trillionaire` (UE5 sandbox)
+- empty `ranvir01/My.AI`
+- Battam1111/Myco (someone else's public project — do not cite)
 
-**No Omni Analytics instance exists today** — verified 2026-08-27: no
-`OMNI_BASE_URL` / `OMNI_API_KEY` configured anywhere, no instance referenced
-in-repo. This lane is **stub-first**, same doctrine as integrations: the
-mechanics below are ready, spend is zero, and activation is an owner
-decision — **D-009 in [`DECISIONS.md`](DECISIONS.md)**.
+Grok out-of-charter names these. Do not spawn a Bot, Claude task, or Cursor
+automation for any dormant row.
 
-### Charter when (if) live
+## How work enters the queue
 
-- **Read-only.** Agents explore models and run queries. Model YAML edits,
-  dashboard writes, connection changes, and billing stay owner-gated —
-  exactly like Airtable view rearrangement.
-- Grok Bots have no Omni connector: Claude/Cursor sessions run the API
-  calls; Engineering Communications Lead posts the numbers (HAPPENED) or the
-  ask (SHOULD) in Claude stand-up.
-- Credentials live in agent env only (`OMNI_BASE_URL`, `OMNI_API_KEY` —
-  a Personal Access Token suffices for querying). Names in docs, values
-  never in git.
+1. Anyone can **open** a GitHub issue (public repo).
+2. A **collaborator** applies `should` (and optional `venture:*`). That label
+   is the owner-curated trigger — it is not authorization; writers keep their
+   ceilings (Grok: none; Cursor agent: PR; integrator: main).
+3. `needs-owner` parks the card for Ranvir (bank, Form 2290, SMTP, apply-to-job).
+4. `npm run agent:backlog` prints `## Open should-issues` above `Backlog:`
+   trailers and prefers a labeled issue as TOP PICK.
+5. Land with `Closes #N`. GitHub closes the issue; agents do not drive a
+   label state machine.
 
-### Activation-day runbook (paste once D-009 = A)
+Issue template: [`.github/ISSUE_TEMPLATE/should-item.md`](../../.github/ISSUE_TEMPLATE/should-item.md).
 
-```bash
-# 1 — what exists (use the SHARED model from the list)
-curl -L "$OMNI_BASE_URL/api/v1/models" -H "Authorization: Bearer $OMNI_API_KEY"
-# 2 — queryable topics in that model
-curl -L "$OMNI_BASE_URL/api/v1/models/{modelId}/topics" -H "Authorization: Bearer $OMNI_API_KEY"
-```
+## Always-on owner chat (optional; D-017)
 
-First query — the AR question no single surface answers today. Swap in real
-view/field names from step 2; `resultType: csv` because the default response
-is base64 Apache Arrow, not human-readable. POST to
-`$OMNI_BASE_URL/api/v1/query/run`:
-
-```json
-{ "query": {
-    "modelId": "{modelId}",
-    "table": "loads",
-    "fields": ["companies.name", "freight_brokers.name", "loads.balance_total"],
-    "filters": { "loads.paid_status": "not Paid" },
-    "sorts": [{ "column_name": "loads.balance_total", "sort_descending": true }],
-    "join_paths_from_topic_name": "loads",
-    "limit": 100 },
-  "resultType": "csv" }
-```
-
-Caveats already mined from the plugin so nobody re-learns them live: 429 =
-back off and retry; `IS_NOT_NULL` filters have a known inversion bug (state
-the filter positively, as above); boolean filters can be silently dropped
-when `pivots` is present.
-
-### Why bother — and why not yet
-
-- **LoadOff product:** competitors ship reporting modules
-  (`docs/research/2026-08b/prompt-11-tms-competitive.md`); Omni's embed SDK
-  could put carrier-scoped dashboards in `/hub` without building a chart
-  stack.
-- **Back office:** cross-source AR truth. Weak case today — the Airtable
-  Money interface already answers the owner's daily question, and
-  Excel-shaped wins by law.
-- So **D-009 recommends defer**, with concrete revisit triggers. The value
-  landed now is that the lane is specced: activation is a paste, not a
-  project.
-
-## Comms lane — chat bridge (stub-first; D-010)
-
-Cross-platform comms remain the git bus
-([`AGENT_INTEROP.md`](AGENT_INTEROP.md) §4). The 2026-08-27 evaluation of
-Anthropic's Managed Agents × Vercel Chat SDK cookbook as an always-on
-owner↔Claude chat surface — and why nothing can chat *to* Cursor — lives in
-[`CHAT-BRIDGE.md`](CHAT-BRIDGE.md); adoption is D-010, **answered A
-2026-08-28**: the pilot app is staged on courier branch
-`cursor/portfolio-chat-code-53f9` awaiting the owner's repo + key
-(worksheet row 7).
+The `should` queue above is the bus. The 2026-08-27 @ClaudeDevs cookbook
+(Claude Managed Agents × Vercel Chat SDK) was evaluated as a phone-first
+owner↔Claude surface that *drafts* bus items — it does not replace this
+file, D-012, or Fire Cursor / Fire Claude. Owner approved a capped pilot
+2026-08-28. Evaluation, v1 charter, and transplant commands:
+[`CHAT-BRIDGE.md`](CHAT-BRIDGE.md). Code is on courier branch
+`cursor/portfolio-chat-code-53f9` (never merge it) until worksheet row 10.

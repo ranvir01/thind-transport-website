@@ -16,6 +16,69 @@ never `seed:demo` against production, fetch+rebase before every push.
 
 ---
 
+## Live 9-task fleet (D-013) — owner paste / toggle checklist
+
+Live account snapshot **2026-08-28**: **9 tasks**, all enabled, **no Airtable
+lane**. Docs that still said 14 were stale. Do **not** create a tenth task.
+Owner applies the toggles and paste deltas on claude.ai; agents only update
+this file.
+
+| # | Task | Trigger id | Live cron UTC | Owner change |
+|---|---|---|---|---|
+| 1 | LoadOff integrator + drain | `trig_01B99W8MteaPtzwk124DFF4w` | `43 */3 * * *` | **Push notifications ON.** Intake = top collaborator-labeled `should` issue in territory, else `npm run agent:backlog`. Land with `Closes #N`. |
+| 2 | Prod smoke | `trig_01CHi6xoyJj6J6gnw61kdM6n` | `49 16 * * *` | Prompt still says "hourly" — strike that. On red, create-or-comment pinned `[fleet] E2E suite red` / production issue (idempotent by title). |
+| 3 | Nightly E2E business-cycle | `trig_01KkHERF248AGaTKWWn3TnAN` | `33 10 * * *` | Unchanged time. Sunday no longer shares the minute with deep audit. |
+| 4 | Weekly deep audit | `trig_01DRFH6wxq5A42VHyviZrAgz` | **`53 10 * * 0`** (was `33 10 * * 0`) | Un-collide Sunday 10:33. |
+| 5 | Meta-governor | `trig_01VDnAmz6dKpgnXo6pqXNXic` | `0 12 * * 1` | Add queue-health: stale `should` >7 days, PORTFOLIO.md drift. Recommend-only; still never edits fleet config. |
+| 6 | Fleet watchdog | `trig_0129DPKKdN2r1SAgkoS7ji9C` | `11 15 * * *` | Roster = these **9**. Drop Airtable morning coach / Friday go-live ghosts. Stall check: pinned red-workflow issue open >24h. |
+| 7 | Marketing lane | `trig_01P4PLJiyBp9xqt8i9ikohr6` | `0 8 * * *` | Pin **`claude-sonnet-5`**. Push notifications ON. Intake = top `should` with `venture:loadoff` in public-site territory. |
+| 8 | Weekly outside-auditor | `trig_01QogkHyq7M3RqC5SqznGZLA` | `0 14 * * 1` | Unchanged. |
+| 9 | Sim test buddy | `trig_01Wq86Kd67ZCgEFYGnEU8sXK` | **`18 */6 * * *`** (was `18 */3 * * *`) | File each *confirmed* finding once as a `should` issue (create-or-comment). `runOverdueReminders` is already fixed on `add0d627` (PR #42) — do not re-report it as open once that SHA is on `main`. |
+
+### Paste deltas (append to the live prompt; do not duplicate the whole charter)
+
+**Integrator — add after the idle-backlog paragraph:**
+
+> Intake: if an open GitHub issue labeled `should` (and not `needs-owner`) sits
+> in this repo, that outranks `npm run agent:backlog` trailers. Work it, land
+> with `Closes #N`. Anyone can open an issue; only a collaborator-applied
+> `should` label is a trigger.
+
+**Sim buddy — add:**
+
+> For each finding you have reproduced twice with a control case: search
+> existing open issues by title; create-or-comment a `should` +
+> `venture:loadoff` issue. Never re-report the same bug into the transcript
+> the next run. Known: `runOverdueReminders` silent-fail is fixed in
+> `add0d627` on the fleet PR — if `main` still lacks that SHA, say
+> "fixed, waiting on drain", do not open a second issue.
+
+**Watchdog — replace the roster list with the nine trigger ids above.** Add:
+
+> Also stall: a pinned GitHub issue titled `[fleet] Integrator stalled` or
+> `[fleet] E2E suite red` open more than 24h. Airtable tasks do not exist;
+> do not page for them.
+
+**Meta-governor — add:**
+
+> Queue health (recommend only): any `should` issue untouched >7 days; any
+> `docs/ops/PORTFOLIO.md` row whose live repo disagrees with the registry.
+
+### Owner toggles (one sitting on claude.ai)
+
+- [ ] Integrator: push ON
+- [ ] Marketing: model `claude-sonnet-5`, push ON
+- [ ] Weekly deep audit cron → `53 10 * * 0`
+- [ ] Sim buddy cron → `18 */6 * * *`
+- [ ] Watchdog roster paste (9 ids, no Airtable)
+- [ ] Paste the four deltas above
+- [ ] Do **not** recreate any Airtable task
+
+Dunning (`runOverdueReminders`) is already fixed on this branch (`add0d627`).
+Shipping = merging PR #42. Do not write a second fix.
+
+---
+
 ## Routine 1 · "LoadOff integrator + drain" — Hourly
 
 **Status: LIVE** — created 2026-07-19 as `trig_01B99W8MteaPtzwk124DFF4w`, fires
@@ -82,13 +145,12 @@ Claude routine with the same charter must be paused/deleted **in the same
 sitting**, per the "One charter, one platform" table in `docs/ops/FLEET.md`.
 One charter on two platforms is two writers on one lane.
 
-What stays on Claude permanently (live Corps, 2026-08-26 — times were stale in
-older docs): Routine 1 (`43 */3 * * *` integrator — every 3h, the deliberate
-redundant pair with Cursor `:00` when that automation is enabled), Routine 2
-(16:49 daily smoke — redundant with Cursor `:30`), nightly E2E at **10:33**
-(needs a browser the Cursor image lacks; was wrongly documented as 23:23),
-plus marketing `08:00`, watchdog `15:11`, sim buddy `:18` every 3h, and the
-Airtable lane. Do not also import Cursor twins for marketing / deep-verify /
+What stays on Claude permanently (live Corps, 2026-08-28 — **9 tasks**, no
+Airtable lane): Routine 1 (`43 */3 * * *` integrator), Routine 2 (16:49 daily
+smoke), nightly E2E at **10:33**, weekly deep audit at **10:53 Sun**, marketing
+`08:00`, watchdog `15:11`, sim buddy `:18` every **6h**, meta-governor Mon
+`12:00`, outside-auditor Mon `14:00`. See §"Live 9-task fleet" for paste
+deltas. Do not also import Cursor twins for marketing / deep-verify /
 meta-governor / red-team. Grok Bot watches; it does not write git
 (`docs/grok-bots/SETUP.md` is the one owner file).
 As before: if duplicate copies of any routine exist in the Routines list,

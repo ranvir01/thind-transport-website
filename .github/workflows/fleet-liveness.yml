@@ -24,6 +24,7 @@ on:
 
 permissions:
   contents: read
+  issues: write
 
 concurrency:
   group: fleet-liveness
@@ -46,6 +47,8 @@ jobs:
         run: git fetch origin --prune --quiet
 
       - name: Agent loop status (fail on stall only)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set +e
           node scripts/agent-loop-status.mjs
@@ -53,6 +56,11 @@ jobs:
           set -e
           if [ "$code" -eq 2 ]; then
             echo "::error::INTEGRATOR STALLED — work is waiting and nothing is merging. Check Cursor automations and the environment build log (docs/ops/FLEET.md)."
+            GH_ISSUE_TITLE="[fleet] Integrator stalled" \
+            GH_ISSUE_BODY="Fleet liveness went red: integrator stalled with pending claude/* work. See this run and docs/ops/FLEET.md." \
+            GH_ISSUE_COMMENT="Liveness still red (stall). Run: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}" \
+            GH_ISSUE_LABELS="should,venture:loadoff" \
+            node scripts/ensure-github-issue.mjs || echo "::warning::could not file the stall issue"
             exit 1
           fi
           if [ "$code" -eq 1 ]; then

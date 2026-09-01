@@ -1,95 +1,69 @@
-# Grok Bot layer — watchers and connectors, never git
+# Grok Bot layer — 14-seat org, never git
 
-**Start here to create the other Bots, the group chats, and cover every
-project:** [`SETUP.md`](SETUP.md)
+**The one owner file: [`SETUP.md`](SETUP.md)** — 14 pastes, six **full** group
+charters, Fire Cursor written SOP, Auto Review, `/workspace` filing cabinet.
+**Paste this into live gogo first: [`GOGO-START.md`](GOGO-START.md).** Source
+notes: [`RESEARCH.md`](RESEARCH.md). Queue:
+[`docs/ops/PORTFOLIO.md`](../ops/PORTFOLIO.md). Routing:
+[`docs/ops/MODEL-ROUTING.md`](../ops/MODEL-ROUTING.md). Bench:
+[`SPAWN.md`](SPAWN.md). Channels: [`GROUPS.md`](GROUPS.md). Airtable software
+is **retired** (D-014); AR Payments LLC remains the holding company.
+Never name the TMS product in bot chat — say **the hub**.
 
-That one file is the whole job: real job titles, specialists for LoadOff / BLS /
-other `ranvir01` repos, and the Claude implementation board.
-
-xAI **Grok Bot** (the always-on teammate with its own cloud computer) is the
-third platform in this fleet. It is **not** a Cursor Automation and **not** a
-Claude routine. Agents in this repo cannot create or edit Grok Bots — only you
-can, from the Grok Bot app. The Technical Program Manager **can** create sibling
-Bots from inside Grok once you paste [`watcher.instructions.md`](watcher.instructions.md).
+xAI **Grok Bot** is the always-on teammate with its own cloud computer. It is
+**not** a Cursor Automation and **not** a Claude routine. Agents in this repo
+cannot create or edit Grok Bots — only the owner can, from the Grok Bot app.
+**D-015 / D-016:** 14 named seats, 6 groups. A GOGO-START paste is owner-yes
+for those 14. Wright may create a 15th only after Ranvir says yes. Job titles
+are real (Chief of Staff, Eng Mgr, ICs who Fire Cursor, FinOps, Botwright,
+Experiments, Researcher, Talent Scout who applies).
 
 Instruction bodies are capped at **4,000 characters** (product limit).
 `src/lib/__tests__/grok-bot-instructions-guard.test.ts` fails if a file here
-goes over.
+goes over, drops the never-git rule, loses the memory rule, or says the
+retired product code-name.
 
-## Three platforms, many projects
+## The fourteen
 
-The Technical Program Manager covers Ranvir's **whole portfolio**. Default when
-ambiguous: Thind Transport / LoadOff (`github.com/ranvir01/thind-transport-website`).
-Other `github.com/ranvir01/*` repos (including `bls-website`), AR Payments /
-Dropbox Excel, and LinkedIn career watch are in the same charter. Code writers
-below apply to the home repo; Grok Bot still never pushes git anywhere.
-
-| Layer | What it is | Writes git? | Lives |
+| Bot | Role | File | Group |
 |---|---|---|---|
-| **Claude Corps** | 14 scheduled tasks, all enabled (2026-08-26 master context) | Yes — `claude/*` then integrator → main | claude.ai Routines |
-| **Cursor Automations** | Grok 4.6 code agents. Dashboard copies currently **DISABLED** (Integrator, Prod Smoke, Deploy + backlog, Untitled — observed 2026-08-26) | Yes when enabled | cursor.com/automations |
-| **GitHub Actions** | Drain `:17`/`:47`, liveness `:10`, E2E `03:40` | Drain writes `main`; liveness/E2E do not | `.github/workflows/` |
-| **Grok Bot** | Job-titled specialists. Watch, connectors, click paths, Claude board. Connectors first: **Google, GitHub, Dropbox, LinkedIn, Vercel**. | **Never** | Grok Bot app (group cap 6) |
+| **gogo** | Org Chief of Staff | [`gogo-cos.instructions.md`](gogo-cos.instructions.md) | HQ |
+| **Finch** | FinOps / 70/90 governor | [`finch-finops.instructions.md`](finch-finops.instructions.md) | HQ |
+| **Wright** | Botwright (14 from GOGO-START; 15th after yes) | [`wright-botwright.instructions.md`](wright-botwright.instructions.md) | HQ |
+| **Scout** | X bookmarks | [`scout-bookmarks.instructions.md`](scout-bookmarks.instructions.md) | HQ |
+| **Em** | Hub Eng Mgr | [`em-engmgr.instructions.md`](em-engmgr.instructions.md) | Hub |
+| **Dex** | IC office/hub — Fire Cursor | [`dex-ic.instructions.md`](dex-ic.instructions.md) | Hub |
+| **Rex** | IC driver/recruiting — Fire Cursor | [`rex-ic.instructions.md`](rex-ic.instructions.md) | Hub |
+| **Steve** | Staff SRE | [`steve-deploy-ci.instructions.md`](steve-deploy-ci.instructions.md) | Hub |
+| **Jeff** | Head of RevOps | [`jeff-revops.instructions.md`](jeff-revops.instructions.md) | Money |
+| **Rav** | Talent Scout (hunt + apply) | [`rav-career-coach.instructions.md`](rav-career-coach.instructions.md) | Career |
+| **Labs** | Experiments | [`labs-experiments.instructions.md`](labs-experiments.instructions.md) | Labs |
+| **Ridge** | Model researcher | [`ridge-research.instructions.md`](ridge-research.instructions.md) | Labs |
+| **Bee** | BLS CoS (Netlify, Cursor-only) | [`bee-bls.instructions.md`](bee-bls.instructions.md) | Clients |
+| **My** | MyConsulting CoS | [`my-myco.instructions.md`](my-myco.instructions.md) | Clients |
 
-Code changes still land through Claude / Cursor / CI. Grok Bot **files a finding
-in chat** (or a numbered click path ≤6 steps). It does not push, merge, import
-automations, or spend money.
+You talk to gogo. gogo talks to everyone else.
 
-## Why this split (learned from the screenshot + daily tools)
+## Three platforms, one repo
 
-The bot you just created already says:
-
-> Watches sites, dashboards, and feeds for changes. The user works with
-> **Google, GitHub, Dropbox, LinkedIn, Vercel** every day — start with those
-> tools when suggesting connectors or taking on work.
-
-That is the right job. Cursor cannot click Airtable views, Dropbox Excel, or
-LinkedIn. Claude's Airtable lane already builds in the base; it cannot see
-Vercel/GitHub CI going red while you are on your phone. Grok Bot fills that
-gap without becoming a fourth writer on `main`.
-
-**D-007:** Claude owns code and long prompts. **D-008:** the Technical Program
-Manager **does** create sibling Bots with real job titles for LoadOff, BLS, and
-other `ranvir01` projects. **Engineering Communications Lead** is the Claude
-liaison — HAPPENED / IN FLIGHT / SHOULD. Groups hold 2–6 Bots
-([xAI: chat and collaboration](https://docs.x.ai/grok-bot/chat-and-collaboration)).
-Paste from this folder; do not freehand extra charters.
-
-| Title | File | Connectors to start |
+| Layer | What it is | Writes git? |
 |---|---|---|
-| **Technical Program Manager** (rename Watcher) | [`watcher.instructions.md`](watcher.instructions.md) | Google, GitHub, Dropbox, LinkedIn, Vercel |
-| **Staff Platform Engineer** | [`vercel-github.instructions.md`](vercel-github.instructions.md) | GitHub, Vercel |
-| **Revenue Operations Analyst** | [`airtable-coach.instructions.md`](airtable-coach.instructions.md) | none required; Airtable in the browser if signed in |
-| **Staff Product Engineer (LoadOff)** | [`loadoff-engineer.instructions.md`](loadoff-engineer.instructions.md) | GitHub |
-| **Software Engineer (BLS)** | [`bls-engineer.instructions.md`](bls-engineer.instructions.md) | GitHub, Vercel |
-| **Engineering Communications Lead** | [`eng-comms.instructions.md`](eng-comms.instructions.md) | GitHub, Vercel |
-| **Software Engineer ({repo})** (on-demand) | [`project-engineer.instructions.md`](project-engineer.instructions.md) | GitHub |
-
-### Standing group chats
-
-| Group | Members | Kickoff paste |
-|---|---|---|
-| **LoadOff engineering** | TPM + LoadOff PE + Platform + Eng Comms | [`SETUP.md`](SETUP.md) Step 4 |
-| **BLS engineering** | TPM + BLS SE + Platform | [`SETUP.md`](SETUP.md) Step 4 |
-| **Back office** | TPM + RevOps Analyst | [`SETUP.md`](SETUP.md) Step 4 |
-| **Claude stand-up** | TPM + Eng Comms Lead | [`SETUP.md`](SETUP.md) Step 4 |
-| **Staff** | six standing titles | [`SETUP.md`](SETUP.md) Step 4 |
-
-Desktop: New chat → select 2–6 Bots. iPhone: **+ → New Group Chat**. Then paste
-the matching kickoff from SETUP.md. `@` one Bot when it owns the next step;
-`@everyone` only for a stall. One owner per stage.
-
-One-shot to the TPM: SETUP.md Step 2 (same text as [`SPAWN.md`](SPAWN.md)).
+| **Claude Corps** | 9 scheduled tasks (live snapshot 2026-08-28), home repo only | Yes — `claude/*` then integrator → main |
+| **Cursor cloud agents** | Ad-hoc bounded fixes via Fire Cursor (`Goal / Files / Done when / Verify`) | Yes — `cursor/*` PRs, reviewed, never merged by Grok |
+| **Cursor Automations** | Dashboard copies **DISABLED** 2026-08-26 | When enabled |
+| **GitHub Actions** | Drain `:17`/`:47`, E2E `03:40`, liveness `:10`, digest Fri `20:41` | Drain writes `main`; reds file issues |
+| **Grok Bot** | The 14-seat org above | **Never** |
 
 ## What Grok Bot must never do
 
-- `git push`, open/merge PRs, force-push, or edit this repo
-- Re-wire Cursor automations or Claude routines
-- Flip Airtable billing, automation ON toggles, or the owner's Highlight star
-- Rotate SMTP / env vars (names only, on `docs/OWNER-CHECKLIST.md`)
-- File Form 2290, spend money, or nag. One human task per message.
+- `git push`, open/merge PRs, force-push, or edit any repo
+- Spawn a 15th bot without Ranvir saying yes; re-wire Cursor automations or Claude routines
+- Recreate Airtable, mix Thind and ATS data, or whole-file Replace a Dropbox xlsx
+- Rotate SMTP / env vars, file Form 2290, open the AR Payments bank, spend money, or nag
+- Bypass Auto Review on email / LinkedIn apply / git / Dropbox Replace
+- Stand up OpenBot or Notion as a second orchestrator
+- Name the TMS product, or name which AI tool wrote the code, in outreach
+- Open `claude.ai/code` for BLS (Bee is Cursor-only)
 
 Human-only work goes on [`docs/ops/OWNER-WORKSHEET.md`](../ops/OWNER-WORKSHEET.md).
-Agents (including Grok Bot) move on.
-
 Live clock: [`docs/ops/FLEET.md`](../ops/FLEET.md) + [`AGENT_INTEROP.md`](../ops/AGENT_INTEROP.md) §1.

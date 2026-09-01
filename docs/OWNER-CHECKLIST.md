@@ -10,12 +10,12 @@ per the autonomous-build plan: agents never block on these, never put them in th
 task lists, and never write secret *values* here — names and places only. Everything not
 on this page is either done or automatable without you.
 
-**Dated front door (Form 2290, Airtable trial, SMTP, Cursor re-enable):**
+**Dated front door (Form 2290, AR Payments bank, SMTP, Claude 9-task toggles, Grok pastes):**
 [`docs/ops/OWNER-WORKSHEET.md`](ops/OWNER-WORKSHEET.md) — one task per ping. Fleet truth:
 [`docs/ops/FLEET.md`](ops/FLEET.md). Claude Corps is already live; you do not need to come
 back to a Cursor agent to keep the repo moving.
 
-**Create the job-titled Grok Bots, group chats, and Claude stand-up board:**
+**Upgrade to the 14-seat Grok org (D-015) and the six groups:**
 [`docs/grok-bots/SETUP.md`](grok-bots/SETUP.md) — that is the one file.
 
 ---
