@@ -105,10 +105,21 @@ async function pushToUser(carrierId: string, userId: string, input: NotifyInput)
      WHERE carrier_id = $1 AND user_id = $2`,
     [carrierId, userId]
   )
+  // Carry the unread total so the service worker can set a numeric app-icon
+  // badge. notifyUser inserts the in-app row before pushing, so the count
+  // already includes the notification this push announces. Best-effort like
+  // the push itself: a failed count never holds the notification back.
+  let unread: number | undefined
+  try {
+    unread = await unreadCount(carrierId, userId)
+  } catch {
+    unread = undefined
+  }
   const payload = JSON.stringify({
     title: input.title,
     body: input.body ?? "",
     link: input.link ?? "/hub",
+    ...(unread !== undefined ? { unread } : {}),
   })
   await Promise.all(
     subs.map(async (sub) => {

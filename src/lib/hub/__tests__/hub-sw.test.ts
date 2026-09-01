@@ -50,5 +50,9 @@ describe("hub service worker offline shell", () => {
   it("badges the app icon on push so alerts survive a closed app", () => {
     const pushHandler = sw.slice(sw.indexOf('"push"'))
     expect(pushHandler).toContain("setAppBadge")
+    // Numeric when the payload carries the unread total, dot for old payloads.
+    expect(pushHandler).toContain("setAppBadge(unread)")
+    expect(pushHandler).toContain("setAppBadge()")
+    expect(pushHandler).toContain("data.unread")
   })
 })

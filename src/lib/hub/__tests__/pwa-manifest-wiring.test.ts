@@ -143,6 +143,23 @@ describe("PWA manifest wiring", () => {
     expect(proxy).toMatch(/pathname === ["']\/hub\/get-app["']/)
   })
 
+  it("the office QR sends a scanned phone to the public install page, not a login wall", () => {
+    // The QR encoded /hub/settings/app once — an authed URL, so the phone that
+    // scanned it met the proxy's login redirect instead of the install steps.
+    const page = read("src/app/hub/(office)/settings/app/page.tsx")
+    expect(page).toMatch(/\$\{host\}\/hub\/get-app/)
+    expect(page).not.toMatch(/\$\{host\}\/hub\/settings\/app/)
+  })
+
+  it("the install funnel is tracked end to end: available → clicked → accepted", () => {
+    // pwa_prompt_available and pwa_install_accepted existed; the click between
+    // them didn't, so the funnel couldn't separate "never shown" from "ignored".
+    const src = read("src/components/hub/InstallAppButton.tsx")
+    expect(src).toMatch(/track\("pwa_prompt_available"\)/)
+    expect(src).toMatch(/track\("pwa_install_clicked"\)/)
+    expect(src).toMatch(/track\("pwa_install_accepted"\)/)
+  })
+
   it("the standalone scope guard is mounted in the hub layout", () => {
     // iOS ignores manifest scope: without the guard, one marketing link
     // inside the installed app swaps the app container for the website.

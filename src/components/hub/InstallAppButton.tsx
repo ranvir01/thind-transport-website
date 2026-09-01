@@ -132,7 +132,10 @@ export function InstallAppButton({ appearance = "driver" }: { appearance?: "driv
   if (installEvent) {
     return (
       <button
-        onClick={() => installEvent.prompt().catch(() => undefined)}
+        onClick={() => {
+          track("pwa_install_clicked")
+          installEvent.prompt().catch(() => undefined)
+        }}
         className={
           office
             ? "flex w-full min-h-[52px] items-center justify-center gap-2 rounded-control border border-border-strong bg-surface-2 px-3 text-sm font-semibold text-fg hover:bg-hover"

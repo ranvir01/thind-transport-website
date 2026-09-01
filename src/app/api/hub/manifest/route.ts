@@ -35,8 +35,72 @@ export async function resolveManifestThemeColor(): Promise<string> {
   return accent && HEX_COLOR.test(accent) ? accent : DEFAULT_THEME_COLOR
 }
 
+const SHORTCUT_ICONS = [{ src: "/hub-icon-192.png", sizes: "192x192" }]
+
+/**
+ * Long-press (Android) / right-click (desktop) shortcuts on the installed
+ * icon. Branched by role, not user agent: a driver's icon should jump to
+ * loads and pay, not a dispatch board their account can't open. Signed-out
+ * installs get the office set — same as the old static manifest — and a
+ * driver who somehow taps an office shortcut is bounced by requireOfficeUser.
+ * Every URL is inside both possible scopes ("/hub" and "/"), and names stay
+ * ≤25 chars so Android doesn't truncate them.
+ */
+export const OFFICE_SHORTCUTS = [
+  {
+    name: "Today",
+    description: "What's due, who hasn't confirmed, money not yet invoiced",
+    url: "/hub",
+    icons: SHORTCUT_ICONS,
+  },
+  {
+    name: "Dispatch board",
+    description: "Loads by status, drag to assign",
+    url: "/hub/dispatch",
+    icons: SHORTCUT_ICONS,
+  },
+  {
+    name: "Money",
+    description: "Invoices, settlements, what's owed",
+    url: "/hub/money",
+    icons: SHORTCUT_ICONS,
+  },
+  {
+    name: "Driver app",
+    description: "Confirm dispatch, PODs, pay",
+    url: "/hub/driver",
+    icons: SHORTCUT_ICONS,
+  },
+]
+
+export const DRIVER_SHORTCUTS = [
+  {
+    name: "Today's loads",
+    description: "Confirm dispatch, arrivals, PODs",
+    url: "/hub/driver",
+    icons: SHORTCUT_ICONS,
+  },
+  {
+    name: "Pay",
+    description: "Settlements and pay stubs",
+    url: "/hub/driver/pay",
+    icons: SHORTCUT_ICONS,
+  },
+  {
+    name: "Messages",
+    description: "Dispatch chat",
+    url: "/hub/driver/messages",
+    icons: SHORTCUT_ICONS,
+  },
+]
+
+export function manifestShortcuts(role: string | null | undefined) {
+  return role === "driver" ? DRIVER_SHORTCUTS : OFFICE_SHORTCUTS
+}
+
 export async function buildManifest(userAgent?: string | null, host?: string | null) {
   const themeColor = await resolveManifestThemeColor()
+  const user = await getHubUser()
   // On the app's own origin there is no marketing page to be out of scope of,
   // so the manifest claims the whole origin honestly — one scope for every
   // platform, no user-agent sniffing. start_url stays /hub because that is
@@ -62,6 +126,7 @@ export async function buildManifest(userAgent?: string | null, host?: string | n
       { src: "/hub-icon-512.png", sizes: "512x512", type: "image/png" },
       { src: "/hub-icon-512-maskable.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
     ],
+    shortcuts: manifestShortcuts(user?.role),
   }
 }
 
