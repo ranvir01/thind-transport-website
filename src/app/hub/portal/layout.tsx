@@ -4,6 +4,7 @@ import { getFlag } from "@/lib/hub/flags"
 import { getHubUser } from "@/lib/hub/session"
 import { getCarrier, getCarrierSettings } from "@/lib/hub/settings"
 import { isSandboxCarrier, seatForEmail } from "@/lib/hub/sandbox"
+import { readSimScenario } from "@/lib/hub/sandbox-shift"
 import { SandboxBanner } from "@/components/hub/SandboxBanner"
 import { SignOutButton } from "@/components/hub/SignOutButton"
 import { PORTAL_ACCENT_DEFAULT, resolvePortalAccent } from "./accent"
@@ -56,6 +57,7 @@ export default async function PortalLayout({ children }: { children: React.React
             dark
             seat={seatForEmail(user.email)?.key}
             sim={await getFlag("sim.shift_mode", { carrierId: user.carrierId })}
+            scenario={await readSimScenario()}
           />
         ) : null}
         {children}

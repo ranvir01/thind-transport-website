@@ -30,6 +30,11 @@ useful information.
    out, arrivals every ~12 min — but you will not watch a truck cross a state in an
    afternoon.
 
+The app now says the first two of these itself: every seat carries the clock rule
+under its shift card, and the sandbox strip names which of the two worlds is loaded
+("Steady week" / "Crunch day"). You should not need this page to avoid those two
+surprises — if you do, that is a finding worth writing down.
+
 **Two scenarios on the seat-picker page:**
 - **Steady week** — the normal company.
 - **Crunch day** — the morning goes wrong on purpose: pickups 4 hours late, a truck dead
@@ -172,6 +177,30 @@ driver seat — both lines should be gone, and nothing else about the card chang
 Would you leave this ON for your drivers? ________________________________
 
 If off — what would you want them to see instead: ________________________
+
+---
+
+### Drill 2c — Before you clock in, and beating yourself
+
+Two small things landed on every seat that can work a shift:
+
+- **The first sixty seconds.** The card now lists the three moves this seat is for
+  before you commit to a shift, plus the clock rule above. Seven of the nine seats had
+  never shown any of this — the tour existed in the code and only the two portal seats
+  ever rendered it.
+- **Your best shift here.** Once you finish a shift that actually did something, the
+  card remembers the score and the money and shows it as a number to beat. It is per
+  seat, lives only in that browser, and **deliberately survives a Reset** — a reset
+  throws away the company, not your record of playing it.
+
+An empty shift (clock in, clock straight out) is not remembered. It banked a "0% of
+the job, $0" record in the first version, which is not a target — worth knowing that
+is deliberate rather than a bug.
+
+☐ The three moves told me what the seat was for ☐ Didn't help ☐ Got in the way
+
+Does having a number to beat make you want another shift, or does it cheapen it?
+________________________________________________________________
 
 ---
 
