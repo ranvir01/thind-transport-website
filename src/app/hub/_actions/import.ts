@@ -567,6 +567,13 @@ export async function importPositionsAction(rows: GenericRow[]): Promise<ImportR
       failed.push({ row: i + 1, error: actionErrorMessage(err, "Unknown error") })
     }
   }
+  // ELD position imports rewrite the map the office dispatches from; sibling
+  // CSV imports (loads/fuel/tolls/mileage) already leave an audit trail.
+  await logAudit({
+    carrierId: user.carrierId, actorId: user.id, actorName: user.name,
+    entityType: "import", entityId: new Date().toISOString(),
+    action: "import_positions", newValue: { imported, failed: failed.length },
+  })
   revalidatePath("/hub/map")
   return { ok: failed.length === 0, imported, failed }
 }
