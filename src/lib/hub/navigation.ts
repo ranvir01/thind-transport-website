@@ -130,6 +130,7 @@ const ALL_UTILITY_LINKS: HubNavLink[] = [
   // The simulation existed at /hub/sandbox with nothing linking to it, so the
   // only way in was typing the URL. It is the safest place to learn the
   // product — a seeded world you can break without touching real freight.
+<<<<<<< HEAD
   { href: "/hub/sandbox", label: "Practice mode", group: "reference" },
   { href: "/hub/help", label: "Help", group: "reference" },
   { href: "/hub/guide", label: "Setup guide", group: "setup" },
@@ -137,6 +138,7 @@ const ALL_UTILITY_LINKS: HubNavLink[] = [
   { href: "/hub/import", label: "Import", group: "setup" },
   { href: "/hub/settings/packet", label: "Carrier packet", group: "setup" },
   { href: "/hub/settings/app", label: "Phone app", group: "setup" },
+  { href: "/hub/settings/preferences", label: "Preferences", group: "setup" },
   { href: "/hub/settings/integrations", label: "Integrations", ownerOnly: true, group: "setup" },
   { href: "/hub/settings/users", label: "Settings", ownerOnly: true, group: "setup" },
 ]
