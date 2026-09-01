@@ -1,3 +1,4 @@
 {
-  "install": "npm ci --ignore-scripts || npm install --ignore-scripts; npm rebuild bcrypt sharp"
+  "install": "test -f .env.local || printf '%s\\n' 'NEXTAUTH_URL=http://localhost:3000' \"NEXTAUTH_SECRET=$(openssl rand -base64 32)\" > .env.local\nnpm ci",
+  "start": "npm run dev"
 }

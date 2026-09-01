@@ -2,6 +2,13 @@
 
 Driver-recruitment website for Thind Transport (trucking carrier, Kent WA). Primary business goal: convert visiting CDL drivers into submitted applications. Stack: Next.js 16 App Router, React 19, TypeScript, Tailwind, NextAuth v5, Vercel Postgres.
 
+## Cursor Cloud
+
+- **install** (`.cursor/environment.json`): if `.env.local` is missing, write `NEXTAUTH_URL=http://localhost:3000` and a generated `NEXTAUTH_SECRET`, then run `npm ci`.
+- **start**: `npm run dev` at http://localhost:3000.
+- Local JSON-mode driver invitation code: `THIND-2026`.
+- Full local workflow, native deps, and pitfalls: `.cursor/skills/dev-workflow-testing/SKILL.md`.
+
 ## Skills (in `.cursor/skills/` — read the relevant one before working)
 
 | Skill | Use when |
