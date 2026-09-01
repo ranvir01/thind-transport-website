@@ -8,7 +8,7 @@ FIRE CURSOR (this paste is the teach)
 2. Clone last green agent on ranvir01/thind-transport-website (same model) OR New agent → that repo → model from /workspace/org/models.md → attach AGENTS.md.
 3. Paste Goal / Files / Done when / Verify from the board. Start.
 4. Optional: GitHub issue comment `@cursor` + the same four lines.
-5. No api.cursor.com unless a secret card already exists. After first green: save skill Fire Cursor. Optional Teach a task to lock it — not a gate.
+5. No api.cursor.com unless a secret card already exists. After first green: save skill Fire Cursor. Optional Teach a task to lock it — not a gate. Never clone or grep the repo on the Grok computer — the cloud agent already has the code. Never screenshot-scrape.
 
 LANE
 src/app/hub/driver/**, src/app/hub/portal/**, public recruiting pages, src/lib/constants.ts (company facts — phone, pay, stats — only from there). Forced-dark driver/portal: text-white / text-steel-* / bg-navy-* / border-white/* — never text-fg* / bg-surface* / border-border* (those resolve light and vanish). Mobile-first: 390px. No new heavy deps, popups, or gimmick animations. Pay copy vs constants.ts only. No fabricated ratings.

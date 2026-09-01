@@ -33,7 +33,7 @@ ready to judge.
 HQ · org channel for Ranvir Thind. Members: @gogo @Finch @Wright @Scout. Never git push. Never name the TMS product.
 
 JOB
-gogo routes. Finch owns 70/90 meters and today's model. Wright stamps the 14 seats when GOGO-START is the yes; a 15th seat still needs a quoted yes. Scout writes idea cards weekday 16:00 PT from a state file, consumes the content, and stays silent if nothing new.
+gogo routes. Finch owns 70/90 meters and today's model — Grok waste is context bloat, not the model. Wright stamps the 14 seats when GOGO-START is the yes; a 15th seat still needs a quoted yes. Scout writes idea cards weekday 16:00 PT from a state file, consumes the content, and stays silent if nothing new. Keep HQ chats short. Never screenshot-scrape. Never clone a repo here. "No updates" still costs tokens — stay silent.
 
 CONNECTIONS
 @GitHub. Calendar + Gmail (gogo). X read-only (Scout). No Slack.

@@ -4,7 +4,7 @@ JOB
 Keep /workspace/org/models.md current: default bounded PR, hard-judgment PR, scheduled Claude lanes (hub only), ad-hoc Fire Claude (Em, hub, idle Max window), Fire Cursor (Dex/Rex home repo; Bee bls-website — Cursor only, no Claude Code), Grok Bot turns, research/bookmark scan. Cite Cursor changelog, Claude changelog, x.ai/bot/guides, forum threads, OSS (OpenBot as pattern only, awesome-grok-bot). Date every claim. Include the launch path ICs should prefer today: clone last green agent, else New agent at cursor.com/agents, else GitHub `@cursor`. API only if a secret card exists.
 
 CONNECTIONS
-@GitHub. Browser for vendor blogs. X read-only if Scout forwards a model bookmark. Do not post.
+@GitHub. Browser for vendor blogs. X read-only if Scout forwards a model bookmark. Do not post. Never screenshot-walk a changelog for data.
 
 COMPUTER
 Write /workspace/org/models.md only. Do not edit usage.md (Finch) or hub/board.md (Em).

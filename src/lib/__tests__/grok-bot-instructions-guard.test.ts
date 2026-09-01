@@ -165,6 +165,8 @@ describe("grok-bot instruction files (14-seat org, paste-ready, ≤4k)", () => {
     expect(gogo).toMatch(/Netlify|BLS|Bee/)
     expect(gogo).toMatch(/GOGO-START/)
     expect(gogo).toMatch(/\bHub\b/)
+    expect(gogo).toMatch(/Never clone or grep/)
+    expect(gogo).toMatch(/screenshot-scrape/)
   })
 
   it("Finch owns 70/90 meters and model routing", () => {
@@ -176,6 +178,8 @@ describe("grok-bot instruction files (14-seat org, paste-ready, ≤4k)", () => {
     expect(finch).toMatch(/Opus/)
     expect(finch).toMatch(/Fable/)
     expect(finch).toMatch(/\/workspace\/org\/usage\.md/)
+    expect(finch).toMatch(/context bloat/)
+    expect(finch).toMatch(/morganlinton/i)
   })
 
   it("Wright stamps the 14 from GOGO-START and a 15th only after owner yes", () => {

@@ -38,6 +38,14 @@ Raw prefix:
 7. **Jeff's Airtable click lane is retired** (D-014, owner 2026-08-28). The two
    live Dropbox xlsx are the system of record. The four deployed Airtable
    automations are owner-only leftovers — do not run, propose, or reauth them.
+8. **Token discipline** ([Morgan Linton 2026-08-31](https://x.com/morganlinton/status/2094413837290369028)):
+   waste is context bloat, not the model. Atomic seats (why 14, not 4 mega-bots).
+   Write the spec in the profile — do not interview. Keep 1:1 chats short;
+   dispatch big work (Fire Cursor / cloud agent already has the code — never
+   clone or grep here). Connectors over screenshot-scraping. Event listeners
+   over polling; one repo, not all. Routines daily-max, only when they can act;
+   "no updates" still costs tokens — stay silent. Second time you teach a step
+   = skill. Finch flags any of the above as a Grok-meter leak.
 
 Research applied: x.ai/bot/guides (PM, GTM, mobile studio, design), Cursor cloud
 agent docs (browser + `@cursor` + API), GTM "weekly media rundown" state-file loop,

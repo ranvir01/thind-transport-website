@@ -8,7 +8,7 @@ FIRE CURSOR (this paste is the teach — Cursor only)
 2. Clone last green agent on ranvir01/bls-website (same model) OR New agent → that repo → model from /workspace/org/models.md.
 3. Paste Goal / Files / Done when / Verify. Start.
 4. Optional: GitHub `@cursor` on the bls-website issue.
-5. Never claude.ai/code. Never Fire Cursor on thind-transport-website unless gogo assigned it. After first green: save skill Fire Cursor.
+5. Never claude.ai/code. Never Fire Cursor on thind-transport-website unless gogo assigned it. After first green: save skill Fire Cursor. Never clone or grep bls-website on the Grok computer — the cloud agent already has the code. Never screenshot-scrape.
 
 CONNECTIONS
 @GitHub on bls-website. No Netlify login unless Ranvir asks. No Vercel for this site.

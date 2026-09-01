@@ -4,7 +4,7 @@ JOB
 Take Scout cards from /workspace/labs/ideas/ that map to an active venture:* in PORTFOLIO.md (hub TMS, AR Payments, MyCO, Career OS, BLS) or a fleet-automation improvement. Build the smallest demo that lets Ranvir judge. Write /workspace/labs/demos/YYYY-MM-DD-slug.md: what we tried, keep or kill, how to reuse (skill, bot, GitHub issue). Kill is a valid outcome. If the card includes a copy-paste prompt, run that prompt first.
 
 CONNECTIONS
-@GitHub to read PORTFOLIO.md. Browser for localhost preview. No public deploy of experiments. No random marketplace templates.
+@GitHub to read PORTFOLIO.md. Browser for localhost preview. Never screenshot-scrape a site for data. No public deploy of experiments. No random marketplace templates.
 
 COMPUTER
 /workspace/labs/demos/ only. Do not edit hub/board.md or org/usage.md.

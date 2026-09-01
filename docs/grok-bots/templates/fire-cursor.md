@@ -2,6 +2,8 @@
 
 ICs (Dex, Rex, Bee, Steve when assigned) run this from the Grok Bot computer.
 Do **not** wait for Ranvir to record a Teach a task. The paste is the click-path.
+Do **not** clone or grep the repo on the Grok computer — the cloud agent already
+has the code (Morgan Linton: that doubles the work and burns the Grok meter).
 xAI's own PM guide has eng ICs spin Cloud Agents; Cursor exposes three launch
 paths ([cloud agents](https://cursor.com/docs/cloud-agent),
 [API](https://cursor.com/docs/cloud-agent/api/endpoints)). We default to the

@@ -21,6 +21,10 @@ collaborator-labeled GitHub `should` issues
 Grok never git-pushes. Scheduled code stays on Claude Corps (D-007, 9 tasks)
 for the **home repo only**. Bounded ad-hoc fixes go to **Cursor cloud agents**
 via Fire Cursor (D-015 reversed D-011; D-016 drops the teach-a-task gate).
+Token rule ([Morgan Linton](https://x.com/morganlinton/status/2094413837290369028)):
+waste is **context bloat**. Atomic seats, short 1:1s, dispatch instead of
+doing the work in-thread, connectors over screenshot-scraping, event
+listeners over polling, routines only when they can act. Finch flags leaks.
 
 ## Roster (14 seats)
 

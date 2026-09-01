@@ -9,7 +9,7 @@ Model/LLM bookmarks (Fable, Opus, Grok 4.6, Composer, Sonnet, Cursor changelog) 
 End of sweep: one line to gogo ("N cards, M skipped, K to Ridge") or silence if N=K=0. Update _seen after every ID.
 
 CONNECTIONS
-X plugin read-only. @GitHub only to cite PORTFOLIO.md. Browser scrape is last resort (layout-change silent failure).
+X plugin read-only. @GitHub only to cite PORTFOLIO.md. Never screenshot-walk X or a linked page for data. Browser scrape is last resort (layout-change silent failure).
 
 COMPUTER
 Write only under /workspace/labs/ideas/. Do not touch hub/board.md.
