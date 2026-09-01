@@ -16,6 +16,7 @@ import { cn } from "@/lib/utils"
 import {
   completeTaskAction, createTaskAction, deleteTaskAction, toggleChecklistAction,
 } from "@/app/hub/_actions/tasks"
+import { runOrQueue } from "@/components/hub/office/offline-queue"
 import { fieldCls } from "@/components/hub/ui"
 import type { Task, TaskPriority, TaskRecurrence } from "@/lib/hub/types"
 
@@ -155,8 +156,12 @@ export function TaskItem({ task }: { task: Task }) {
 
   const complete = () =>
     startTransition(async () => {
-      const result = await completeTaskAction(task.id)
-      if (result.ok) {
+      const result = await runOrQueue(
+        { kind: "task-complete", payload: { taskId: task.id } },
+        () => completeTaskAction(task.id)
+      )
+      if ("queued" in result) toast.success("No signal — saved, sends automatically")
+      else if (result.ok) {
         toast.success(result.recurred ? "Done — next one is already on the list" : "Done")
         router.refresh()
       } else toast.error(result.error ?? "Could not complete")
@@ -172,8 +177,12 @@ export function TaskItem({ task }: { task: Task }) {
 
   const toggleItem = (index: number, done: boolean) =>
     startTransition(async () => {
-      const result = await toggleChecklistAction(task.id, index, done)
-      if (result.ok) router.refresh()
+      const result = await runOrQueue(
+        { kind: "task-checklist", payload: { taskId: task.id, index, done } },
+        () => toggleChecklistAction(task.id, index, done)
+      )
+      if ("queued" in result) toast.success("No signal — saved, sends automatically")
+      else if (result.ok) router.refresh()
       else toast.error(result.error ?? "Could not update")
     })
 

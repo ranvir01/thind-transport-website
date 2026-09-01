@@ -20,7 +20,7 @@ import {
 } from "@/app/hub/_actions/driver"
 import { openThread } from "@/app/hub/_actions/messages"
 import { runOrQueue, type PendingIntent } from "@/components/hub/driver/offline-queue"
-import { FACILITY_NOTE_TAGS, type Stop } from "@/lib/hub/types"
+import { FACILITY_NOTE_TAGS, fmtCentsExact, type Stop } from "@/lib/hub/types"
 
 interface LoadForDriver {
   id: string
@@ -58,7 +58,21 @@ function fmtAppt(start: string | null, end: string | null, fcfs: boolean): strin
   return end ? `${fmt(start)} – ${new Date(end).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}` : fmt(start)
 }
 
-export function DriverLoadCard({ load, detentionFreeMinutes }: { load: LoadForDriver; detentionFreeMinutes: number }) {
+/** What this run pays the driver — their own figure, never the linehaul. */
+export interface RunPayForDriver {
+  cents: number
+  label: string
+}
+
+export function DriverLoadCard({
+  load,
+  detentionFreeMinutes,
+  pay = null,
+}: {
+  load: LoadForDriver
+  detentionFreeMinutes: number
+  pay?: RunPayForDriver | null
+}) {
   const router = useRouter()
   const [pending, startTransition] = useTransition()
   const [uploadKind, setUploadKind] = useState<"pod" | "receipt" | "bol">("pod")
@@ -157,6 +171,21 @@ export function DriverLoadCard({ load, detentionFreeMinutes }: { load: LoadForDr
           {load.truck_unit ? ` · Truck #${load.truck_unit}` : ""}
           {load.trailer_unit ? ` · Trailer #${load.trailer_unit}` : ""}
         </p>
+        {/* What the run is worth to the person driving it. Computed on the
+            server by the same engine that drafts settlements, so it is the
+            number the office would actually pay — and it is the DRIVER's pay,
+            never the rate the load billed for. */}
+        {pay ? (
+          <p className="flex flex-wrap items-baseline gap-x-2 rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-steel-400">
+              This run pays you
+            </span>
+            <span className="font-display text-lg font-extrabold text-[color:var(--driver-accent)]">
+              {fmtCentsExact(pay.cents)}
+            </span>
+            {pay.label ? <span className="text-body-xs text-steel-400">{pay.label}</span> : null}
+          </p>
+        ) : null}
         {load.notes ? (
           <p className="rounded-xl bg-white/[0.04] border border-white/10 px-3 py-2 text-body-sm text-steel-200">
             Dispatch notes: {load.notes}

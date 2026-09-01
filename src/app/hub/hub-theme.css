@@ -132,6 +132,28 @@
   letter-spacing: -0.006em;
 }
 
+/* The marketing base layer paints <body> navy (--brand-bg) with two fixed
+   red/gold radial gradients. Inside the software that body box sits UNDER the
+   app shell, so it is invisible on a desktop — but on a phone it is exactly
+   what an iOS rubber-band overscroll reveals, top and bottom, on a page whose
+   mode is light. That navy flash is why the office app reads as "stuck in dark
+   mode" on a phone. Specificity (0,1,1) clears it above the marketing body
+   rule (0,0,1); data-app only lands on <html> for /hub, so the marketing site
+   is untouched. */
+[data-app="hauldesk"] body {
+  background-color: var(--bg);
+  background-image: none;
+  color: var(--text);
+}
+
+/* Driver and portal are forced-dark by class on an INNER element, so clearing
+   the marketing navy above would leave their overscroll flashing white — the
+   same bug, inverted, for the people who use the app in a cab. The boot script
+   stamps data-surface="dark" for those routes; match it here. */
+[data-app="hauldesk"][data-surface="dark"] body {
+  background-color: #121316;
+}
+
 /* ============================================================================
  * Interaction foundation — every tappable surface physically responds.
  * Scoped to the software app only; the marketing site keeps its own rules.

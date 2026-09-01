@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { TrendingUp, Fuel, Truck, DollarSign, Calculator, Info, ChevronDown, Wrench, Mail, CheckCircle2, Check } from "lucide-react"
 import Link from "next/link"
 import { MARKET_DATA, EquipmentType } from "@/lib/market-data"
+import { PAY_RATES } from "@/lib/constants"
 import { emailCalculation } from "@/app/actions/email-calculation"
 
 // Combine static UI data with dynamic market data
@@ -43,6 +44,13 @@ const EXPENSES = {
   other: { perMile: MARKET_DATA.expenses.other },
 }
 
+/** Our published split, as a fraction. */
+const THIND_SPLIT = Number(PAY_RATES.ownerOperator.commission.replace("%", "")) / 100
+
+/** Modelling assumptions, stated rather than buried in an expression. */
+const FSC_PER_MILE = 0.15
+const CURRENT_FSC_PASSTHROUGH = 0.8
+
 export const ProfitCalculator = () => {
   const [equipmentType, setEquipmentType] = useState<EquipmentType>("dryVan")
   const [miles, setMiles] = useState<number>(2500)
@@ -52,7 +60,7 @@ export const ProfitCalculator = () => {
   
   // Current pay comparison
   const [showComparison, setShowComparison] = useState(false)
-  const [currentSplit, setCurrentSplit] = useState(91)
+  const [currentSplit, setCurrentSplit] = useState(75)
   const [currentWeeklyPay, setCurrentWeeklyPay] = useState(0)
   
   // Email capture for saving calculation
@@ -100,14 +108,12 @@ export const ProfitCalculator = () => {
   
   // Core calculations
   const grossRevenue = miles * lineHaulRate
-  const fuelSurcharge = miles * 0.15 // ~$0.15/mile avg fuel surcharge
+  const fuelSurcharge = miles * FSC_PER_MILE
   const totalGross = grossRevenue + fuelSurcharge
-  
-  // Thind 91% split (100% of fuel surcharge passed through)
-  const thindDriverGross = (grossRevenue * 0.91) + fuelSurcharge
-  
-  // Competitor 70-75% split (typical - using 72% as average, often keep some fuel surcharge)
-  const competitorDriverGross = (grossRevenue * 0.72) + (fuelSurcharge * 0.80)
+
+  // Our split, from the published term. 100% of the fuel surcharge passes
+  // through, which is why it is added whole.
+  const thindDriverGross = grossRevenue * THIND_SPLIT + fuelSurcharge
   
   // Operating expenses
   const fuelCost = (miles / equipment.fuelMpg) * fuelPrice
@@ -117,19 +123,25 @@ export const ProfitCalculator = () => {
   const otherCost = miles * EXPENSES.other.perMile
   const totalExpenses = fuelCost + insuranceCost + maintenanceCost + permitsCost + otherCost
   
+  // What the driver's current carrier leaves them, on their own split. This
+  // used to model a 72% "typical" competitor that no source in the repo backs;
+  // the visitor supplies the number now.
+  const currentDriverGross =
+    grossRevenue * (currentSplit / 100) + fuelSurcharge * CURRENT_FSC_PASSTHROUGH
+
   // Net take-home after expenses
   const thindNetPay = thindDriverGross - totalExpenses
-  const competitorNetPay = competitorDriverGross - totalExpenses
+  const currentNetPay = currentDriverGross - totalExpenses
   
   // Annual projections (48 weeks to account for downtime)
   const weeksPerYear = 48
   const thindAnnualGross = thindDriverGross * weeksPerYear
   const thindAnnualNet = thindNetPay * weeksPerYear
-  const competitorAnnualNet = competitorNetPay * weeksPerYear
+  const currentAnnualNet = currentNetPay * weeksPerYear
   
   // Difference calculations
-  const weeklyDifference = thindNetPay - competitorNetPay
-  const annualDifference = thindAnnualNet - competitorAnnualNet
+  const weeklyDifference = thindNetPay - currentNetPay
+  const annualDifference = thindAnnualNet - currentAnnualNet
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -139,17 +151,9 @@ export const ProfitCalculator = () => {
     }).format(value)
   }
 
-  const formatCurrencyDetailed = (value: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2
-    }).format(value)
-  }
 
   return (
-    <section id="calculator" className="py-20 md:py-28 brand-section-panel scroll-mt-20 overflow-x-hidden border-t-0">
+    <section className="py-20 md:py-28 brand-section-panel scroll-mt-20 overflow-x-hidden border-t-0">
       <div className="container max-w-6xl mx-auto px-4 overflow-hidden">
         <div className="fleet-section-heading">
           <span className="fleet-badge mb-4">Owner-operator pay</span>
@@ -157,8 +161,8 @@ export const ProfitCalculator = () => {
             Calculate your <span className="text-orange">real</span> take-home
           </h2>
           <p className="text-base md:text-lg text-steel-300 max-w-2xl mx-auto">
-            See the actual difference between our 91% split and the typical 70-75% split. 
-            We include real operating expenses so you know exactly what to expect.
+            Put in your miles, your rate and the split you are on now. Real operating
+            expenses come out, so the number at the end is what actually lands.
           </p>
         </div>
 
@@ -313,8 +317,7 @@ export const ProfitCalculator = () => {
                     />
                     <div className="flex justify-between text-xs text-white/80 mt-1">
                       <span>60%</span>
-                      <span>Industry: 70-75%</span>
-                      <span className="text-orange font-bold">91% Thind</span>
+                      <span className="text-orange font-bold">{PAY_RATES.ownerOperator.commission} Thind</span>
                       <span>95%</span>
                     </div>
                   </div>
@@ -339,9 +342,9 @@ export const ProfitCalculator = () => {
                   {currentWeeklyPay > 0 && (
                     <div className="p-3 bg-green-500/20 border border-green-500/30 rounded-lg">
                       <p className="text-green-400 text-sm font-semibold">
-                        With Thind's 91% split, you could earn approximately{' '}
+                        With Thind&apos;s {PAY_RATES.ownerOperator.commission} split, you could earn approximately{' '}
                         <span className="text-green-300 font-black text-lg">
-                          {formatCurrency(currentWeeklyPay * (90 / currentSplit) - currentWeeklyPay)} more
+                          {formatCurrency(currentWeeklyPay * (THIND_SPLIT * 100 / currentSplit) - currentWeeklyPay)} more
                         </span>{' '}
                         per week!
                       </p>
@@ -410,19 +413,19 @@ export const ProfitCalculator = () => {
             
             {/* Main Comparison Cards */}
             <div className="grid grid-cols-2 gap-2 sm:gap-4 mb-6">
-              {/* Competitor Card */}
+              {/* The visitor's current split — their number, not an invented one */}
               <div className="bg-gray-100 rounded-xl p-3 sm:p-4 border-2 border-gray-200">
-                <p className="text-gray-700 text-[10px] sm:text-xs font-semibold uppercase tracking-wider mb-1">Other Carriers</p>
-                <p className="text-xs sm:text-sm text-gray-600 mb-2 sm:mb-3">~72% Split</p>
+                <p className="text-gray-700 text-[10px] sm:text-xs font-semibold uppercase tracking-wider mb-1">Your Carrier Now</p>
+                <p className="text-xs sm:text-sm text-gray-600 mb-2 sm:mb-3">{currentSplit}% split</p>
                 
                 <div className="space-y-2">
                   <div>
                     <p className="text-[10px] sm:text-xs text-gray-600">Your Cut</p>
-                    <p className="text-sm sm:text-lg font-bold text-gray-800">{formatCurrency(competitorDriverGross)}</p>
+                    <p className="text-sm sm:text-lg font-bold text-gray-800">{formatCurrency(currentDriverGross)}</p>
                   </div>
                   <div>
                     <p className="text-[10px] sm:text-xs text-gray-600">After Expenses</p>
-                    <p className="text-base sm:text-xl font-black text-gray-800">{formatCurrency(competitorNetPay)}</p>
+                    <p className="text-base sm:text-xl font-black text-gray-800">{formatCurrency(currentNetPay)}</p>
                   </div>
                 </div>
               </div>
@@ -430,10 +433,10 @@ export const ProfitCalculator = () => {
               {/* Thind Card */}
               <div className="bg-gradient-to-br from-orange/10 to-orange/5 rounded-xl p-3 sm:p-4 border-2 border-orange relative overflow-hidden">
                 <div className="absolute top-0 right-0 bg-orange-600 text-white text-[8px] sm:text-[10px] font-bold px-1.5 sm:px-2 py-0.5 rounded-bl-lg z-10">
-                  +{Math.round((0.91 - 0.72) / 0.72 * 100)}% MORE
+                  +{Math.max(0, Math.round(((THIND_SPLIT * 100 - currentSplit) / currentSplit) * 100))}% MORE
                 </div>
                 <p className="text-orange-600 text-[10px] sm:text-xs font-semibold uppercase tracking-wider mb-1">Thind Transport</p>
-                <p className="text-xs sm:text-sm text-orange-700 mb-2 sm:mb-3">91% Split</p>
+                <p className="text-xs sm:text-sm text-orange-700 mb-2 sm:mb-3">{PAY_RATES.ownerOperator.commission} Split</p>
                 
                 <div className="space-y-2 relative z-0">
                   <div>
@@ -453,18 +456,18 @@ export const ProfitCalculator = () => {
               <p className="text-sm text-gray-700 mb-3 font-semibold">Net Weekly Comparison</p>
               <div className="space-y-2">
                 <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
-                  <span className="text-xs text-gray-600 w-auto sm:w-16 font-mono shrink-0">72%</span>
+                  <span className="text-xs text-gray-600 w-auto sm:w-16 font-mono shrink-0">{currentSplit}%</span>
                   <div className="flex-1 min-w-0 bg-gray-100 rounded-full h-6 overflow-hidden w-full">
                     <div 
                       className="h-full bg-gray-600 rounded-full transition-all duration-500 flex items-center justify-end pr-2"
-                      style={{ width: `${Math.min(100, (competitorNetPay / thindNetPay) * 100)}%` }}
+                      style={{ width: `${Math.max(0, Math.min(100, (currentNetPay / thindNetPay) * 100))}%` }}
                     >
-                      <span className="text-[10px] sm:text-xs text-white font-bold whitespace-nowrap">{formatCurrency(competitorNetPay)}</span>
+                      <span className="text-[10px] sm:text-xs text-white font-bold whitespace-nowrap">{formatCurrency(currentNetPay)}</span>
                     </div>
                   </div>
                 </div>
                 <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
-                  <span className="text-xs text-orange-600 font-bold w-auto sm:w-16 font-mono shrink-0">91%</span>
+                  <span className="text-xs text-orange-600 font-bold w-auto sm:w-16 font-mono shrink-0">{PAY_RATES.ownerOperator.commission}</span>
                   <div className="flex-1 min-w-0 bg-orange/20 rounded-full h-6 overflow-hidden w-full">
                     <div 
                       className="h-full bg-gradient-to-r from-orange-700 to-orange-600 rounded-full transition-all duration-500 flex items-center justify-end pr-2"
@@ -519,7 +522,7 @@ export const ProfitCalculator = () => {
                    "No Trailer Rental Fees",
                    "No ELD Installation Fees",
                    "No Cargo Insurance Fees",
-                   "No Admin Fees (besides 9%)",
+                   "No Admin Fees (besides our 10%)",
                    "No Forced Dispatch",
                    "100% Fuel Pass-through"
                  ].map(item => (
@@ -597,9 +600,9 @@ export const ProfitCalculator = () => {
         {/* Bottom Context */}
         <div className="mt-8 text-center">
           <p className="text-white/80 text-sm max-w-2xl mx-auto">
-            <strong className="text-white">Why 91%?</strong> Most carriers keep 25-30% of your linehaul. 
-            We only take 9% to cover dispatch, billing, and admin — you keep the rest.
-            No hidden fees, no surprises.
+            <strong className="text-white">Why {PAY_RATES.ownerOperator.commission}?</strong> We take {100 - THIND_SPLIT * 100}% of the
+            linehaul to cover dispatch, billing, and admin, and pass the fuel surcharge through whole.
+            No other deductions.
           </p>
         </div>
       </div>

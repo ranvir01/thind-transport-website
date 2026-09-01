@@ -2,18 +2,12 @@
 
 import { useState } from "react"
 import {
-  CheckCircle2,
-  XCircle,
-  Truck,
-  ShieldCheck,
-  MapPin,
-  Clock,
-  DollarSign,
-  GraduationCap,
+  CheckCircle2, ShieldCheck, MapPin, Clock, GraduationCap,
   AlertTriangle,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
+import { COMPANY_INFO } from "@/lib/constants"
 
 export const QuickQualify = () => {
   const [step, setStep] = useState(0)
@@ -189,7 +183,7 @@ export const QuickQualify = () => {
                 </Button>
               </Link>
               <p className="text-sm text-slate-600 mt-4">
-                Takes 2 minutes. No account needed.
+                No account needed.
               </p>
             </div>
           )}
@@ -216,7 +210,7 @@ export const QuickQualify = () => {
                     Apply Anyway
                   </Button>
                 </Link>
-                <a href="tel:+12067656300">
+                <a href={`tel:${COMPANY_INFO.phoneFormatted}`}>
                   <Button
                     variant="outline"
                     className="px-8 py-4 rounded-xl w-full sm:w-auto border-slate-300 hover:bg-slate-50"

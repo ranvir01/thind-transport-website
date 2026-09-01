@@ -147,7 +147,7 @@ export default function GetAppPage() {
           <Reveal className="mx-auto flex max-w-3xl flex-wrap items-center justify-between gap-4">
             <p className="max-w-measure text-m-body text-ink-2">
               Trouble installing it? Call the office and we&apos;ll walk you through it — it takes
-              about a minute.
+              a couple of screens.
             </p>
             <a
               href={`tel:${COMPANY_INFO.phoneFormatted}`}

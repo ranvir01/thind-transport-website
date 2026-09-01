@@ -12,10 +12,17 @@ export function LazyMount({
   children,
   minHeight,
   rootMargin = "800px",
+  id,
+  className,
 }: {
   children: ReactNode
   minHeight: number
   rootMargin?: string
+  /** Put the fragment target on the reserved slot, not on the lazy child:
+   *  the slot is server-rendered, so `#id` resolves before the child mounts.
+   *  Scrolling to it is then what trips the observer. */
+  id?: string
+  className?: string
 }) {
   const ref = useRef<HTMLDivElement>(null)
   const [show, setShow] = useState(false)
@@ -41,7 +48,7 @@ export function LazyMount({
   }, [rootMargin])
 
   return (
-    <div ref={ref} style={show ? undefined : { minHeight }}>
+    <div ref={ref} id={id} className={className} style={show ? undefined : { minHeight }}>
       {show ? children : null}
     </div>
   )

@@ -147,17 +147,19 @@ export async function tickSandboxSim(seatKey?: string | null, now = new Date()):
                 jsonb_set(
                   jsonb_set(
                     jsonb_set(
-                      jsonb_set(settings, '{sim,telemetry}',
+                      jsonb_set(
+                        jsonb_set(settings, '{sim,telemetry}',
                                 COALESCE(settings->'sim'->'telemetry', '{}'::jsonb), true),
                       '{sim,lastTickAt}', COALESCE(to_jsonb($2::text), 'null'::jsonb), true),
                     '{sim,nextDropAt}', COALESCE(to_jsonb($3::text), 'null'::jsonb), true),
                   '{sim,telemetry,ticks}',
                   to_jsonb(COALESCE((settings->'sim'->'telemetry'->>'ticks')::int, 0) + 1), true),
-                '{sim,telemetry,opsApplied}',
-                to_jsonb(COALESCE((settings->'sim'->'telemetry'->>'opsApplied')::int, 0) + $4::int), true),
+                  '{sim,telemetry,opsApplied}',
+                  to_jsonb(COALESCE((settings->'sim'->'telemetry'->>'opsApplied')::int, 0) + $4::int), true),
+                '{sim,nextTroubleAt}', COALESCE(to_jsonb($5::text), 'null'::jsonb), true),
               updated_at = NOW()
         WHERE carrier_id = $1 AND settings ? 'sim'`,
-      [C, nextSim.lastTickAt, nextSim.nextDropAt, ops.length]
+      [C, nextSim.lastTickAt, nextSim.nextDropAt, ops.length, nextSim.nextTroubleAt ?? null]
     )
     await client.query("COMMIT")
     // "Advanced" means the world actually changed — a quiet tick must not
@@ -194,6 +196,14 @@ export async function tickSandboxSim(seatKey?: string | null, now = new Date()):
 /* ------------------------------- snapshot ------------------------------- */
 
 async function snapshotWorld(): Promise<WorldSnapshot> {
+  // The carrier's own free time decides how long a hold has to run before it
+  // is worth money — read it rather than assuming the sandbox's two hours.
+  const settingsRows = await query<{ free_hours: number | null }>(
+    `SELECT (settings->'detention'->>'freeHours')::numeric AS free_hours
+       FROM hub.carrier_settings WHERE carrier_id = $1`,
+    [C]
+  )
+  const freeMinutes = Math.round(Number(settingsRows[0]?.free_hours ?? 2) * 60)
   const loads = await query<{
     id: string
     reference: string
@@ -357,6 +367,7 @@ async function snapshotWorld(): Promise<WorldSnapshot> {
       })),
     dispatcherUserIds: dispatcherUsers.map((u) => u.id),
     invoiceSeq: seq[0]?.n ?? 0,
+    detentionFreeMinutes: freeMinutes,
   }
 }
 
@@ -496,6 +507,33 @@ async function applyOp(
     case "notifyUser":
       await notifyUser(C, op.userId, { kind: op.kind, title: op.title, body: op.body, link: op.link })
       return
+    case "receiverHold": {
+      // Backdate the arrival past the free time and leave the departure open.
+      // That is the whole trick: every downstream piece already exists, so the
+      // dwell shows up on the dispatch board with a dollar figure and bills
+      // itself the moment somebody marks the truck departed.
+      if (op.needsStatus) await changeLoadStatus(C, op.loadId, "at_pickup", NPC)
+      await setStopTimestamp(C, op.stopId, op.loadId, "arrived_at", op.arrivedAt.toISOString())
+      await client.query(
+        `INSERT INTO hub.load_events (carrier_id, load_id, kind, actor_id, actor_name, payload)
+         VALUES ($1, $2, 'exception', NULL, $3, $4::jsonb)`,
+        [
+          C,
+          op.loadId,
+          NPC.name,
+          JSON.stringify({ type: "receiver_hold", note: "Receiver is holding the truck — detention is running." }),
+        ]
+      )
+      for (const userId of op.notifyUserIds) {
+        await notifyUser(C, userId, {
+          kind: "load_exception",
+          title: `${op.reference} is being held`,
+          body: "The receiver has the truck sitting. Detention is running — mark it departed to bill it.",
+          link: `/hub/loads/${op.loadId}`,
+        })
+      }
+      return
+    }
     case "prunePings":
       await client.query(
         `DELETE FROM hub.position_pings WHERE carrier_id = $1 AND ts < NOW() - INTERVAL '7 days'`,

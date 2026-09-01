@@ -123,7 +123,7 @@ export function FuelSavingsCalculator() {
             max={9}
             step={0.1}
             display={`${mpg.toFixed(1)} mpg`}
-            hint="A loaded 2020-2022 Cascadia on flat interstate sits around 7.0; heavy flatbed and mountains pull it down."
+            hint="A loaded late-model Cascadia on flat interstate sits around 7.0; heavy flatbed and mountains pull it down."
             onChange={setMpg}
           />
           <Slider

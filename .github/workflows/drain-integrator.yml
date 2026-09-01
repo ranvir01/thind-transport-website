@@ -30,6 +30,14 @@
 #
 # Scheduled at :17/:47 to stay clear of the fleet crons (:00 integrator,
 # :30 prod smoke, :59 deploy). See docs/agent-improvement-loop.md §3a/§5.
+#
+# Learned 2026-08-30 (drain-integrator.yml #789 on main@f234be5): GitHub sets
+# CI=true. Verify ran vitest with no database, and the three
+# isolation proofs (portal / driver-file / cross-tenant) fail-closed when
+# CI is set and POSTGRES_URL is missing — vitest exited 1 and the merge
+# was skipped. The e2e-suite.yml `unit` job already had the working
+# pattern (postgres:16 + migrate + seed:demo); this workflow did not.
+# Do not "fix" this by skipping those tests — they must actually run.
 
 name: Drain integrator to main
 
@@ -54,6 +62,29 @@ jobs:
   drain:
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    # Same service + URL as e2e-suite.yml `unit`. That is NOT the
+    # hauldesk/hauldesk/hauldesk of docker-compose.yml.
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: hubapp
+          POSTGRES_PASSWORD: hubpass
+          POSTGRES_DB: hubdb
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U hubapp -d hubdb"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    env:
+      POSTGRES_URL: postgres://hubapp:hubpass@localhost:5432/hubdb
+      # CI-only values; nothing here is a real secret and none of it can
+      # reach production. CREDENTIALS_KEY must be 32+ chars for the vault.
+      NEXTAUTH_SECRET: ci-only-nextauth-secret-not-production
+      CREDENTIALS_KEY: ci-only-credentials-key-32-chars-min
+      CRON_SECRET: ci-only-cron-secret
     steps:
       - uses: actions/checkout@v4
         with:
@@ -146,6 +177,11 @@ jobs:
           # app loads both, so rebuild just those two (from drain-fallback.yml,
           # deleted in this commit).
           npm rebuild bcrypt sharp
+          # Isolation proofs fail-closed when CI=true and POSTGRES_URL is
+          # missing. driver-file-isolation also needs seeded demo rows
+          # (looks up driver@demo.thind + CDL/POD documents by stable keys).
+          npm run db:migrate
+          npm run seed:demo
           npm run build
           npx vitest run
           # Type-soundness + license hygiene, both enforceable today:

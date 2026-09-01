@@ -9,6 +9,7 @@ import {
   DollarSign,
   Calendar,
 } from "lucide-react"
+import { PAY_RATES } from "@/lib/constants"
 import { Reveal } from "@/components/ui/Reveal"
 
 export function RoutesSection() {
@@ -51,14 +52,14 @@ export function RoutesSection() {
                   </h3>
                   <div className="flex flex-col items-center gap-0.5 sm:gap-1 mb-2">
                     <span className="text-2xl sm:text-3xl font-black text-gold">
-                      $57K-$63K
+                      {PAY_RATES.companyDriver.local.annual}
                     </span>
                     <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-steel-400">
                       Target Annual Pay
                     </span>
                   </div>
                   <div className="inline-block px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-lg bg-steel-800/60 border border-steel-700/60 text-xs font-bold text-steel-200">
-                    $0.60-$0.65 CPM
+                    {PAY_RATES.companyDriver.otr.perMile} CPM
                   </div>
                 </div>
 
@@ -140,14 +141,14 @@ export function RoutesSection() {
                   </h3>
                   <div className="flex flex-col items-center gap-0.5 sm:gap-1 mb-2">
                     <span className="text-2xl sm:text-3xl font-black text-gold">
-                      $63K-$73K
+                      {PAY_RATES.companyDriver.regional.annual}
                     </span>
                     <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-steel-400">
                       Target Annual Pay
                     </span>
                   </div>
                   <div className="inline-block px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-lg bg-steel-800/60 border border-steel-700/60 text-xs font-bold text-steel-200">
-                    $0.60-$0.65 CPM
+                    {PAY_RATES.companyDriver.otr.perMile} CPM
                   </div>
                 </div>
 
@@ -222,21 +223,21 @@ export function RoutesSection() {
                     <Globe className="h-7 w-7 sm:h-8 sm:w-8 md:h-10 md:w-10 text-gold" />
                   </div>
                   <span className="fleet-badge fleet-badge-gold mb-2 sm:mb-3">
-                    Highest earnings
+                    Most miles
                   </span>
                   <h3 className="text-xl sm:text-2xl font-black mb-2 sm:mb-3 text-white">
                     OTR Routes
                   </h3>
                   <div className="flex flex-col items-center gap-0.5 sm:gap-1 mb-2">
                     <span className="text-2xl sm:text-3xl font-black text-gold">
-                      $65K-$280K
+                      {PAY_RATES.companyDriver.otr.annual}
                     </span>
                     <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-steel-400">
                       Target Annual Pay
                     </span>
                   </div>
                   <div className="inline-block px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-lg bg-steel-800/60 border border-steel-700/60 text-xs font-bold text-steel-200">
-                    $0.55-$0.60 CPM / 91% O/O
+                    {PAY_RATES.companyDriver.otr.perMile} CPM · {PAY_RATES.ownerOperator.commission} owner-operator
                   </div>
                 </div>
 
@@ -289,10 +290,10 @@ export function RoutesSection() {
                     Owner Operator Benefits:
                   </p>
                   <ul className="text-xs sm:text-sm text-steel-200 space-y-1 sm:space-y-2 font-medium">
-                    <li>• 91% of gross revenue</li>
-                    <li>• Avg $2.25-$3.25/mile</li>
+                    <li>• {PAY_RATES.ownerOperator.commission} of gross revenue</li>
+                    <li>• {PAY_RATES.ownerOperator.perMile}/mile</li>
                     <li>• Pick your own loads</li>
-                    <li>• $250K-$300K potential</li>
+                    <li>• {PAY_RATES.ownerOperator.annualGross} gross potential</li>
                   </ul>
                 </div>
               </CardContent>

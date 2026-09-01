@@ -1,8 +1,8 @@
 /**
  * getTrackAccent resolves a share-link token to the carrier's chrome accent
  * for the public /track page. Public surface, so the failure posture matters
- * as much as the happy path: unknown/revoked tokens and any storage error
- * must fall back to the stock chrome, never throw into the page render.
+ * as much as the happy path: unknown/revoked/expired tokens and any storage
+ * error must fall back to the stock chrome, never throw into the page render.
  */
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
@@ -34,6 +34,19 @@ describe("getTrackAccent", () => {
     // Same guard as getTrackedLoad: revoked links must not resolve.
     expect(queryOneMock.mock.calls[0][0]).toContain("revoked_at IS NULL")
     expect(queryOneMock.mock.calls[0][1]).toEqual(["nope"])
+  })
+
+  // The file header promises this lookup mirrors getTrackedLoad's token guard.
+  // It only filtered revoked_at, so a lapsed link still resolved the carrier's
+  // branding on a public page after the link stopped granting access.
+  it("filters on expires_at too, exactly as getTrackedLoad does", async () => {
+    queryOneMock.mockResolvedValueOnce(null) // expired -> no row comes back
+    expect(await getTrackAccent("lapsed")).toEqual(PORTAL_ACCENT_DEFAULT)
+    expect(settingsMock).not.toHaveBeenCalled()
+    expect(queryOneMock.mock.calls[0][0]).toContain(
+      "revoked_at IS NULL AND (expires_at IS NULL OR expires_at > NOW())"
+    )
+    expect(queryOneMock.mock.calls[0][1]).toEqual(["lapsed"])
   })
 
   it("resolves the linked carrier's accent through the WCAG gate", async () => {

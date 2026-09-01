@@ -13,12 +13,10 @@ framing reads MORE authentic, not less.
 | `truck-mountain-pass.webp` | Any truck on I-90/Snoqualmie or a scenic grade, from a safe pullout | Homepage photo band #2 |
 | `hero-cascadia-highway.webp` | Lead truck rolling, 3/4 front view, motion in background | Homepage hero |
 | `truck-night-highway.webp` | Truck at dusk/night, headlights on — truck stop is fine | /shippers hero |
-| `fleet-kent-wa.png` | Wide yard shot with several trucks + trailers | /loadoff, fleet contexts |
 | `dispatch-desk-kent.webp` | The real dispatch desk — screens, coffee, person on the phone | "How you'll run" section |
 | `driver-pretrip-walkaround.webp` | A driver doing a walkaround, hand on the hood/tires | Culture sections |
 | `driver-cab-interior.webp` | Clean cab interior from the driver's seat | Driver-life sections |
 | `yard-morning-kent.webp` | Yard at sunrise, frost/coffee-steam era energy | Ambient sections |
-| `driver-portrait-1..3.png` | Real drivers (with written permission), yard background, natural smile | Testimonials |
 
 Ten minutes of video worth shooting on the same trip (landscape, phone):
 - 10s slow walk past the truck lineup → future homepage hero video

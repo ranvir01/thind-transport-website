@@ -1,5 +1,5 @@
 import { Metadata } from "next"
-import { PayCalculator } from "@/components/features/PayCalculator"
+import { ProfitCalculator } from "@/components/features/ProfitCalculator"
 import { PayRateVisualizations } from "@/components/features/PayRateVisualizations"
 import { JobDetailsDialog } from "@/components/features/JobDetailsDialog"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -15,29 +15,29 @@ import { RelatedLinks } from "@/components/shared/RelatedLinks"
 import { driverLinks } from "@/components/shared/link-sets"
 
 export const metadata: Metadata = {
-  title: `Pay Rates - 91% O/O Split, ${PAY_RATES.companyDriver.regional.perMile}/mi Company | ${COMPANY_INFO.name}`,
-  description: `Transparent trucking pay: Owner Operators keep 91% gross (${PAY_RATES.ownerOperator.annualGross}/year). Company Drivers ${PAY_RATES.companyDriver.regional.perMile}/mi (${PAY_RATES.companyDriver.regional.annual}/year). Weekly pay, no hidden fees.`,
+  title: `Pay rates — ${PAY_RATES.ownerOperator.commission} owner-operator split, ${PAY_RATES.companyDriver.regional.perMile}/mile company`,
+  description: `Transparent trucking pay: Owner Operators keep ${PAY_RATES.ownerOperator.commission} gross (${PAY_RATES.ownerOperator.annualGross}/year). Company Drivers ${PAY_RATES.companyDriver.regional.perMile}/mi (${PAY_RATES.companyDriver.regional.annual}/year). Weekly pay, no hidden fees.`,
   keywords: [
     "truck driver pay rates",
     "owner operator commission",
     "CDL driver salary",
     "trucking company pay",
-    "90 percent trucking",
+    `${PAY_RATES.ownerOperator.commission.replace("%", "")} percent trucking`,
     "truck driver weekly pay",
     "OTR driver income",
     "flatbed driver pay",
     "reefer driver pay",
   ],
   openGraph: {
-    title: `Truck Driver Pay Rates - 91% O/O | ${COMPANY_INFO.name}`,
-    description: `Owner Operators: 91% gross. Company Drivers: ${PAY_RATES.companyDriver.regional.perMile}/mi. No hidden fees. Weekly pay. See exactly what you'll earn.`,
+    title: `Truck Driver Pay Rates - ${PAY_RATES.ownerOperator.commission} O/O | ${COMPANY_INFO.name}`,
+    description: `Owner Operators: ${PAY_RATES.ownerOperator.commission} gross. Company Drivers: ${PAY_RATES.companyDriver.regional.perMile}/mi. No hidden fees. Weekly pay. See exactly what you'll earn.`,
     url: "https://thindtransport.com/pay-rates",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
     title: `Truck Driver Pay Rates | ${COMPANY_INFO.name}`,
-    description: `91% payout for O/O • ${PAY_RATES.companyDriver.regional.perMile}/mi for company • Weekly pay • No hidden fees`,
+    description: `${PAY_RATES.ownerOperator.commission} commission for O/O • ${PAY_RATES.companyDriver.regional.perMile}/mi for company • Weekly pay • No hidden fees`,
   },
   alternates: {
     canonical: "https://thindtransport.com/pay-rates",
@@ -59,9 +59,9 @@ export default function PayRatesPage() {
             Transparent <span className="text-orange">Pay Rates</span>
           </>
         }
-        description="No hidden fees. No surprises. Just straightforward, competitive pay — 91% split for owner-operators, $0.60-$0.65/mile for company drivers."
+        description={`No hidden fees. No surprises. Just straightforward, competitive pay — ${PAY_RATES.ownerOperator.commission} split for owner-operators, ${PAY_RATES.companyDriver.regional.perMile}/mile for company drivers.`}
         primaryLabel="See What You'd Earn"
-        primaryHref="/#calculator"
+        primaryHref="#calculator"
       />
 
       {/* Position Cards */}
@@ -74,9 +74,6 @@ export default function PayRatesPage() {
             <h2 className="text-4xl font-black text-gray-900 mb-4">
               Choose Your Driving Career Path
             </h2>
-            <p className="text-lg text-gray-700 max-w-2xl mx-auto font-medium">
-              Whether you prefer the stability of company driving or the independence of being an owner-operator, we have the perfect opportunity for you
-            </p>
           </div>
 
           <div className="grid md:grid-cols-2 gap-8 mb-12">
@@ -92,7 +89,7 @@ export default function PayRatesPage() {
                   <Badge className="bg-[#17181B] text-white px-3 py-1 font-bold">Full-Time</Badge>
                 </CardTitle>
                 <CardDescription className="text-base text-gray-700 font-medium">
-                  Competitive pay, excellent benefits, and flexible routes
+                  {PAY_RATES.companyDriver.regional.perMile}/mile — the same rate local, regional or OTR
                 </CardDescription>
               </CardHeader>
               <CardContent className="pt-6">
@@ -138,7 +135,7 @@ export default function PayRatesPage() {
                   </div>
                   <div className="flex items-center gap-2 text-sm">
                     <CheckCircle2 className="h-4 w-4 text-green-600" />
-                    <span className="text-gray-800 font-medium">Full benefits package included</span>
+                    <span className="text-gray-800 font-medium">Performance and referral bonuses</span>
                   </div>
                 </div>
 
@@ -158,7 +155,7 @@ export default function PayRatesPage() {
                   <Badge className="bg-[#17181B] text-white px-3 py-1 font-bold">Independent</Badge>
                 </CardTitle>
                 <CardDescription className="text-base text-gray-700 font-medium">
-                  Highest earning potential with 91% payout
+                  Highest earning potential with {PAY_RATES.ownerOperator.commission} commission
                 </CardDescription>
               </CardHeader>
               <CardContent className="pt-6">
@@ -213,9 +210,10 @@ export default function PayRatesPage() {
             </Card>
           </div>
 
-          {/* Interactive Pay Calculator */}
-          <section className="mt-16">
-            <PayCalculator />
+          {/* One instrument site-wide: the same calculator the homepage and
+              /drivers render, reading the same constants. */}
+          <section id="calculator" className="mt-16 scroll-mt-20">
+            <ProfitCalculator />
           </section>
 
           {/* Pay Rate Visualizations */}
@@ -237,6 +235,7 @@ export default function PayRatesPage() {
       </section>
 
       <RelatedLinks
+        tone="dark"
         title="The rest of the money picture"
         intro="Where the money goes after the calculator, and the records behind it."
         links={driverLinks(["/pay-rates"])}

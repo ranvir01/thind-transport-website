@@ -8,7 +8,12 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion"
 import { HelpCircle } from "lucide-react"
-import { COMPANY_INFO, FMCSA_LINKS } from "@/lib/constants"
+import { COMPANY_INFO, EQUIPMENT, FMCSA_LINKS, PAY_RATES, STATS } from "@/lib/constants"
+
+const ooSplitPct = Number(PAY_RATES.ownerOperator.commission.replace("%", ""))
+const ooTakePct = 100 - ooSplitPct
+const faqExampleGross = 3000
+const faqExampleKeep = Math.round((faqExampleGross * ooSplitPct) / 100)
 
 const defaultFaqs = [
   // Pay & Compensation
@@ -18,15 +23,15 @@ const defaultFaqs = [
   },
   {
     question: "How much can I realistically earn?",
-    answer: "Company Drivers: $78K-$110K annually at $0.60-$0.65 per mile (based on miles and route type), plus $1,000 sign-on bonus first year. Owner Operators: $250K-$300K gross annually with 91% payout (you keep 91% of gross!), plus $2,500 sign-on bonus. Pay is distributed weekly via direct deposit every Friday."
+    answer: `Company Drivers: ${PAY_RATES.companyDriver.local.annual} to ${PAY_RATES.companyDriver.otr.annual} annually at ${PAY_RATES.companyDriver.otr.perMile} per mile (based on miles and route type), plus ${PAY_RATES.companyDriver.signOnBonus}. Owner Operators: ${PAY_RATES.ownerOperator.annualGross} gross annually with ${PAY_RATES.ownerOperator.payout} payout (you keep ${PAY_RATES.ownerOperator.payout} of gross!), plus ${PAY_RATES.ownerOperator.signOnBonus} sign-on bonus. Pay is distributed weekly via direct deposit every Friday.`
   },
   {
-    question: "What's this 91% payout for owner operators?",
-    answer: "You keep 91% of the gross revenue from each load - one of the highest rates in the industry! Most companies offer 70-85%. There are NO hidden fees or surprise deductions. Fuel surcharge passes through 100% to you. Your weekly settlement shows exactly where every dollar goes. Transparent accounting, no games."
+    question: `What's this ${PAY_RATES.ownerOperator.payout} payout for owner operators?`,
+    answer: `You keep ${PAY_RATES.ownerOperator.payout} of the gross revenue from each load. There are NO hidden fees or surprise deductions. Fuel surcharge passes through 100% to you. Your weekly settlement shows exactly where every dollar goes. Transparent accounting, no games.`
   },
   {
-    question: "How does the 91% payout work exactly?",
-    answer: "Simple: If a load pays $3,000 gross, you receive $2,730 (91%). We take 9% to cover our back-office, dispatch, insurance, and administrative costs. NO other deductions. Fuel surcharge? You get 100%. Accessorial charges? You get 91%. Detention, layover, TONU - all 91% to you. Clean, transparent, fair."
+    question: `How does the ${PAY_RATES.ownerOperator.payout} payout work exactly?`,
+    answer: `Simple: If a load pays $${faqExampleGross.toLocaleString("en-US")} gross, you receive $${faqExampleKeep.toLocaleString("en-US")} (${PAY_RATES.ownerOperator.payout}). We take ${ooTakePct}% to cover our back-office, dispatch, insurance, and administrative costs. NO other deductions. Fuel surcharge? You get 100%. Accessorial charges? You get ${PAY_RATES.ownerOperator.payout}. Detention, layover, TONU - all ${PAY_RATES.ownerOperator.payout} to you. Clean, transparent, fair.`
   },
   {
     question: "What are the sign-on bonuses?",
@@ -36,11 +41,11 @@ const defaultFaqs = [
   // Freight & Operations
   {
     question: "What types of freight do you haul?",
-    answer: "We offer three freight types: Flatbed (building materials, steel, machinery), Reefer (temperature-controlled food and pharmaceutical), and Dry Van (general freight and retail goods). You can choose what fits your experience and equipment. Consistent loads year-round across all divisions. No hazmat required."
+    answer: "We offer three freight types: Flatbed (building materials, steel, machinery), Reefer (temperature-controlled food and pharmaceutical), and Dry Van (general freight and retail goods). You can choose what fits your experience and equipment. Freight moves year-round in all three. No hazmat required."
   },
   {
     question: "What's the average length of haul?",
-    answer: "Our average length of haul is 800-1,200 miles depending on your route preferences. We have both long-haul cross-country lanes and shorter regional runs. Dedicated lanes available for drivers who prefer consistent routes. OTR drivers average 2,500-3,000 miles per week."
+    answer: "It depends on what you take: we run both long-haul cross-country lanes and shorter regional runs, and owner-operators choose. Dedicated lanes come up for drivers who want a consistent route. Ask dispatch what the current mix looks like — they will tell you what is actually on the board."
   },
   // Both answers below previously named specific shippers and brokers as
   // partners. We can't substantiate those relationships in writing, and naming
@@ -59,7 +64,7 @@ const defaultFaqs = [
   // Home Time & Schedule
   {
     question: "What about home time?",
-    answer: "We offer flexible schedules: Local routes (home every night), Regional routes (home on weekends - typically 5 days out, 2 days home), or OTR (2-3 weeks out, 3-4 days home). We work around YOUR life and actually honor our home time promises. No broken commitments - we track and guarantee it."
+    answer: "We offer flexible schedules: Local routes (home every night), Regional routes (home on weekends - typically 5 days out, 2 days home), or OTR (2-3 weeks out, 3-4 days home). Tell dispatch the home time you need and they build around it — and you see the delivery date before you accept a load, so you can say no."
   },
   {
     question: "Is there forced dispatch?",
@@ -69,21 +74,21 @@ const defaultFaqs = [
   // Benefits & Perks
   {
     question: "Do company drivers get benefits?",
-    answer: "Here's the honest list of what we offer today: $1,000 sign-on bonus in your first year; weekly direct deposit every Friday; paid time off and paid holidays; performance and referral bonuses; home time you pick (local, regional, or OTR at the same $0.60-$0.65/mile); modern 2020-2022 Freightliner Cascadias; rider and pet policy; and 24/7 dispatch you can actually reach. We do NOT currently offer company medical, dental, vision, life or disability insurance, or a 401(k) — we'd rather tell you now than at orientation. If that changes, this page changes with it."
+    answer: `Here's the honest list of what we offer today: ${PAY_RATES.companyDriver.signOnBonus}; weekly direct deposit every Friday; performance and referral bonuses; home time you pick (local, regional, or OTR at the same ${PAY_RATES.companyDriver.otr.perMile}/mile); modern ${EQUIPMENT.modelYears} ${EQUIPMENT.makes}; and 24/7 dispatch you can actually reach. Riders and pets are decided case by case — ask us. We do NOT currently offer company medical, dental, vision, life or disability insurance, or a 401(k) — we'd rather tell you now than at orientation. If that changes, this page changes with it.`
   },
   {
     question: "What fuel programs are available for owner operators?",
-    answer: "We offer fuel card programs with discounts at Pilot Flying J, Love's, TA/Petro, and other major chains - typically $0.40-$0.60 off per gallon. IFTA reporting assistance included. 100% of fuel surcharge always passes to you. We help you optimize fuel routes and costs."
+    answer: "We offer fuel card programs with discounts at Pilot Flying J, Love's, TA/Petro, and other major chains - typically $0.30-$0.75 off per gallon depending on the chain and the week. IFTA reporting assistance included. 100% of fuel surcharge always passes to you. We help you optimize fuel routes and costs."
   },
   {
     question: "Do you offer maintenance discounts?",
-    answer: "Yes! Owner operators get preferred pricing at our partner service centers nationwide. Discounts on tires, oil changes, brakes, and major repairs. We've negotiated rates that can save you thousands annually. 24/7 roadside assistance connections available."
+    answer: "Yes! Owner operators get preferred pricing at our partner service centers nationwide. Discounts on tires, oil changes, brakes, and major repairs. 24/7 roadside assistance connections available."
   },
   
   // Getting Started
   {
     question: "How quickly can I start?",
-    answer: "Most drivers start within 1-2 weeks after approval. Process: Phone interview (same day response), Application review (1-2 days), Background check & drug screening (3-5 days), Orientation (1 day in Kent, WA or virtual option), Then you're on the road! We move fast for qualified drivers."
+    answer: "The steps are: a phone interview, application review, background check and drug screening, then orientation in Kent, WA (a virtual option is available). How long each takes depends on how fast your previous employers verify your history — we will tell you where you are at each stage rather than promise a date we do not control."
   },
   {
     question: "Do you hire nationwide?",
@@ -91,13 +96,13 @@ const defaultFaqs = [
   },
   {
     question: "What if I don't have my own truck yet?",
-    answer: "No problem! Start as a company driver ($0.60-$0.65/mile) while you save up and learn our operations. Many of our current owner operators started as company drivers. We can guide you through the transition when you're ready to purchase your own truck. We don't do lease-purchase (those programs often trap drivers)."
+    answer: `No problem! Start as a company driver (${PAY_RATES.companyDriver.otr.perMile}/mile) while you save up and learn our operations. Many of our current owner operators started as company drivers. We can guide you through the transition when you're ready to purchase your own truck. We don't do lease-purchase (those programs often trap drivers).`
   },
   
   // Equipment & Requirements
   {
     question: "What equipment do company drivers use?",
-    answer: "Company drivers operate our 2020-2022 Freightliner Cascadias - fully loaded with APU, refrigerator, inverter, and premium sleeper. Automatic transmission available. All trucks maintained to the highest standards. No junk equipment - we invest in quality because it keeps you safe and efficient."
+    answer: `Company drivers operate our ${EQUIPMENT.modelYears} ${EQUIPMENT.makes} — fully loaded with APU, refrigerator, inverter, and premium sleeper. Automatic transmission available.`,
   },
   {
     question: "What are the truck requirements for owner operators?",
@@ -107,7 +112,7 @@ const defaultFaqs = [
   // Safety & Compliance
   {
     question: "What's your safety rating?",
-    answer: `We maintain an A+ safety rating with FMCSA. Zero out-of-service violations in our history. Our USDOT number is ${COMPANY_INFO.dot} (MC-${COMPANY_INFO.mc}) — verify our carrier record anytime on SAFER. We take safety seriously because it protects you and keeps our insurance costs down (which means better pay for you).`,
+    answer: `Our USDOT number is ${COMPANY_INFO.dot} (MC-${COMPANY_INFO.mc}), and our full inspection and out-of-service record is public on FMCSA SAFER — we would rather you read it there than take our word for it. Safety protects you first and our insurance costs second, and both end up in what we can pay.`,
   },
   {
     question: "What is FMCSA Motus and does it change Thind Transport's authority?",
@@ -121,11 +126,11 @@ const defaultFaqs = [
   // Company Info
   {
     question: "How long has Thind Transport been in business?",
-    answer: "Thind Transport was founded in 2014 in Kent, Washington. Our owner has 25+ years of trucking industry experience. We've grown from 1 truck to 15+ and continue to expand. Family-owned and operated - not a faceless corporation. When you call, you talk to real people who care."
+    answer: `Thind Transport was founded in ${COMPANY_INFO.founded} in Kent, Washington by ${COMPANY_INFO.owner}, who has ${COMPANY_INFO.ownerExperience} years in trucking. We run ${STATS.trucksInFleet} trucks today. Family-owned — when you call, you talk to the people who dispatch the loads.`
   },
   {
     question: "Why should I choose Thind over bigger carriers?",
-    answer: "At big carriers, you're a number. At Thind, you're family. We offer: Highest payout in the industry (91%), No forced dispatch, Transparent settlements with no hidden fees, Modern equipment, Real 24/7 support from people who know your name, Home time that's actually honored. Many of our drivers came from mega-carriers and say they wish they'd switched sooner."
+    answer: `We are ${STATS.trucksInFleet} trucks, so the dispatcher who books your load is the one who answers when you call. What we put in writing: ${PAY_RATES.ownerOperator.commission} of gross, no forced dispatch, settlements every Friday with no deductions beyond our ${ooTakePct}%, and ${EQUIPMENT.modelYears} equipment. Compare that line by line against whoever else you are talking to.`
   }
 ]
 

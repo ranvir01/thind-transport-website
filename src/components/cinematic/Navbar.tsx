@@ -5,23 +5,11 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { focusableWithin, nextFocusTarget } from "@/lib/focus-trap"
 import {
-  ChevronDown,
-  Menu,
-  X,
-  Phone,
-  FileText,
-  DollarSign,
-  Heart,
-  MapPin,
-  MessageSquare,
-  BookOpen,
-  Users,
-  Truck,
-  Shield,
-  ChevronRight,
-  LayoutDashboard,
+  ChevronDown, Menu, X, Phone, FileText,
+  DollarSign, Heart, MapPin, BookOpen, Users,
+  Truck, Shield, ChevronRight, LayoutDashboard,
 } from "lucide-react"
-import { COMPANY_INFO } from "@/lib/constants"
+import { COMPANY_INFO, EQUIPMENT, PAY_RATES } from "@/lib/constants"
 import { PersonaSwitcher } from "@/components/shared/PersonaSwitcher"
 
 // Navigation items with dropdowns
@@ -36,7 +24,7 @@ const driverMenuItems = [
   {
     href: "/pay-rates",
     label: "Pay Rates",
-    description: "91% O/O split",
+    description: `${PAY_RATES.ownerOperator.commission} O/O split`,
     icon: DollarSign,
   },
   {
@@ -75,7 +63,7 @@ const companyMenuItems = [
   {
     href: "/fleet",
     label: "Our Fleet",
-    description: "2020-2022 Cascadias",
+    description: EQUIPMENT.short,
     icon: Truck,
   },
   {
@@ -477,11 +465,11 @@ function MobileMenuDrawer({
             {/* Footer Actions */}
             <div className="p-4 border-t border-white/10 space-y-3 bg-[rgba(5,8,14,0.92)]">
               <a
-                href="tel:+12067656300"
+                href={`tel:${COMPANY_INFO.phoneFormatted}`}
                 className="flex items-center justify-center gap-2 w-full py-3 px-4 bg-white/5 hover:bg-white/10 rounded-xl text-white font-medium transition-colors"
               >
                 <Phone className="w-4 h-4" />
-                (206) 765-6300
+                {COMPANY_INFO.phone}
               </a>
               <Link
                 href="/apply"
@@ -611,12 +599,12 @@ export const CinematicNavbar = () => {
 
           {/* Phone Number - Desktop only */}
           <a
-            href="tel:+12067656300"
+            href={`tel:${COMPANY_INFO.phoneFormatted}`}
             className="hidden lg:flex items-center gap-2 px-3 py-2 text-sm font-semibold text-steel-300 hover:text-orange transition-colors"
             data-cursor="CALL"
           >
             <Phone className="w-4 h-4" />
-            <span className="hidden xl:inline">(206) 765-6300</span>
+            <span className="hidden xl:inline">{COMPANY_INFO.phone}</span>
           </a>
 
           {/* Apply Button */}

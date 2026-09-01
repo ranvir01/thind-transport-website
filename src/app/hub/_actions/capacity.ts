@@ -21,7 +21,7 @@ export async function postCapacityAction(input: {
   note?: string
 }): Promise<Result> {
   try {
-    // Capacity postings render on the PUBLIC /load-board, so this advertises
+    // Capacity postings render on the PUBLIC /routes page, so this advertises
     // the fleet to brokers under the carrier's name — dispatch work, not
     // "any office role" (an accountant holds no loads:write).
     const user = await requirePermission("loads:write")
@@ -39,7 +39,7 @@ export async function postCapacityAction(input: {
       ]
     )
     revalidatePath("/hub/capacity")
-    revalidatePath("/load-board")
+    revalidatePath("/routes")
     return { ok: true }
   } catch (err) {
     return actionError(err, "Could not post")
@@ -54,7 +54,7 @@ export async function removeCapacityAction(id: string): Promise<Result> {
       [user.carrierId, id]
     )
     revalidatePath("/hub/capacity")
-    revalidatePath("/load-board")
+    revalidatePath("/routes")
     return { ok: true }
   } catch (err) {
     return actionError(err, "Could not remove")

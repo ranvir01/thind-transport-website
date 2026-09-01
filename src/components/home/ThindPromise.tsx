@@ -1,6 +1,6 @@
 import Image from "next/image"
 import { Phone, Quote, ShieldCheck } from "lucide-react"
-import { COMPANY_INFO } from "@/lib/constants"
+import { COMPANY_INFO, EQUIPMENT, PAY_RATES } from "@/lib/constants"
 import { Reveal } from "@/components/ui/Reveal"
 
 const yearsRunning = new Date().getFullYear() - COMPANY_INFO.founded
@@ -81,9 +81,9 @@ export const ThindPromise = () => {
               <p className="pl-5">
                 &ldquo;That&apos;s the reason we run this differently.
                 Owner-operators keep{" "}
-                <strong className="text-white">91% of gross</strong>. Company
+                <strong className="text-white">{PAY_RATES.ownerOperator.commission} of gross</strong>. Company
                 drivers run{" "}
-                <strong className="text-white">2020-2022 Cascadias</strong>. And when
+                <strong className="text-white">{EQUIPMENT.short}</strong>. And when
                 you call, you get a real person who knows your name &mdash; not
                 a queue.&rdquo;
               </p>

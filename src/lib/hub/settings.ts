@@ -1,4 +1,5 @@
 import { query, queryOne } from "./db"
+import { dollarsToCents } from "./types"
 
 /** Typed carrier settings (stored as JSONB; merged over defaults on read). */
 export interface CarrierSettings {
@@ -52,6 +53,20 @@ export interface CarrierSettings {
   /** Per-tenant branding (Phase 7). Written by setBrandAccentAction; rendered on PDFs, the customer
    * portal chrome, and the driver PWA nav (each via its own accent-resolution helper). */
   branding: { accent: string | null }
+  driverApp: {
+    /**
+     * Show a driver what each run pays them, on the load card and as a
+     * running weekly total.
+     *
+     * Default ON: a driver who cannot see what the work is worth until the
+     * office cuts a settlement is being asked to take it on trust. But pay
+     * transparency is a real difference between carriers — some deliberately
+     * keep per-load pay in the office until payroll — so it is a switch, not
+     * an assumption. It gates the driver's OWN pay only; the linehaul is
+     * never shown either way.
+     */
+    showRunPay: boolean
+  }
 }
 
 export const DEFAULT_SETTINGS: CarrierSettings = {
@@ -64,6 +79,7 @@ export const DEFAULT_SETTINGS: CarrierSettings = {
   factoring: { company: null, remitName: null, remitAddress: null, email: null },
   notifications: { officeEmail: null },
   branding: { accent: null },
+  driverApp: { showRunPay: true },
 }
 
 export interface Carrier {
@@ -93,7 +109,12 @@ function mergePay(
 ): CarrierSettings["pay"] {
   const merged = { ...DEFAULT_SETTINGS.pay, ...stored }
   if (stored?.companyDriverPerMileCents == null && typeof stored?.companyDriverPerMile === "number") {
-    merged.companyDriverPerMileCents = Math.round(stored.companyDriverPerMile * 100)
+    // dollarsToCents, not a bare Math.round(x * 100): this path must agree
+    // with what migration 024 rewrites the same row to (exact numeric
+    // ROUND(x * 100)). A half-cent tie like 0.565 drifts to 56.499… as a
+    // double — bare rounding read 56¢ where the migration writes 57¢, so the
+    // tenant's default rate changed by a cent the day the migration ran.
+    merged.companyDriverPerMileCents = dollarsToCents(stored.companyDriverPerMile)
   }
   return merged
 }
@@ -115,6 +136,7 @@ export async function getCarrierSettings(carrierId: string): Promise<CarrierSett
     factoring: { ...DEFAULT_SETTINGS.factoring, ...stored.factoring },
     notifications: { ...DEFAULT_SETTINGS.notifications, ...stored.notifications },
     branding: { ...DEFAULT_SETTINGS.branding, ...stored.branding },
+    driverApp: { ...DEFAULT_SETTINGS.driverApp, ...stored.driverApp },
   }
 }
 

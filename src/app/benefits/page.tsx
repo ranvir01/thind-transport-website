@@ -8,7 +8,7 @@ import {
 } from "lucide-react"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { COMPANY_INFO, PAY_RATES } from "@/lib/constants"
+import { COMPANY_INFO, EQUIPMENT, PAY_RATES, SUPPORT } from "@/lib/constants"
 import { PageBreadcrumb } from "@/components/shared/PageBreadcrumb"
 import { PageHero } from "@/components/shared/PageHero"
 import { Reveal } from "@/components/ui/Reveal"
@@ -16,13 +16,12 @@ import { CountUp } from "@/components/shared/CountUp"
 import { RelatedLinks } from "@/components/shared/RelatedLinks"
 
 export const metadata: Metadata = {
-  title: `Driver Benefits & Perks | ${COMPANY_INFO.name}`,
-  description: "What Thind Transport actually offers CDL drivers: weekly direct deposit, paid time off and holidays, sign-on and referral bonuses, home time you pick, 2024 equipment, fuel discounts and 24/7 dispatch. Plus a straight answer on what we don't offer yet.",
+  title: "Driver benefits — and what we don't offer",
+  description: `What Thind Transport actually offers CDL drivers: ${PAY_RATES.companyDriver.otr.perMile}/mile, weekly direct deposit, a $1,000 first-year sign-on bonus, referral and performance bonuses, home time you pick, and late-model equipment. Plus a straight answer on what we don't offer yet.`,
   keywords: [
     "truck driver benefits",
     "driver sign on bonus",
     "owner operator benefits",
-    "truck driver paid time off",
     "trucking company perks",
     "driver home time",
     "fuel discount program",
@@ -48,8 +47,8 @@ const companyDriverBenefits = [
     color: "green",
     items: [
       {
-        title: "Competitive Pay",
-        description: `${PAY_RATES.companyDriver.otr.perMile} per mile — same rate local, regional or OTR`,
+        title: `${PAY_RATES.companyDriver.otr.perMile} per mile`,
+        description: "Same rate local, regional or OTR",
         highlight: true,
       },
       {
@@ -72,26 +71,18 @@ const companyDriverBenefits = [
     ],
   },
   {
-    category: "Time Off & Work-Life",
+    category: "Home Time",
     icon: Calendar,
-    color: "purple",
+    color: "orange",
     items: [
       {
-        title: "Paid Time Off",
-        description: "Vacation days that increase with tenure",
-      },
-      {
-        title: "Paid Holidays",
-        description: "Major holidays paid at premium rates",
-      },
-      {
         title: "Flexible Home Time",
-        description: "Local, regional, or OTR - you choose",
+        description: "Local, regional, or OTR — you choose",
         highlight: true,
       },
       {
-        title: "Family Leave",
-        description: "Time off for important family moments",
+        title: "Same Rate Either Way",
+        description: `${PAY_RATES.companyDriver.otr.perMile}/mile whichever you pick, so home time is not a pay cut`,
       },
     ],
   },
@@ -102,20 +93,12 @@ const companyDriverBenefits = [
     items: [
       {
         title: "Modern Equipment",
-        description: "2020-2022 Freightliner Cascadias with latest tech",
+        description: `${EQUIPMENT.modelYears} ${EQUIPMENT.makes}, ${EQUIPMENT.apu}`,
         highlight: true,
       },
       {
-        title: "24/7 Dispatch Support",
+        title: SUPPORT.dispatch,
         description: "Real people available whenever you need help",
-      },
-      {
-        title: "Rider Program",
-        description: "Bring a companion on the road",
-      },
-      {
-        title: "Pet Policy",
-        description: "Your furry friend can ride along",
       },
     ],
   },
@@ -128,8 +111,8 @@ const ownerOperatorBenefits = [
     color: "green",
     items: [
       {
-        title: "91% Gross Payout",
-        description: "You keep 91% of the linehaul on every load you haul",
+        title: `${PAY_RATES.ownerOperator.commission} Gross Commission`,
+        description: `You keep ${PAY_RATES.ownerOperator.commission} of the linehaul on every load you haul`,
         highlight: true,
       },
       {
@@ -155,7 +138,7 @@ const ownerOperatorBenefits = [
   {
     category: "Independence & Freedom",
     icon: Shield,
-    color: "blue",
+    color: "orange",
     items: [
       {
         title: "No Forced Dispatch",
@@ -179,7 +162,7 @@ const ownerOperatorBenefits = [
   {
     category: "Business Support",
     icon: DollarSign,
-    color: "purple",
+    color: "orange",
     items: [
       {
         title: "Fuel Card Programs",
@@ -209,13 +192,9 @@ const ownerOperatorBenefits = [
     color: "orange",
     items: [
       {
-        title: "Consistent Freight",
-        description: "Year-round loads from top shippers",
+        title: "Year-Round Freight",
+        description: "Flatbed, reefer and dry van across all 48 states",
         highlight: true,
-      },
-      {
-        title: "Premium Lanes",
-        description: "Access to high-paying dedicated routes",
       },
       {
         title: "Diverse Freight Types",
@@ -229,15 +208,18 @@ const ownerOperatorBenefits = [
   },
 ]
 
-const comparisonData = [
-  { feature: "Payout Rate", thind: "91%", industry: "70-85%" },
-  { feature: "Fuel Surcharge", thind: "100% to driver", industry: "Varies, often split" },
-  { feature: "Sign-On Bonus (O/O)", thind: "$2,500", industry: "$500-$1,500" },
-  { feature: "Forced Dispatch", thind: "Never", industry: "Common" },
-  { feature: "Weekly Settlement", thind: "Every Friday", industry: "Varies" },
-  { feature: "Hidden Fees", thind: "None", industry: "Often hidden" },
-  { feature: "Equipment Age", thind: "2024 Models", industry: "3-5+ years old" },
-  { feature: "24/7 Support", thind: "Yes, real people", industry: "Limited hours" },
+/** Our terms, from constants. No invented "industry average" column: the
+ *  numbers that used to sit there had no source and contradicted the second
+ *  set on the homepage. */
+const termsData = [
+  { feature: "Commission rate (owner-operator)", thind: PAY_RATES.ownerOperator.commission },
+  { feature: "Fuel surcharge", thind: "100% to the driver" },
+  { feature: "Sign-on bonus (owner-operator)", thind: PAY_RATES.ownerOperator.signOnBonus },
+  { feature: "Sign-on bonus (company driver)", thind: PAY_RATES.companyDriver.signOnBonus },
+  { feature: "Company driver rate", thind: `${PAY_RATES.companyDriver.otr.perMile}/mile, local, regional or OTR` },
+  { feature: "Forced dispatch", thind: "Never" },
+  { feature: "Settlements", thind: "Every Friday" },
+  { feature: "Deductions we take from the split", thind: "None" },
 ]
 
 /**
@@ -308,11 +290,12 @@ const BENEFIT_LINKS = [
   },
 ]
 
+const ooCommissionPct = Number(PAY_RATES.ownerOperator.commission.replace("%", ""))
+const companyCpm = Number(PAY_RATES.companyDriver.otr.perMile.match(/\d+\.\d+/)?.[0] ?? "0")
+const fuelPassPct = Number(PAY_RATES.ownerOperator.fuelSurcharge.replace("%", ""))
+
 const colorClasses = {
   green: "from-green-500/10 to-green-600/5 border-green-500/20 text-green-600",
-  red: "from-red-500/10 to-red-600/5 border-red-500/20 text-red-600",
-  blue: "from-blue-500/10 to-blue-600/5 border-blue-500/20 text-blue-600",
-  purple: "from-purple-500/10 to-purple-600/5 border-purple-500/20 text-purple-600",
   orange: "from-orange-500/10 to-orange-600/5 border-orange-500/20 text-orange-600",
 }
 
@@ -328,10 +311,10 @@ export default function BenefitsPage() {
         eyebrow="Driver Benefits"
         title={
           <>
-            Benefits That Actually <span className="text-orange">Matter</span>
+            What we offer — and <span className="text-orange">what we don&apos;t</span>
           </>
         }
-        description="Weekly pay, paid time off, home time you choose, and 2024 equipment — plus a straight list of what we don't offer yet, so nothing is a surprise at orientation."
+        description="Weekly pay, home time you choose, late-model equipment — plus a straight list of what we don't offer yet, so nothing is a surprise at orientation."
       />
 
       {/* Quick Stats — the numbers count up once, on first view only */}
@@ -339,9 +322,9 @@ export default function BenefitsPage() {
         <div className="container">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto">
             {[
-              { value: 90, suffix: "%", label: "Commission", sublabel: "Owner Operators" },
-              { value: 0.63, prefix: "$", decimals: 2, label: "Per Mile", sublabel: "Company Drivers" },
-              { value: 100, suffix: "%", label: "Fuel Surcharge", sublabel: "Passed Through" },
+              { value: ooCommissionPct, suffix: "%", label: "Commission", sublabel: "Owner Operators" },
+              { value: companyCpm, prefix: "$", decimals: 2, label: "Per Mile", sublabel: "Company Drivers" },
+              { value: fuelPassPct, suffix: "%", label: "Fuel Surcharge", sublabel: "Passed Through" },
               { value: 24, suffix: "/7", label: "Support", sublabel: "Real People" },
             ].map((stat, i) => (
               <Reveal key={stat.label} index={Math.min(i, 4)}>
@@ -481,10 +464,10 @@ export default function BenefitsPage() {
               Owner Operators
             </Badge>
             <h2 className="text-3xl md:text-4xl font-black text-gray-900 mb-4">
-              Maximum Earnings, Maximum Freedom
+              {PAY_RATES.ownerOperator.commission} of gross. No forced dispatch.
             </h2>
             <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              91% payout, no forced dispatch, complete transparency. Run your business your way.
+              Weekly settlements every Friday, and 100% of the fuel surcharge passed through.
             </p>
           </div>
 
@@ -540,10 +523,11 @@ export default function BenefitsPage() {
                 Side-by-Side Comparison
               </Badge>
               <h2 className="text-3xl md:text-4xl font-black text-gray-900 mb-4">
-                See the Thind Difference
+                The terms, in writing
               </h2>
               <p className="text-lg text-gray-600">
-                Compare our benefits to industry averages and see why drivers switch to us.
+                Every figure below comes from the same file the calculators read. Ask any carrier
+                you&apos;re comparing us to for the same list.
               </p>
             </div>
 
@@ -552,24 +536,22 @@ export default function BenefitsPage() {
                 <table className="w-full">
                   <thead>
                     <tr className="bg-navy text-white">
-                      <th className="px-6 py-4 text-left font-bold">Feature</th>
+                      <th className="px-6 py-4 text-left font-bold">What you&apos;re comparing</th>
                       <th className="px-6 py-4 text-center font-bold bg-orange-600">
                         <div className="flex flex-col items-center">
                           <Star className="h-5 w-5 mb-1" />
                           Thind Transport
                         </div>
                       </th>
-                      <th className="px-6 py-4 text-center font-bold">Industry Average</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200">
-                    {comparisonData.map((row, idx) => (
+                    {termsData.map((row, idx) => (
                       <tr key={row.feature} className={idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
                         <td className="px-6 py-4 font-medium text-gray-900">{row.feature}</td>
                         <td className="px-6 py-4 text-center font-bold text-green-700 bg-green-50/50">
                           {row.thind}
                         </td>
-                        <td className="px-6 py-4 text-center text-gray-500">{row.industry}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -581,6 +563,7 @@ export default function BenefitsPage() {
       </section>
 
       <RelatedLinks
+        tone="dark"
         title="Check the numbers yourself"
         intro="Benefits pages are easy to write. These are the tools and records behind ours."
         links={BENEFIT_LINKS}
@@ -603,8 +586,8 @@ export default function BenefitsPage() {
               Ready to Experience These Benefits?
             </h2>
             <p className="text-lg text-white/90 mb-8">
-              $0.60-$0.65 a mile for company drivers, 91% of the linehaul for owner-operators,
-              and a real person on the phone in Kent. Apply today and hear back within 24 hours.
+              {PAY_RATES.companyDriver.otr.perMile} a mile for company drivers, {PAY_RATES.ownerOperator.commission} of the linehaul for owner-operators,
+              and a real person on the phone in Kent. Apply today and hear back within 24 hours on business days.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link

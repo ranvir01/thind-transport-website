@@ -1,12 +1,12 @@
 import { Metadata } from "next"
-import { COMPANY_INFO, STATS } from "@/lib/constants"
+import { COMPANY_INFO, EQUIPMENT, STATS } from "@/lib/constants"
 
 export const metadata: Metadata = {
-  title: `Fleet & Equipment | 2020-2022 Freightliner & Volvo Trucks | ${COMPANY_INFO.name}`,
-  description: `Drive modern equipment at ${COMPANY_INFO.name}. Our fleet features 2020-2022 Freightliner Cascadias & Volvo VNL 860s with APU, inverters, and full safety suites. ${STATS.trucksInFleet}+ trucks maintained by our in-house shop. Apply today!`,
+  title: `Fleet & equipment — ${EQUIPMENT.modelYears} Freightliners and Volvos`,
+  description: `Drive the newest equipment at ${COMPANY_INFO.name}. Our fleet features ${EQUIPMENT.modelYears} Freightliner Cascadias & Volvo VNL 860s with APU, inverters, and full safety suites. ${STATS.trucksInFleet} trucks, maintained on a preventive schedule.`,
   keywords: [
     "trucking company equipment",
-    "Freightliner Cascadia 2020-2022",
+    "Freightliner Cascadia 2024",
     "Volvo VNL 860 trucks",
     "truck driver equipment",
     "CDL driver trucks",
@@ -20,7 +20,7 @@ export const metadata: Metadata = {
   ],
   openGraph: {
     title: `Fleet & Equipment | ${COMPANY_INFO.name}`,
-    description: `Drive 2020-2022 Freightliner Cascadias & Volvo VNL 860s. APU, inverters, full safety suites standard. ${STATS.trucksInFleet}+ trucks with 24/7 maintenance support.`,
+    description: `Drive ${EQUIPMENT.modelYears} Freightliner Cascadias & Volvo VNL 860s. APU, inverters, full safety suites standard. ${STATS.trucksInFleet} trucks with 24/7 maintenance support.`,
     url: "https://thindtransport.com/fleet",
     siteName: COMPANY_INFO.name,
     locale: "en_US",
@@ -29,7 +29,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: `Fleet & Equipment | ${COMPANY_INFO.name}`,
-    description: "2020-2022 Freightliner & Volvo trucks. APU standard. 24/7 maintenance support.",
+    description: `${EQUIPMENT.modelYears} Freightliner & Volvo trucks. APU standard. 24/7 maintenance support.`,
   },
   alternates: {
     canonical: "https://thindtransport.com/fleet"
@@ -51,13 +51,13 @@ export default function FleetLayout({
             "@context": "https://schema.org",
             "@type": "ItemList",
             "name": `${COMPANY_INFO.name} Fleet Equipment`,
-            "description": "Modern trucking fleet featuring 2020-2022 Freightliner Cascadias and Volvo VNL trucks",
-            "numberOfItems": STATS.trucksInFleet,
+            "description": `Modern trucking fleet featuring ${EQUIPMENT.modelYears} Freightliner Cascadias and Volvo VNL trucks`,
+            "numberOfItems": 2,
             "itemListElement": [
               {
                 "@type": "Vehicle",
                 "position": 1,
-                "name": "Freightliner Cascadia 2020-2022",
+                "name": `Freightliner Cascadia ${EQUIPMENT.modelYears}`,
                 "vehicleConfiguration": "Semi-Truck",
                 "vehicleEngine": {
                   "@type": "EngineSpecification",
@@ -71,7 +71,7 @@ export default function FleetLayout({
               {
                 "@type": "Vehicle",
                 "position": 2,
-                "name": "Volvo VNL 860 2020-2022",
+                "name": "Volvo VNL 860 2024-2025",
                 "vehicleConfiguration": "Semi-Truck",
                 "vehicleEngine": {
                   "@type": "EngineSpecification",
@@ -87,58 +87,9 @@ export default function FleetLayout({
         }}
       />
       
-      {/* FAQ Schema */}
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
-            "@context": "https://schema.org",
-            "@type": "FAQPage",
-            "mainEntity": [
-              {
-                "@type": "Question",
-                "name": "What year models are in the Thind Transport fleet?",
-                "acceptedAnswer": {
-                  "@type": "Answer",
-                  "text": "Our fleet consists of 2020-2022 model year trucks. We operate Freightliner Cascadias and Volvo VNL 860s/760s. All trucks are well-maintained modern equipment with APUs."
-                }
-              },
-              {
-                "@type": "Question",
-                "name": "Do all trucks come with APUs and inverters?",
-                "acceptedAnswer": {
-                  "@type": "Answer",
-                  "text": "Yes! Every truck in our fleet comes standard with an APU (Auxiliary Power Unit) and a high-power inverter (1800W-2500W). You'll never need to idle for climate control, and you can run all your devices including microwaves, TVs, and gaming systems."
-                }
-              },
-              {
-                "@type": "Question",
-                "name": "What safety features are included?",
-                "acceptedAnswer": {
-                  "@type": "Answer",
-                  "text": "All trucks include Detroit Assurance or Volvo Active Driver Assist safety suites with: Lane Departure Warning, Collision Mitigation, Adaptive Cruise Control, Electronic Stability Control, and ABS with disc brakes."
-                }
-              },
-              {
-                "@type": "Question",
-                "name": "What happens if my truck breaks down on the road?",
-                "acceptedAnswer": {
-                  "@type": "Answer",
-                  "text": "Call our 24/7 dispatch line and we'll have roadside assistance to you within 4 hours on average. For repairs we can't do roadside, we'll get you to the nearest certified shop and cover all costs. We also provide rental equipment if repairs take longer than expected."
-                }
-              },
-              {
-                "@type": "Question",
-                "name": "How often is preventive maintenance performed?",
-                "acceptedAnswer": {
-                  "@type": "Answer",
-                  "text": "Every truck receives a full preventive maintenance inspection every 25,000 miles at our in-house shop, and we complete DOT inspections ahead of their due dates so trucks stay on the road."
-                }
-              }
-            ]
-          })
-        }}
-      />
+      {/* No FAQPage entity here: FAQAccordion on the page emits one from the
+          same `faqs` array that renders on screen, and two top-level FAQPage
+          entities on one URL is a structured-data error. Removed 2026-08-30. */}
       {children}
     </>
   )

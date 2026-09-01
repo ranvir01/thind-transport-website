@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib"
-import { COMPANY_INFO, STATS, SERVICES, FMCSA_LINKS } from "@/lib/constants"
+import { COMPANY_INFO, EQUIPMENT, STATS, SERVICES, FMCSA_LINKS } from "@/lib/constants"
 
 /**
  * One-click carrier snapshot for brokers (marketing side).
@@ -70,7 +70,7 @@ export async function GET() {
   row("Phone (dispatch)", COMPANY_INFO.phone)
   row("Email", COMPANY_INFO.email)
   row("Authority since", String(COMPANY_INFO.founded))
-  row("Power units", `${STATS.trucksInFleet} (2020-2022 Freightliner Cascadias)`)
+  row("Power units", `${STATS.trucksInFleet} (${EQUIPMENT.modelYears} ${EQUIPMENT.makes})`)
   row("Equipment", SERVICES.types.join(" · "))
   row("Coverage", `${STATS.statesCovered} states (lower 48)`)
   row("Auto liability", "$1,000,000")

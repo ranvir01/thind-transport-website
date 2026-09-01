@@ -412,6 +412,12 @@ export async function createShareLinkAction(loadId: string): Promise<ActionResul
   try {
     const link = await createShareLink(user.carrierId, loadId, user.id)
     await addLoadEvent(user.carrierId, loadId, "note", { note: "Tracking link created" }, { id: user.id, name: user.name })
+    // Token stays off the audit row — it is the public /track secret.
+    await logAudit({
+      carrierId: user.carrierId, actorId: user.id, actorName: user.name,
+      entityType: "share_link", entityId: link.id, action: "create",
+      newValue: { loadId },
+    })
     revalidateLoadViews(loadId)
     return { ok: true, id: link.id, token: link.token }
   } catch (err) {
@@ -428,6 +434,11 @@ export async function revokeShareLinkAction(linkId: string, loadId: string): Pro
   }
   try {
     await revokeShareLink(user.carrierId, linkId)
+    await logAudit({
+      carrierId: user.carrierId, actorId: user.id, actorName: user.name,
+      entityType: "share_link", entityId: linkId, action: "revoke",
+      newValue: { loadId },
+    })
     revalidateLoadViews(loadId)
     return { ok: true }
   } catch (err) {
@@ -444,6 +455,11 @@ export async function renewShareLinkAction(linkId: string, loadId: string): Prom
   }
   try {
     await renewShareLink(user.carrierId, linkId)
+    await logAudit({
+      carrierId: user.carrierId, actorId: user.id, actorName: user.name,
+      entityType: "share_link", entityId: linkId, action: "renew",
+      newValue: { loadId },
+    })
     revalidateLoadViews(loadId)
     return { ok: true }
   } catch (err) {

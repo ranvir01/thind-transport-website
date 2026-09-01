@@ -1,6 +1,7 @@
 import { ArrowRight } from "lucide-react"
 import Link from "next/link"
 import { Reveal } from "@/components/ui/Reveal"
+import { EQUIPMENT, PAY_RATES } from "@/lib/constants"
 
 /**
  * Archetype C — dense data (docs/design/DIRECTION.md §3).
@@ -16,13 +17,13 @@ import { Reveal } from "@/components/ui/Reveal"
  */
 
 const comparisonData = [
-  { feature: "Pay split", competitor: "65–75% of gross", thind: "91% of gross" },
+  { feature: "Pay split", competitor: "A cut you have to ask for", thind: `${PAY_RATES.ownerOperator.commission} of gross, in writing` },
   { feature: "Fuel surcharge", competitor: "Partial pass-through", thind: "100% pass-through" },
   { feature: "Forced dispatch", competitor: "Yes", thind: "Never" },
   { feature: "Home time", competitor: "When convenient", thind: "Your schedule, honored" },
-  { feature: "Equipment age", competitor: "5–10 year old trucks", thind: "2020-2022 Cascadias" },
+  { feature: "Equipment age", competitor: "Whatever is on the yard", thind: EQUIPMENT.short },
   { feature: "Dispatch response", competitor: "Call center queue", thind: "Direct line, real person" },
-  { feature: "Pay timeline", competitor: "Net 30–45 days", thind: "Weekly direct deposit" },
+  { feature: "Pay timeline", competitor: "Whenever the invoice clears", thind: "Weekly direct deposit" },
   { feature: "Hidden fees", competitor: "ELD, compliance, admin", thind: "None" },
 ] as const
 
@@ -48,7 +49,7 @@ export const WhySwitch = () => {
               What you&apos;re comparing
             </span>
             <span className="font-display text-m-micro font-bold uppercase tracking-[0.15em] text-ink-3">
-              Mega carriers
+              What you may be used to
             </span>
             <span className="font-display text-m-micro font-bold uppercase tracking-[0.15em] text-signal">
               Thind Transport
@@ -69,7 +70,7 @@ export const WhySwitch = () => {
 
                 <span className="flex flex-col">
                   <span className="font-display text-m-micro uppercase tracking-[0.12em] text-ink-3 md:hidden">
-                    Mega carriers
+                    What you may be used to
                   </span>
                   <span className="text-m-body text-ink-3">{row.competitor}</span>
                 </span>

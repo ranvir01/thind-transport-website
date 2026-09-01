@@ -177,7 +177,7 @@ suite("the driver's wage is the wage the software would pay", () => {
     // right; a percentage owner-operator really does share the detention.
     const [{ cents }] = await query<{ cents: string }>(
       `SELECT COALESCE(SUM(
-                ROUND((l.linehaul_cents + COALESCE((SELECT SUM((a->>'amountCents')::int)
+                ROUND((l.linehaul_cents + COALESCE((SELECT SUM((a->>'amount_cents')::int)
                          FROM jsonb_array_elements(l.accessorials) a), 0)) * 0.90)
                 + l.fuel_surcharge_cents), 0)::bigint AS cents
          FROM hub.loads l
