@@ -4,12 +4,14 @@ import { useEffect, useState } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import {
-  CalendarClock, CircleDollarSign, House, LayoutGrid, Package, Truck, Users,
+  CalendarClock, ChevronDown, CircleDollarSign, House, LayoutGrid, Package,
+  PanelLeftClose, PanelLeftOpen, Truck, Users,
   type LucideIcon,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { PRODUCT } from "@/lib/hub/product"
-import { hubPrimarySections, hubUtilityLinks, isNavActive } from "@/lib/hub/navigation"
+import { hubPrimarySections, hubUtilityGroups, isNavActive } from "@/lib/hub/navigation"
+import { setSidebarCollapsedAction } from "@/app/hub/_actions/prefs"
 import { NotificationsBell } from "@/components/hub/NotificationsBell"
 import { OfficeOfflineBanner } from "@/components/hub/OfficeOfflineBanner"
 import { CommandPalette } from "@/components/hub/CommandPalette"
@@ -45,6 +47,8 @@ export function HubShell({
   smallCarrier,
   accent,
   inboxCount = 0,
+  railCollapsed = false,
+  setupComplete = false,
   children,
 }: {
   user: { name: string; role: string; carrierName?: string }
@@ -54,6 +58,10 @@ export function HubShell({
   accent?: string | null
   /** Emailed rate cons waiting for review — badged on Loads → Inbox. */
   inboxCount?: number
+  /** Per-user preference (hub.user_preferences). The desktop sidebar starts as the 56px rail. */
+  railCollapsed?: boolean
+  /** Core setup checklist done — the Setup group folds up so it stops taking scan time. */
+  setupComplete?: boolean
   children: React.ReactNode
 }) {
   const pathname = usePathname()
@@ -68,8 +76,26 @@ export function HubShell({
   const sections = hubPrimarySections(smallCarrier)
   const section = sections.find((s) => s.match(pathname)) ?? sections[0]!
   const isOwner = user.role === "owner"
-  const utility = hubUtilityLinks(smallCarrier).filter((l) => !l.ownerOnly || isOwner)
+  const groups = hubUtilityGroups(smallCarrier)
+    .map((g) => ({ ...g, links: g.links.filter((l) => !l.ownerOnly || isOwner) }))
+    .filter((g) => g.links.length > 0)
   const mobilePrimaries = sections.slice(0, 5)
+
+  // Collapsed = the 56px icon rail. Local state flips instantly; the
+  // preference write is fire-and-forget — a failed save costs one reload of
+  // width, not a broken sidebar.
+  const [collapsed, setCollapsed] = useState(railCollapsed)
+  const toggleRail = () => {
+    const next = !collapsed
+    setCollapsed(next)
+    void setSidebarCollapsedAction(next)
+  }
+  // Setup folds once the core checklist is done, but never hides the page you
+  // are on: an active Setup link keeps its group open.
+  const setupHasActive = groups.some(
+    (g) => g.id === "setup" && g.links.some((l) => isNavActive(pathname, l.href))
+  )
+  const [setupOpen, setSetupOpen] = useState(!setupComplete)
 
   return (
     <div className="hauldesk-shell min-h-screen bg-bg text-fg">
@@ -148,53 +174,151 @@ export function HubShell({
       </div>
 
       <div className="flex">
-        <aside className="hidden md:flex w-[212px] shrink-0 flex-col border-r border-border bg-surface sticky top-[calc(3.5rem+env(safe-area-inset-top,0px))] self-start max-h-[calc(100vh-3.5rem-env(safe-area-inset-top,0px))] overflow-y-auto">
-          <div className="p-3">
-            <p className="px-2 pb-2 text-[11px] font-semibold uppercase tracking-wide text-fg-3">
-              {section.label}
-            </p>
-            <div className="space-y-0.5">
-              {section.sub.map((link) => {
-                const active = isNavActive(pathname, link.href)
+        <aside
+          data-rail={collapsed ? "collapsed" : "expanded"}
+          className={cn(
+            "hidden md:flex shrink-0 flex-col border-r border-border bg-surface sticky top-[calc(3.5rem+env(safe-area-inset-top,0px))] self-start max-h-[calc(100vh-3.5rem-env(safe-area-inset-top,0px))] overflow-y-auto transition-[width] duration-standard",
+            collapsed ? "w-14" : "w-[212px]"
+          )}
+        >
+          {collapsed ? (
+            /* The rail: six primary sections as icons. Sub-links have no icons
+               of their own, so the rail shows sections, not the active
+               section's pages — one click on a section lands on its first page,
+               a second click on the toggle brings the pages back. */
+            <nav className="flex flex-1 flex-col items-center gap-1 p-2" aria-label="Sections">
+              {sections.map((primary) => {
+                const active = primary.id === section.id
+                const Icon = SECTION_ICONS[primary.id] ?? LayoutGrid
+                const badge = primary.id === "loads" && inboxCount > 0
                 return (
                   <Link
-                    key={link.href}
-                    href={link.href}
+                    key={primary.id}
+                    href={primary.sub[0]?.href ?? "/hub"}
+                    title={primary.label}
+                    aria-label={primary.label}
+                    aria-current={active ? "page" : undefined}
                     className={cn(
-                      "relative block rounded-control px-2.5 py-2 text-sm font-medium",
-                      active ? "bg-accent-soft text-accent-text" : "text-fg-2 hover:bg-hover hover:text-fg"
+                      "relative flex h-10 w-10 items-center justify-center rounded-control",
+                      active ? "bg-accent-soft text-accent-text" : "text-fg-3 hover:bg-hover hover:text-fg"
                     )}
                   >
-                    {active ? (
+                    <Icon className="h-5 w-5" strokeWidth={active ? 2.3 : 1.9} />
+                    {badge ? (
                       <span
                         aria-hidden
-                        className="hub-pop-enter absolute left-0 top-1/2 h-4 w-[3px] -translate-y-1/2 rounded-pill bg-accent"
+                        className="absolute right-1 top-1 h-2 w-2 rounded-pill bg-accent ring-2 ring-surface"
                       />
                     ) : null}
-                    {link.label}
-                    {link.href === "/hub/inbox" && inboxCount > 0 ? <NavCount n={inboxCount} /> : null}
                   </Link>
                 )
               })}
+              <span aria-hidden className="my-1 h-px w-6 bg-border" />
+              <button
+                type="button"
+                onClick={toggleRail}
+                title="More"
+                aria-label="Show more links"
+                className="flex h-10 w-10 items-center justify-center rounded-control text-fg-3 hover:bg-hover hover:text-fg"
+              >
+                <LayoutGrid className="h-5 w-5" strokeWidth={1.9} />
+              </button>
+            </nav>
+          ) : (
+            <div className="p-3">
+              <p className="px-2 pb-2 text-[11px] font-semibold uppercase tracking-wide text-fg-3">
+                {section.label}
+              </p>
+              <div className="space-y-0.5">
+                {section.sub.map((link) => {
+                  const active = isNavActive(pathname, link.href)
+                  return (
+                    <Link
+                      key={link.href}
+                      href={link.href}
+                      className={cn(
+                        "relative block rounded-control px-2.5 py-2 text-sm font-medium",
+                        active ? "bg-accent-soft text-accent-text" : "text-fg-2 hover:bg-hover hover:text-fg"
+                      )}
+                    >
+                      {active ? (
+                        <span
+                          aria-hidden
+                          className="hub-pop-enter absolute left-0 top-1/2 h-4 w-[3px] -translate-y-1/2 rounded-pill bg-accent"
+                        />
+                      ) : null}
+                      {link.label}
+                      {link.href === "/hub/inbox" && inboxCount > 0 ? <NavCount n={inboxCount} /> : null}
+                    </Link>
+                  )
+                })}
+              </div>
+
+              {groups.map((group) => {
+                const foldable = group.id === "setup"
+                const open = !foldable || setupOpen || setupHasActive
+                return (
+                  <div key={group.id} data-nav-group={group.id}>
+                    {foldable ? (
+                      <button
+                        type="button"
+                        onClick={() => setSetupOpen((v) => !v)}
+                        aria-expanded={open}
+                        className="flex w-full items-center justify-between px-2 pt-4 pb-2 text-[11px] font-semibold uppercase tracking-wide text-fg-3 hover:text-fg-2"
+                      >
+                        {group.label}
+                        <ChevronDown
+                          className={cn("h-3.5 w-3.5 transition-transform duration-fast", open ? "" : "-rotate-90")}
+                          aria-hidden
+                        />
+                      </button>
+                    ) : (
+                      <p className="px-2 pt-4 pb-2 text-[11px] font-semibold uppercase tracking-wide text-fg-3">
+                        {group.label}
+                      </p>
+                    )}
+                    {open ? (
+                      <div className="space-y-0.5">
+                        {group.links.map((link) => (
+                          <Link
+                            key={link.href}
+                            href={link.href}
+                            data-tour={link.href === "/hub/guide" ? "hub-setup-guide" : undefined}
+                            className={cn(
+                              "block rounded-control px-2.5 py-2 text-sm",
+                              isNavActive(pathname, link.href)
+                                ? "bg-accent-soft text-accent-text font-medium"
+                                : "text-fg-3 hover:bg-hover hover:text-fg-2"
+                            )}
+                          >
+                            {link.label}
+                          </Link>
+                        ))}
+                      </div>
+                    ) : null}
+                  </div>
+                )
+              })}
             </div>
-            <p className="px-2 pt-4 pb-2 text-[11px] font-semibold uppercase tracking-wide text-fg-3">More</p>
-            <div className="space-y-0.5">
-              {utility.map((link) => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  data-tour={link.href === "/hub/guide" ? "hub-setup-guide" : undefined}
-                  className={cn(
-                    "block rounded-control px-2.5 py-2 text-sm",
-                    isNavActive(pathname, link.href)
-                      ? "bg-accent-soft text-accent-text font-medium"
-                      : "text-fg-3 hover:bg-hover hover:text-fg-2"
-                  )}
-                >
-                  {link.label}
-                </Link>
-              ))}
-            </div>
+          )}
+
+          {/* The toggle sits at the foot of the sidebar in both states, so the
+              control that changes the width is in the same place either way. */}
+          <div className={cn("mt-auto border-t border-border p-2", collapsed ? "flex justify-center" : "")}>
+            <button
+              type="button"
+              onClick={toggleRail}
+              aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+              aria-expanded={!collapsed}
+              data-testid="sidebar-toggle"
+              className={cn(
+                "flex items-center gap-2 rounded-control text-[12.5px] font-medium text-fg-3 hover:bg-hover hover:text-fg",
+                collapsed ? "h-10 w-10 justify-center" : "h-9 w-full px-2.5"
+              )}
+            >
+              {collapsed ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
+              {collapsed ? null : "Collapse"}
+            </button>
           </div>
         </aside>
 

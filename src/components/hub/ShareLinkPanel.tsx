@@ -1,10 +1,17 @@
 "use client"
 
-import { useState, useTransition } from "react"
+import { useState, useSyncExternalStore, useTransition } from "react"
 import { toast } from "sonner"
-import { Copy, Link2, Loader2, RefreshCw, XCircle } from "lucide-react"
+import { Copy, Link2, Loader2, RefreshCw, Share2, XCircle } from "lucide-react"
 import { createShareLinkAction, revokeShareLinkAction, renewShareLinkAction } from "@/app/hub/_actions/loads"
 import { Panel } from "@/components/hub/ui"
+import { canShareLinks, shareLink } from "@/lib/hub/pwa"
+
+// Hydration-safe capability read: the server can't know about share sheets,
+// so it renders none and the client fills in after mount.
+const subscribeNever = () => () => {}
+const readCanShare = () => canShareLinks()
+const readCanShareOnServer = () => false
 
 export interface ShareLinkRow {
   id: string
@@ -67,6 +74,17 @@ export function ShareLinkPanel({ loadId, links }: { loadId: string; links: Share
     )
   }
 
+  // On a phone this is the whole point: the tracking link goes straight into
+  // the text thread with the broker instead of through a copy-paste dance.
+  const shareable = useSyncExternalStore(subscribeNever, readCanShare, readCanShareOnServer)
+  const send = async (token: string) => {
+    const url = `${window.location.origin}/track/${token}`
+    const outcome = await shareLink({ title: "Load tracking", text: "Live tracking for your load:", url })
+    if (outcome === "shared") toast.success("Sent — the broker has the tracking link")
+    else if (outcome === "copied") toast.success("Link copied — send it to the broker")
+    else if (outcome === "failed") toast.error("Could not share the link")
+  }
+
   // Not-revoked links stay listed even past expiry so office can renew one
   // instead of it silently going dead and a dispatcher minting a duplicate.
   const active = links.filter((l) => !l.revoked_at)
@@ -101,6 +119,15 @@ export function ShareLinkPanel({ loadId, links }: { loadId: string; links: Share
               <code className="flex-1 truncate rounded-lg bg-surface-2 px-2.5 py-2 text-body-xs text-fg-2">
                 /track/{link.token.slice(0, 12)}…
               </code>
+              {shareable ? (
+                <button
+                  aria-label="Send link"
+                  onClick={() => send(link.token)}
+                  className="flex h-10 w-10 items-center justify-center rounded-lg bg-accent text-accent-fg hover:bg-accent-hover"
+                >
+                  <Share2 className="h-4 w-4" />
+                </button>
+              ) : null}
               <button
                 aria-label="Copy link"
                 onClick={() => copy(link.token)}
@@ -168,9 +195,27 @@ export function ShareLinkPanel({ loadId, links }: { loadId: string; links: Share
         </ul>
       )}
       {latestToken ? (
-        <p className="mt-3 rounded-lg border border-accent-soft bg-accent-soft p-2.5 text-body-xs text-accent-text break-all">
-          {typeof window !== "undefined" ? `${window.location.origin}/track/${latestToken}` : `/track/${latestToken}`}
-        </p>
+        <div className="mt-3 rounded-lg border border-accent-soft bg-accent-soft p-2.5">
+          <p className="text-body-xs text-accent-text break-all">
+            {typeof window !== "undefined" ? `${window.location.origin}/track/${latestToken}` : `/track/${latestToken}`}
+          </p>
+          <div className="mt-2 flex gap-2">
+            {shareable ? (
+              <button
+                onClick={() => send(latestToken)}
+                className="inline-flex min-h-[36px] items-center gap-1.5 rounded-lg bg-accent px-3 text-xs font-semibold text-accent-fg hover:bg-accent-hover"
+              >
+                <Share2 className="h-3.5 w-3.5" /> Send to broker
+              </button>
+            ) : null}
+            <button
+              onClick={() => copy(latestToken)}
+              className="inline-flex min-h-[36px] items-center gap-1.5 rounded-lg border border-border bg-surface px-3 text-xs font-semibold text-fg-2 hover:bg-hover"
+            >
+              <Copy className="h-3.5 w-3.5" /> Copy
+            </button>
+          </div>
+        </div>
       ) : null}
     </Panel>
   )

@@ -4,7 +4,7 @@
  * assign/reschedule, time-off blocks, availability forecasts, backhaul hints.
  */
 import { query } from "./db"
-import { haversineMiles } from "./geo"
+import { estimateArrival } from "./eta"
 import { lanesOutOf } from "./lanes"
 import { approvedTimeOffInWindow } from "./timeoff"
 import type { Lane, TimeOffRequest } from "./types"
@@ -179,8 +179,9 @@ export async function plannerData(carrierId: string, weekStartISO?: string): Pro
 
 /**
  * When does this truck go empty? Last delivery appointment, or — if the load
- * is rolling and we know the truck's position — a drive-time estimate
- * (haversine × 1.2 road factor ÷ 47 mph average, clearly an estimate).
+ * is rolling and we know the truck's position — the shared drive-time estimate
+ * (eta.ts: road factor, average speed, and a stale-ping guard that returns
+ * null rather than trusting a position from yesterday).
  */
 async function emptyEta(
   carrierId: string,
@@ -203,11 +204,10 @@ async function emptyEta(
      ORDER BY s.sequence DESC LIMIT 1`,
     [carrierId, lastBlock.id]
   )
-  if (!ping || destStop?.lat == null || destStop?.lng == null) return apptEnd
-
-  const miles = haversineMiles(ping.lat, ping.lng, destStop.lat, destStop.lng) * 1.2
-  const driveHours = miles / 47
-  const eta = new Date(new Date(ping.ts).getTime() + driveHours * 3600_000)
-  // Whichever is later: the appointment or the physics.
-  return eta > apptEnd ? eta : apptEnd
+  const physics = estimateArrival({ ping, dest: destStop })
+  if (!physics) return apptEnd
+  // Whichever is later: the appointment or the physics. This is the planner's
+  // own rule — a truck cannot go empty before its delivery window — and it is
+  // exactly why the broker-facing ETA does NOT apply it.
+  return physics.at > apptEnd ? physics.at : apptEnd
 }

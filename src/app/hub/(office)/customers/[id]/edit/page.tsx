@@ -20,6 +20,7 @@ export default async function EditCustomerPage({ params }: { params: Promise<{ i
     billing_email: customer.billing_email ?? "",
     billing_address: customer.billing_address ?? "",
     phone: customer.phone ?? "",
+    status_updates_email: customer.status_updates_email ?? "",
     payment_terms_days: customer.payment_terms_days.toString(),
     credit_limit: customer.credit_limit_cents != null ? (customer.credit_limit_cents / 100).toFixed(2) : "",
     factored: customer.factored,

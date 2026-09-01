@@ -3,10 +3,24 @@
  * Maps existing routes; placeholder labels point at nearest live screen.
  */
 
+export type HubUtilityGroupId = "work" | "reference" | "setup"
+
 export interface HubNavLink {
   href: string
   label: string
   ownerOnly?: boolean
+  /**
+   * Utility links only. Daily work, things you look up, and things you do
+   * once. The flat list stays the source of truth (⌘K reads it); the sidebar
+   * renders the groups.
+   */
+  group?: HubUtilityGroupId
+}
+
+export interface HubUtilityGroup {
+  id: HubUtilityGroupId
+  label: string
+  links: HubNavLink[]
 }
 
 export interface HubPrimarySection {
@@ -97,28 +111,41 @@ const ALL_PRIMARY_SECTIONS: HubPrimarySection[] = [
   },
 ]
 
+/**
+ * Thirteen-plus links in one flat "More" list mixed daily work (Messages,
+ * Compliance) with one-time setup (Import, Carrier packet) and reference
+ * (Toolbox, Help), so the scan cost was paid on every visit. The groups fix
+ * full mode; small-carrier mode already trims. Order within a group is the
+ * order it renders.
+ */
 const ALL_UTILITY_LINKS: HubNavLink[] = [
-  { href: "/hub/leads", label: "Driver leads" },
-  { href: "/hub/outreach", label: "Outreach" },
-  { href: "/hub/compliance", label: "Compliance" },
-  { href: "/hub/safety", label: "Safety" },
-  { href: "/hub/reports", label: "Reports" },
-  { href: "/hub/messages", label: "Messages" },
-  { href: "/hub/tasks", label: "Tasks" },
-  { href: "/hub/guide", label: "Setup guide" },
-  { href: "/hub/toolbox", label: "Toolbox" },
+  { href: "/hub/leads", label: "Driver leads", group: "work" },
+  { href: "/hub/outreach", label: "Outreach", group: "work" },
+  { href: "/hub/compliance", label: "Compliance", group: "work" },
+  { href: "/hub/safety", label: "Safety", group: "work" },
+  { href: "/hub/reports", label: "Reports", group: "work" },
+  { href: "/hub/messages", label: "Messages", group: "work" },
+  { href: "/hub/tasks", label: "Tasks", group: "work" },
+  { href: "/hub/toolbox", label: "Toolbox", group: "reference" },
   // The simulation existed at /hub/sandbox with nothing linking to it, so the
   // only way in was typing the URL. It is the safest place to learn the
   // product — a seeded world you can break without touching real freight.
-  { href: "/hub/sandbox", label: "Practice mode" },
-  { href: "/hub/help", label: "Help" },
-  { href: "/hub/setup", label: "Smart Setup" },
-  { href: "/hub/import", label: "Import" },
-  { href: "/hub/settings/packet", label: "Carrier packet" },
-  { href: "/hub/settings/app", label: "Phone app" },
-  { href: "/hub/settings/integrations", label: "Integrations", ownerOnly: true },
-  { href: "/hub/settings/users", label: "Settings", ownerOnly: true },
+  { href: "/hub/sandbox", label: "Practice mode", group: "reference" },
+  { href: "/hub/help", label: "Help", group: "reference" },
+  { href: "/hub/guide", label: "Setup guide", group: "setup" },
+  { href: "/hub/setup", label: "Smart Setup", group: "setup" },
+  { href: "/hub/import", label: "Import", group: "setup" },
+  { href: "/hub/settings/packet", label: "Carrier packet", group: "setup" },
+  { href: "/hub/settings/app", label: "Phone app", group: "setup" },
+  { href: "/hub/settings/integrations", label: "Integrations", ownerOnly: true, group: "setup" },
+  { href: "/hub/settings/users", label: "Settings", ownerOnly: true, group: "setup" },
 ]
+
+const UTILITY_GROUP_LABELS: Record<HubUtilityGroupId, string> = {
+  work: "Work",
+  reference: "Reference",
+  setup: "Setup",
+}
 
 /**
  * Small-carrier mode trims the nav + ⌘K down to what a single small trucking
@@ -161,6 +188,14 @@ export function hubPrimarySections(smallCarrier: boolean): HubPrimarySection[] {
 
 export function hubUtilityLinks(smallCarrier: boolean): HubNavLink[] {
   return ALL_UTILITY_LINKS.filter((link) => shownInNav(link.href, smallCarrier))
+}
+
+/** The same links as hubUtilityLinks, grouped for the sidebar. Empty groups are dropped. */
+export function hubUtilityGroups(smallCarrier: boolean): HubUtilityGroup[] {
+  const links = hubUtilityLinks(smallCarrier)
+  return (["work", "reference", "setup"] as const)
+    .map((id) => ({ id, label: UTILITY_GROUP_LABELS[id], links: links.filter((l) => l.group === id) }))
+    .filter((g) => g.links.length > 0)
 }
 
 /** Env-default snapshots — non-layout consumers that predate per-tenant flags. */

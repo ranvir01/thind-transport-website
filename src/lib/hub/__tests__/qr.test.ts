@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 import jsQR from "jsqr"
-import { qrMatrix, qrSvgPath } from "../qr"
+import { QR_MAX_BYTES, qrMatrix, qrSvgPath } from "../qr"
 
 /** Rasterize a module matrix to RGBA pixels and decode with a real reader. */
 function decode(matrix: boolean[][], scale = 4): string | null {
@@ -27,13 +27,23 @@ describe("qrMatrix", () => {
     expect(decode(qrMatrix(url))).toBe(url)
   })
 
-  it("round-trips every version in range (1 through 10)", () => {
+  it("round-trips every version in range (1 through 20)", () => {
     // Byte capacities at ECC M force specific versions; cover each once.
-    const lengths = [10, 20, 40, 60, 80, 100, 120, 150, 180, 210]
+    // v11+ exercise the multi-group interleave and the 16-bit count field.
+    const lengths = [10, 20, 40, 60, 80, 100, 120, 150, 180, 210, 230, 270, 310, 350, 400, 440, 480, 540, 600, 650]
     for (const len of lengths) {
-      const text = "x".repeat(len)
+      // Varied bytes, not a run of one character — a wrong EC table row can
+      // still decode a degenerate payload by luck.
+      const text = Array.from({ length: len }, (_, i) => String.fromCharCode(33 + ((i * 7) % 90))).join("")
       expect(decode(qrMatrix(text)), `len=${len}`).toBe(text)
     }
+  })
+
+  it("fits a signed driver-invite URL, which is ~3x a normal hub link", () => {
+    const token = `${"A".repeat(150)}.${"b".repeat(43)}` // base64url body + HMAC, realistic shape
+    const url = `https://thindtransport.com/hub/driver-invite/${token}`
+    expect(url.length).toBeGreaterThan(213) // the old cap this feature blew past
+    expect(decode(qrMatrix(url))).toBe(url)
   })
 
   it("round-trips non-ASCII content as UTF-8", () => {
@@ -50,8 +60,11 @@ describe("qrMatrix", () => {
     expect(qrMatrix("https://thindtransport.com/hub")).toEqual(qrMatrix("https://thindtransport.com/hub"))
   })
 
-  it("rejects input beyond version 10 capacity", () => {
-    expect(() => qrMatrix("x".repeat(300))).toThrow(/too long/)
+  it("rejects input beyond version 20 capacity, and accepts exactly the cap", () => {
+    expect(QR_MAX_BYTES).toBe(666)
+    expect(() => qrMatrix("x".repeat(QR_MAX_BYTES + 1))).toThrow(/too long/)
+    const atCap = "y".repeat(QR_MAX_BYTES)
+    expect(decode(qrMatrix(atCap))).toBe(atCap)
   })
 
   it("has finder patterns in three corners", () => {

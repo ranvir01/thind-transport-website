@@ -1,5 +1,50 @@
 import { describe, expect, it, vi } from "vitest"
-import { applyAppBadge, clearShellCache } from "../pwa"
+import { applyAppBadge, canShareLinks, clearShellCache, shareLink } from "../pwa"
+
+describe("shareLink", () => {
+  const data = { title: "Load tracking", url: "https://example.com/track/abc" }
+
+  it("opens the native sheet when the device has one", async () => {
+    const share = vi.fn(async () => {})
+    const writeText = vi.fn(async () => {})
+    expect(await shareLink(data, { share, clipboard: { writeText } })).toBe("shared")
+    expect(share).toHaveBeenCalledWith(data)
+    expect(writeText).not.toHaveBeenCalled()
+  })
+
+  it("treats closing the sheet as cancelled, not failure — and copies nothing", async () => {
+    const share = vi.fn(async () => {
+      throw Object.assign(new Error("closed"), { name: "AbortError" })
+    })
+    const writeText = vi.fn(async () => {})
+    expect(await shareLink(data, { share, clipboard: { writeText } })).toBe("cancelled")
+    expect(writeText).not.toHaveBeenCalled()
+  })
+
+  it("falls back to the clipboard where there is no sheet, or the sheet refuses the data", async () => {
+    const writeText = vi.fn(async () => {})
+    expect(await shareLink(data, { clipboard: { writeText } })).toBe("copied")
+    expect(writeText).toHaveBeenCalledWith(data.url)
+    const share = vi.fn(async () => {})
+    expect(await shareLink(data, { share, canShare: () => false, clipboard: { writeText } })).toBe("copied")
+    expect(share).not.toHaveBeenCalled()
+  })
+
+  it("reports failure when neither route exists or the clipboard rejects", async () => {
+    expect(await shareLink(data, {})).toBe("failed")
+    expect(await shareLink(data, undefined)).toBe("failed")
+    const writeText = vi.fn(async () => {
+      throw new Error("denied")
+    })
+    expect(await shareLink(data, { clipboard: { writeText } })).toBe("failed")
+  })
+
+  it("canShareLinks is a plain capability check", () => {
+    expect(canShareLinks({ share: async () => {} })).toBe(true)
+    expect(canShareLinks({})).toBe(false)
+    expect(canShareLinks(undefined)).toBe(false)
+  })
+})
 
 describe("applyAppBadge", () => {
   it("sets the badge for a positive count and clears it at zero", () => {

@@ -39,7 +39,7 @@ export default async function TrackPage({ params }: { params: Promise<{ token: s
     )
   }
 
-  const { load, stops, carrierName, latestPosition } = tracked
+  const { load, stops, carrierName, latestPosition, eta } = tracked
   const status = publicStatus(load.status)
   const cancelled = load.status === "cancelled"
   const live = !cancelled && status.index < PUBLIC_FLOW.length - 1
@@ -78,6 +78,15 @@ export default async function TrackPage({ params }: { params: Promise<{ token: s
                   </span>
                 ) : null}
               </p>
+              {eta ? (
+                <p
+                  className={`mt-1.5 text-sm font-semibold ${eta.late ? "text-amber-300" : "text-white"}`}
+                  data-testid="track-eta"
+                >
+                  {eta.stopType === "pickup" ? "Arriving at pickup" : "Arriving"} {eta.label}
+                  {eta.late ? <span className="font-normal text-amber-200/80"> · running behind the appointment</span> : null}
+                </p>
+              ) : null}
             </div>
           )}
 

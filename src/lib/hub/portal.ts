@@ -8,6 +8,8 @@ import { randomBytes } from "crypto"
 import path from "path"
 import bcrypt from "bcrypt"
 import { query, queryOne } from "./db"
+import { loadEta } from "./eta-load"
+import { formatEta } from "./eta"
 import { stateForPoint } from "./geo"
 import { assertCarrierRefs } from "./tenancy"
 
@@ -133,7 +135,7 @@ const PORTAL_LOAD_SELECT = `
 /** City-level position hint for an in-transit load (latest ping → state only, never raw GPS). */
 async function positionHint(
   carrierId: string,
-  load: { status: string; truck_id: string | null; dest_city: string | null }
+  load: { id: string; status: string; truck_id: string | null; dest_city: string | null }
 ): Promise<string | null> {
   if (load.status !== "in_transit" || !load.truck_id) return null
   const ping = await queryOne<{ lat: number; lng: number; ts: string }>(
@@ -143,7 +145,11 @@ async function positionHint(
   )
   if (!ping) return null
   const state = stateForPoint(ping.lat, ping.lng)
-  return `${state ? `In ${state}` : "On the road"}, heading to ${load.dest_city ?? "delivery"} — updated ${new Date(ping.ts).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}`
+  // Same estimate the /track page shows; null when not trustworthy, in which
+  // case the hint simply has no ETA clause rather than a guessed one.
+  const arrival = await loadEta(carrierId, load.id).catch(() => null)
+  const etaClause = arrival ? `, ETA ${formatEta(arrival.eta)}` : ""
+  return `${state ? `In ${state}` : "On the road"}, heading to ${load.dest_city ?? "delivery"}${etaClause} — updated ${new Date(ping.ts).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}`
 }
 
 /** Loads visible to a portal account: their customer's only, no money/driver fields. */

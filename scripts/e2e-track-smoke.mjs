@@ -62,6 +62,36 @@ async function main() {
     const text1 = await page.evaluate(() => document.body.innerText)
     check(text1.includes(liveRef), `page shows load reference (${liveRef})`)
     check(/In Transit|last seen near/i.test(text1), "status shows In Transit + last-seen position")
+    // #8: the shared ETA, both halves of its contract. The seed's newest ping
+    // is hours to days old by the time a smoke runs, and a stale position must
+    // yield NO estimate — a confidently wrong arrival time is worse than none.
+    // Then freshen that one ping and the estimate must appear: rounded to
+    // 5 min and prefixed "~", never a to-the-minute promise.
+    const readEta = () => page.$eval('[data-testid="track-eta"]', (el) => el.textContent.trim()).catch(() => null)
+    const pingAge = await db.query(
+      `SELECT round(extract(epoch from (now() - max(p.ts))) / 60) AS min
+         FROM hub.position_pings p JOIN hub.loads l ON l.truck_id = p.truck_id AND l.carrier_id = p.carrier_id
+        WHERE l.reference = $1`,
+      [liveRef]
+    )
+    const staleMin = Number(pingAge.rows[0]?.min ?? 0)
+    const staleEta = await readEta()
+    if (staleMin > 6 * 60) {
+      check(staleEta === null, `no ETA from a ${Math.round(staleMin / 60)}h-old ping (${staleEta})`)
+    } else {
+      console.log(`   (ping is only ${staleMin} min old — stale-guard half not exercised this run)`)
+    }
+    await db.query(
+      `UPDATE hub.position_pings SET ts = now()
+        WHERE id = (SELECT p.id FROM hub.position_pings p
+                      JOIN hub.loads l ON l.truck_id = p.truck_id AND l.carrier_id = p.carrier_id
+                     WHERE l.reference = $1 ORDER BY p.ts DESC LIMIT 1)`,
+      [liveRef]
+    )
+    await page.reload({ waitUntil: "networkidle2" })
+    const etaLine = await readEta()
+    check(!!etaLine && /^Arriving ~\S/.test(etaLine), `fresh ping renders an estimate (${etaLine})`)
+    check(!!etaLine && !/\d:\d[1-46-9]\b/.test(etaLine), "ETA is rounded to five minutes")
 
     const headingColor1 = await page.evaluate(() => {
       const h1 = document.querySelector("h1")
