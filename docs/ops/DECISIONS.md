@@ -226,5 +226,27 @@ ventures. Claude 9-task fleet unchanged; same ticket never on two plans.
 B) Keep the four-bot freeze.
 Answer: **A — owner 2026-09-01.** Setup: `docs/grok-bots/SETUP.md`. D-007
 stands for scheduled git. D-012 stands for the GitHub `should` queue. D-014
-stands for Airtable out.
+stands for Airtable out. D-016 amends the Grok-facing names and Rav/Bee/Fire
+Cursor rules without raising the 14-seat ceiling.
+
+## D-016 | filed:2026-09-01 | class:fleet
+Q: Strip the TMS product code-name from Grok Bot chat (software still under
+development); let Rav hunt and apply with Auto Review; run BLS fully on
+Cursor IDE (no Claude Code); make Fire Cursor a written SOP so ICs do not
+wait to be taught; paste full group charters; give live gogo a GOGO-START
+pack that is owner-yes for the 14 seats?
+A) Yes — group **Hub**, board `/workspace/hub/board.md`. Never name the product
+or which AI tool wrote the code in LinkedIn/email/chat. Rav applies (proof-only
+claims; Auto Review holds send). Bee Fire Cursors `ranvir01/bls-website` and
+never opens `claude.ai/code`. Dex/Rex/Bee clone the last green Cursor cloud
+agent or New agent at `cursor.com/agents` (optional GitHub `@cursor`; API only
+with a secret card). Teach a task is optional after first green. GROUPS.md
+charters are full 6-part blocks. `docs/grok-bots/GOGO-START.md` pasted into
+live gogo **is** the yes for those 14 seats; a 15th still needs a quoted yes.
+GitHub `venture:*` labels stay as routing tokens in SPAWN.md — bots do not
+speak them. Claude 9-task fleet on the home repo unchanged.
+[owner request 2026-09-01]
+B) Keep D-015 names and Rav as draft-only.
+Answer: **A — owner 2026-09-01.** Setup: `docs/grok-bots/SETUP.md` +
+`docs/grok-bots/GOGO-START.md`.
 

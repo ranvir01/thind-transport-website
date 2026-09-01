@@ -89,29 +89,34 @@ They cannot see each other's sessions **across platforms** (Cursor cannot read a
 Claude transcript; neither can read a Grok Bot thread). The **commit body** is the
 bus between platforms (`Backlog:` trailers, `npm run agent:backlog`). **One branch, one writer.** If a fix already exists on another branch, name it in `Backlog:` and take the next item.
 
-**Grok Bots among themselves can share a thread.** The live team (D-015) is
-**14 named Bots in six groups** (HQ, LoadOff, Money, Career, Labs, Clients):
-gogo (org CoS), Finch (FinOps 70/90), Wright (spawn after owner yes), Scout
-(X bookmarks), Em (LoadOff Eng Mgr — only writer of `/workspace/loadoff/board.md`),
-Dex + Rex (ICs, Fire Cursor), Steve (SRE), Jeff (RevOps), Rav (Career), Labs +
-Ridge (demos + models), Bee + My (quiet venture CoS). Paste files:
-[`docs/grok-bots/SETUP.md`](../grok-bots/SETUP.md) is the one owner file. Grok
-never writes git. Live Grok routines (gogo's GitHub listener, Finch's morning
-usage line, Scout weekday 16:00 PT, Jeff's daily 8:30pm PT loadboard) stay off
-this table's write clock. Boards live on the shared Grok computer; this repo's
+**Grok Bots among themselves can share a thread.** The live team (D-015 /
+D-016) is **14 named Bots in six groups** (HQ, Hub, Money, Career, Labs,
+Clients): gogo (org CoS), Finch (FinOps 70/90), Wright (14 seats from
+GOGO-START; 15th after owner yes), Scout (X bookmarks, state-file rundown),
+Em (Hub Eng Mgr — only writer of `/workspace/hub/board.md`), Dex + Rex (ICs,
+Fire Cursor from a written SOP), Steve (SRE), Jeff (RevOps), Rav (Talent Scout
+— hunt + apply, Auto Review), Labs + Ridge (demos + models), Bee (BLS,
+Cursor-only) + My (quiet MyCO CoS). Paste files:
+[`docs/grok-bots/SETUP.md`](../grok-bots/SETUP.md) is the one owner file;
+[`GOGO-START.md`](../grok-bots/GOGO-START.md) is what Ranvir pastes into live
+gogo. Grok never writes git and never names the TMS product in chat. Live Grok
+routines (gogo's GitHub listener, Finch's morning usage line, Scout weekday
+16:00 PT, Jeff's daily 8:30pm PT loadboard, Rav's weekday hunt) stay off this
+table's write clock. Boards live on the shared Grok computer; this repo's
 `should` issues, `Backlog:` trailers, and PR bodies are intake.
 
 **D-007 (scheduled code):** Claude Corps still owns scheduled git and long
-prompts. **D-015 (dispatch):** Em runs a one-item LoadOff board — a bounded
-repo fix becomes a **Cursor cloud agent** via skill Fire Cursor (Goal / Files /
-Done when / Verify), lands as a `cursor/*` PR, gets reviewed by Grok and
-**never merged** by it. Dex/Rex start the agent in the browser after the
-teach-a-task (D-011's “Ranvir clicks” is reversed). Finch caps the weekly
-count (start 6/week combined) and may raise or cut it. Same ticket never on
-Cursor and the Claude 9-task fleet. SMTP 535, Form 2290, and the AR Payments
-bank account never go to Claude or a cloud agent. Setup:
-[`docs/grok-bots/SETUP.md`](../grok-bots/SETUP.md). Queue: collaborator-labeled
-`should` issues ([`PORTFOLIO.md`](PORTFOLIO.md)).
+prompts on the **home repo**. **D-015 / D-016 (dispatch):** Em runs a one-item
+hub board — a bounded repo fix becomes a **Cursor cloud agent** via Fire Cursor
+(Goal / Files / Done when / Verify; clone last green or New agent at
+`cursor.com/agents`; optional GitHub `@cursor`), lands as a `cursor/*` PR, gets
+reviewed by Grok and **never merged** by it. Teach a task is optional after
+first green, not a gate. Finch caps the weekly count (start 6/week combined
+Dex+Rex) and may raise or cut it. BLS (`bls-website`) is Bee + Cursor only —
+never Claude Code. Same ticket never on Cursor and the Claude 9-task fleet.
+SMTP 535, Form 2290, and the AR Payments bank account never go to Claude or a
+cloud agent. Setup: [`docs/grok-bots/SETUP.md`](../grok-bots/SETUP.md). Queue:
+collaborator-labeled `should` issues ([`PORTFOLIO.md`](PORTFOLIO.md)).
 
 Daily/weekly **build** sessions that Claude does *not* already run (office, driver, tests,
 integrations) remain import-ready Cursor Automations on Grok 4.6 (`DECISIONS.md` D-003) —
@@ -192,8 +197,9 @@ These are redundancy, not duplicates — only if the owner re-enables the Cursor
 | Claude `10:33` nightly E2E | Needs a browser. Cursor image has none. Do not re-create as a Cursor automation. |
 
 Grok Bot (14 seats, six groups) has **no git charter**. Em publishes one
-in-flight LoadOff SHOULD at a time; Dex/Rex Fire Cursor (or Em Fire Claude
-when Finch says the window is idle). Same ticket never on two plans.
+in-flight hub SHOULD at a time; Dex/Rex Fire Cursor (or Em Fire Claude
+when Finch says the window is idle). Bee Fire Cursors BLS only. Same ticket
+never on two plans.
 
 Everything else in the collaboration contract is unchanged: `claude/*` branches are absorbed
 by the `:00`/`:43` integrators, `cursor/*` session work lands via PR, the commit-body

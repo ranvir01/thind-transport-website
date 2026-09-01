@@ -2,19 +2,25 @@
 
 **This is that file.** Path: `docs/grok-bots/SETUP.md`
 
-Live roster (**D-015**, owner 2026-09-01): **14 bots, 6 groups** (HQ, LoadOff,
-Money, Career, Labs, Clients). gogo is the only org-wide Chief of Staff. Em
-owns LoadOff coding dispatch. Dex + Rex Fire Cursor in the browser; Em may
-Fire Claude when Finch says the Max 5x window is idle. Wright creates more
-bots **only after Ranvir says yes**. Research: [`RESEARCH.md`](RESEARCH.md).
-Queue: collaborator-labeled GitHub `should` issues
+Live roster (**D-015** + **D-016**, owner 2026-09-01): **14 bots, 6 groups**
+(HQ, Hub, Money, Career, Labs, Clients). Never name the TMS product in bot
+chat, LinkedIn, or email — say **the hub** or `thindtransport.com/hub`. gogo
+is the only org-wide Chief of Staff. Em owns hub coding dispatch. Dex + Rex
+Fire Cursor from a **written SOP** ([`templates/fire-cursor.md`](templates/fire-cursor.md));
+do not wait for a Teach a task. Bee runs BLS on Cursor only (no Claude Code).
+Rav hunts and applies; Auto Review holds send. Wright creates more bots **only
+after Ranvir says yes**, except a **GOGO-START** paste which **is** the yes
+for these 14 seats. Research: [`RESEARCH.md`](RESEARCH.md). Queue:
+collaborator-labeled GitHub `should` issues
 ([`docs/ops/PORTFOLIO.md`](../ops/PORTFOLIO.md)). Routing:
 [`docs/ops/MODEL-ROUTING.md`](../ops/MODEL-ROUTING.md). Bench:
-[`SPAWN.md`](SPAWN.md). Channels: [`GROUPS.md`](GROUPS.md).
+[`SPAWN.md`](SPAWN.md). Channels: [`GROUPS.md`](GROUPS.md) — paste the
+**full** charters, not one-liners. Operator pack for the live gogo Bot:
+[`GOGO-START.md`](GOGO-START.md).
 
-Grok never git-pushes. Scheduled code stays on Claude Corps (D-007, 9 tasks).
-Bounded ad-hoc fixes go to **Cursor cloud agents** via Fire Cursor (D-015
-reverses the D-011 "Ranvir clicks" rule once the teach-a-task is recorded).
+Grok never git-pushes. Scheduled code stays on Claude Corps (D-007, 9 tasks)
+for the **home repo only**. Bounded ad-hoc fixes go to **Cursor cloud agents**
+via Fire Cursor (D-015 reversed D-011; D-016 drops the teach-a-task gate).
 
 ## Roster (14 seats)
 
@@ -22,17 +28,17 @@ reverses the D-011 "Ranvir clicks" rule once the teach-a-task is recorded).
 |---|---|---|---|---|
 | **gogo** | Org Chief of Staff | [`gogo-cos.instructions.md`](gogo-cos.instructions.md) | GitHub, Gmail, Calendar | GitHub watch pr-opened / pr-merged / ci-failed; Friday retro |
 | **Finch** | FinOps / model router — 70/90 governor | [`finch-finops.instructions.md`](finch-finops.instructions.md) | GitHub | Weekday morning usage line |
-| **Wright** | Botwright — spawn only after owner yes | [`wright-botwright.instructions.md`](wright-botwright.instructions.md) | none | Monthly unused-routine sweep |
-| **Scout** | X bookmarks → idea cards | [`scout-bookmarks.instructions.md`](scout-bookmarks.instructions.md) | X (read-only) | Weekday 16:00 PT |
-| **Em** | LoadOff Eng Mgr — only writer of `/workspace/loadoff/board.md` | [`em-engmgr.instructions.md`](em-engmgr.instructions.md) | GitHub | none |
+| **Wright** | Botwright — 14 seats from GOGO-START; 15th after yes | [`wright-botwright.instructions.md`](wright-botwright.instructions.md) | none | Monthly unused-routine sweep |
+| **Scout** | X bookmarks → idea cards (state file + consume) | [`scout-bookmarks.instructions.md`](scout-bookmarks.instructions.md) | X (read-only) | Weekday 16:00 PT |
+| **Em** | Hub Eng Mgr — only writer of `/workspace/hub/board.md` | [`em-engmgr.instructions.md`](em-engmgr.instructions.md) | GitHub | none |
 | **Dex** | IC office/hub/TMS — Fire Cursor | [`dex-ic.instructions.md`](dex-ic.instructions.md) | GitHub | none |
 | **Rex** | IC driver/recruiting — Fire Cursor | [`rex-ic.instructions.md`](rex-ic.instructions.md) | GitHub | none |
 | **Steve** | Staff SRE | [`steve-deploy-ci.instructions.md`](steve-deploy-ci.instructions.md) | GitHub, Vercel | none |
 | **Jeff** | Head of RevOps | [`jeff-revops.instructions.md`](jeff-revops.instructions.md) | Gmail, Dropbox; browser for PDFs | loadboard 8:30pm PT daily |
-| **Rav** | Talent Scout — proof-only | [`rav-career-coach.instructions.md`](rav-career-coach.instructions.md) | GitHub | none |
+| **Rav** | Talent Scout — hunt + apply, Auto Review | [`rav-career-coach.instructions.md`](rav-career-coach.instructions.md) | GitHub, LinkedIn | weekday hunt |
 | **Labs** | Experiments — disposable demos | [`labs-experiments.instructions.md`](labs-experiments.instructions.md) | GitHub | none |
 | **Ridge** | Researcher — Fable vs Opus vs Grok 4.6 vs Composer | [`ridge-research.instructions.md`](ridge-research.instructions.md) | GitHub | after Scout if the bookmark is about models |
-| **Bee** | BLS CoS — quiet | [`bee-bls.instructions.md`](bee-bls.instructions.md) | GitHub | none until fired |
+| **Bee** | BLS CoS — Fire Cursor, never Claude Code | [`bee-bls.instructions.md`](bee-bls.instructions.md) | GitHub | none until fired |
 | **My** | MyConsulting CoS — quiet | [`my-myco.instructions.md`](my-myco.instructions.md) | GitHub | none until fired |
 
 Facts baked in: `bls-website` is on **Netlify**; Dropbox is authenticated;
@@ -40,7 +46,8 @@ Facts baked in: `bls-website` is on **Netlify**; Dropbox is authenticated;
 **atstransport24**, never mixed; Form 2290 due **2026-08-31** and the
 AR Payments bank are owner-only; Gmail connector **cannot download PDF bytes**;
 Cursor Ultra is $200/mo; Claude Max 5x is $100/mo; Fire Cursor cap starts at
-**6/week** combined (Finch may raise or cut).
+**6/week** combined Dex+Rex (Finch may raise or cut). Bee's BLS agents are a
+separate cap Finch names.
 
 ## How work moves (files, not chat)
 
@@ -48,38 +55,48 @@ Cursor Ultra is $200/mo; Claude Max 5x is $100/mo; Fire Cursor cap starts at
 |---|---|---|
 | `/workspace/org/board.md` | gogo | one in-flight org SHOULD |
 | `/workspace/org/usage.md` | Finch | meters + today's model |
-| `/workspace/org/models.md` | Ridge | Fable / Opus / Grok 4.6 / Composer card |
-| `/workspace/loadoff/board.md` | Em only | one in-flight LoadOff SHOULD |
+| `/workspace/org/models.md` | Ridge | Fable / Opus / Grok 4.6 / Composer card + launch path |
+| `/workspace/org/pastes/` | Wright / gogo | copies of the 14 instruction files |
+| `/workspace/hub/board.md` | Em only | one in-flight hub SHOULD |
 | `/workspace/platform/last.md` | Steve | last sweep |
 | `/workspace/loadboard/last-run.md` | Jeff | loadboard run |
-| `/workspace/career/` | Rav | fit-check / bullets |
-| `/workspace/labs/ideas/` | Scout | bookmark cards |
+| `/workspace/career/` | Rav | applications log + packets |
+| `/workspace/labs/ideas/` | Scout | `_seen.md` + bookmark cards |
 | `/workspace/labs/demos/` | Labs | keep-or-kill notes |
 
 Chat is history. The file is memory. One writer per shared file.
+**Memory is not the record.** Reopen the source.
 
-## Step 1 — replace or create each Bot's instructions
+## Step 1 — give gogo the pack (preferred) or paste each Bot
 
-Open each Bot → Bot actions → Edit Profile → Instructions → replace everything
-with its file above → Save. New seats: create the Bot, then paste. Paste in
-the Bot's own profile (or 1:1), not in a group. Pin **gogo** and **Jeff**.
-Turn **Notifications** on for **gogo**, **Jeff**, and **Finch**.
+**Preferred:** paste [`GOGO-START.md`](GOGO-START.md) into the live **gogo**
+1:1. That paste is owner-yes for the 14 seats. gogo + Wright create or replace
+Bots, post group charters, and mkdir `/workspace`.
 
-Apply order (so the Grok meter survives):
+**Manual fallback:** each Bot → Bot actions → Edit Profile → Instructions →
+replace with its file above → Save. Paste in the Bot's own profile (or 1:1),
+not in a group. Pin **gogo** and **Jeff**. Turn **Notifications** on for
+**gogo**, **Jeff**, and **Finch**.
+
+Apply order if doing it by hand (so the Grok meter survives):
 
 1. Day 1: gogo + Finch + Wright + Scout; create **HQ**; connect **X** for Scout.
-2. Day 2: Em + Dex + Rex; move Steve into **LoadOff**; teach **Fire Cursor**; cap 6.
+2. Day 2: Em + Dex + Rex; move Steve into **Hub**; Fire Cursor SOP is in the
+   paste — no teach-a-task required; cap 6.
 3. Day 3: Labs + Ridge; create **Labs**; first bookmark sweep (manual, then routine).
-4. Day 4: Bee + My (no routines). Jeff + Rav pastes; create **Money** and **Career**.
-5. Day 5: teach **Fire Claude** if Finch says the Max 5x window is idle; gogo
-   posts one HQ digest; you label new `should` issues.
+4. Day 4: Bee + My (no Claude Code on BLS). Jeff + Rav pastes; create **Money**
+   and **Career**. LinkedIn on Rav.
+5. Day 5: Fire Claude only if Finch says the Max 5x window is idle (hub, Em);
+   gogo posts one HQ digest; you label new `should` issues.
 
 If Finch hard-stops, Wright pauses routines — does not spawn.
 
 ## Step 2 — post the six group charters
 
-Retire the old **Big team** kickoff. Create six groups and paste the matching
-snippet from [`GROUPS.md`](GROUPS.md). Keep each group at 2–6 bots.
+Retire the old **Big team** kickoff. Create six groups and paste the **full**
+matching charter from [`GROUPS.md`](GROUPS.md) into each group's instructions.
+Keep each group at 2–6 bots where the roster allows (Money and Career are
+single-seat on purpose).
 
 ## Step 3 — account settings (once)
 
@@ -92,10 +109,10 @@ Desktop: Settings (`Cmd/Ctrl+,`).
      git push / merge; overwrite or Replace a Dropbox file; purchases; changing
      a production dashboard.
    - Do **not** add “always allow everything in the browser.”
-4. **Plugins:** GitHub, Vercel, Gmail, Dropbox, **X** (Scout, read-only).
-   Airtable is retired — do not sign it in. Type `@` to attach a connector;
-   `/` to run a saved skill. After each Bot saves its starter skill, open
-   **Plugins → Yours** and enable that skill on that Bot.
+4. **Plugins:** GitHub, Vercel, Gmail, Dropbox, **X** (Scout, read-only),
+   **LinkedIn** (Rav). Airtable is retired — do not sign it in. Type `@` to
+   attach a connector; `/` to run a saved skill. After each Bot saves its
+   starter skill, open **Plugins → Yours** and enable that skill on that Bot.
 5. Do not share these Bots (a public link exposes the description).
 6. Do not install random public Grok templates.
 
@@ -103,19 +120,24 @@ Password / passkey / 2FA / CAPTCHA / payment: open **Agent Computer**, take
 control, complete only that step, return control. Never paste secrets in chat.
 If the Bot misses the handoff, tell it “hand me your computer.”
 
-## Step 4 — Fire Cursor and Fire Claude (teach-a-task once)
+## Step 4 — Fire Cursor / Fire Claude (written SOP; Teach a task optional)
 
-Desktop, 1:1, computer view visible, ≤10 min, **no secrets on screen**.
+Desktop, 1:1, computer view visible, **no secrets on screen**.
 
-**Fire Cursor:** open `cursor.com/agents` → New agent → paste Goal / Files /
-Done when / Verify → pick the model Finch named → Start. Save as skill
-**Fire Cursor**. Enable it on Dex, Rex, and (if assigned) Steve.
+**Fire Cursor** is already in Dex / Rex / Bee / Steve pastes. They open
+`cursor.com/agents`, clone the last green agent on that repo, or New agent →
+Goal / Files / Done when / Verify → Start. Optional GitHub `@cursor` on the
+issue. Full SOP: [`templates/fire-cursor.md`](templates/fire-cursor.md). After
+the first green run, tell the Bot “**save this method as a skill**” named
+Fire Cursor. If **Teach a task** is offered, record that click-path once
+(≤10 min) to lock the skill — optional, not a gate.
 
 **Fire Claude:** open `claude.ai/code` → new session → same brief → Start.
-Save as skill **Fire Claude**. Enable it on Em only. Do not duplicate a ticket
-already on the live 9-task Claude fleet.
+Save as skill **Fire Claude**. Enable it on **Em only**, hub only, and only
+when Finch says the Max 5x window is idle. Do not duplicate a ticket already
+on the live 9-task Claude fleet. **Bee never uses this.**
 
-Review the draft skill; add Finch's cap and "never merge" — the recording will
+Review the draft skill; add Finch's cap and "never merge" — a recording will
 miss those.
 
 ## Step 5 — durability (skills; routines stay listed)
@@ -126,9 +148,9 @@ miss those.
 **Skills.** Run the job once, correct it, then: “save this method as a skill”
 with all six parts (when / inputs / steps / validate / return / approval).
 Starter skills: gogo **Dispatch**, Finch **Usage card**, Wright **Stamp seat**,
-Scout **Bookmark card**, Em **Decompose**, Dex/Rex **Fire Cursor**, Steve
-**Platform sweep**, Jeff **Loadboard entry**, Rav **Fit check**, Labs
-**Disposable demo**, Ridge **Model card**.
+Scout **Bookmark card**, Em **Decompose**, Dex/Rex/Bee **Fire Cursor**, Steve
+**Platform sweep**, Jeff **Loadboard entry**, Rav **Fit check** + **Apply packet**,
+Labs **Disposable demo**, Ridge **Model card**.
 
 **Routines.** After any edit: **Test run** on desktop. On a missing source,
 report and stop, never retry in a loop, never reuse stale data. Adding a
@@ -137,12 +159,13 @@ hard-stop.
 
 ## Done when
 
-- [ ] All 14 Bots carry the new pastes; gogo + Jeff + Finch notifications on
-- [ ] Six groups have the charters in GROUPS.md; Big team retired
+- [ ] GOGO-START pasted into live gogo, or all 14 Bots carry the new pastes
+- [ ] Six groups have the **full** charters in GROUPS.md; Big team retired
 - [ ] Step 3 settings saved (timezone, local computer Never, Auto-review)
-- [ ] `/workspace/org/board.md` and `/workspace/loadoff/board.md` exist
-- [ ] Fire Cursor taught; Fire Claude taught only if Finch said the window is idle
-- [ ] X plugin on Scout; Airtable stays disconnected
+- [ ] `/workspace/org/board.md` and `/workspace/hub/board.md` exist
+- [ ] Fire Cursor SOP used at least once (skill saved); Fire Claude only if
+      Finch said the window is idle
+- [ ] X plugin on Scout; LinkedIn on Rav; Airtable stays disconnected
 - [ ] Each Bot saved and **enabled** its starter skill
 - [ ] gogo's listener, Finch's morning line, Scout 16:00 PT, Jeff 8:30pm PT
       each had a Test run

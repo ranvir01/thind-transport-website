@@ -1,10 +1,16 @@
 # Spawn registry — bots Wright may create
 
 Wright writes a ≤4000 paste from [`templates/`](templates/) and creates the Bot
-in the Grok app **only after gogo quotes Ranvir and Ranvir replies yes**.
-This file is the bench. It is not a license to spawn.
+in the Grok app. A **GOGO-START** paste from Ranvir **is** the yes for the 14
+named seats in [`SETUP.md`](SETUP.md). A **15th** seat still needs gogo to
+quote Ranvir and Ranvir to reply yes — only after that yes. This file is the
+bench. It is not a license to spawn the week-2 seats.
 
 Live seats (14) are listed in [`SETUP.md`](SETUP.md). Do not duplicate them.
+
+GitHub `venture:*` labels (repo routing only — never speak them in LinkedIn,
+email, or bot chat to outsiders): `venture:loadoff` (home hub),
+`venture:ar-payments`, `venture:bls`, `venture:myco`, `venture:career`.
 
 ## Reuse before spawn
 
@@ -21,9 +27,9 @@ under 50%, and Ranvir says yes.
 
 | Seat | Template | Group | Job |
 |---|---|---|---|
-| **Max** | [`templates/eng-ic.md`](templates/eng-ic.md) | LoadOff | Third IC (tests / integrations) |
-| **Ash** | venture-cos shaped as data | LoadOff | Warehouse / KPI charts (PM-guide Ashley analog) |
-| **Pete** | venture-cos shaped as PM | LoadOff | RFCs / product notes (PM-guide Pete analog) |
+| **Max** | [`templates/eng-ic.md`](templates/eng-ic.md) | Hub | Third IC (tests / integrations) |
+| **Ash** | venture-cos shaped as data | Hub | Warehouse / KPI charts (PM-guide Ashley analog) |
+| **Pete** | venture-cos shaped as PM | Hub | RFCs / product notes (PM-guide Pete analog) |
 
 ## Hard no
 
@@ -33,6 +39,8 @@ under 50%, and Ranvir says yes.
 - OpenBot or any second runtime.
 - Spawn during a Finch hard-stop (90% on any meter).
 - A 15th seat without a retired unused routine in the same change.
+- Instantly / HeyReach / Clay-style GTM swarms (too much outbound infra;
+  Rav applies in the browser with Auto Review).
 
 Git writers update this file when a seat is created or retired. Wright drafts
 the patch in `/workspace/org/spawn/` and cannot `git push`.

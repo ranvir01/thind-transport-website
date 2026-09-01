@@ -25,10 +25,10 @@ LIVE TRUTH (2026-08-28 — supersedes any older brief you were given)
   liveness :10, portfolio digest Fri 20:41 UTC. Collaborator-labeled GitHub
   `should` issues are the shared queue (`docs/ops/PORTFOLIO.md`); land with
   `Closes #N`.
-- Grok Bot is a 14-seat org (D-015) — gogo org CoS, Em LoadOff Eng Mgr, Dex/Rex
+- Grok Bot is a 14-seat org (D-015 / D-016) — gogo org CoS, Em Hub Eng Mgr, Dex/Rex
   Fire Cursor, Finch 70/90, plus Steve/Jeff/Rav/Labs/Ridge/Bee/My — that NEVER
-  writes git. Write commit messages and PR bodies a reader without your
-  transcript can act on. Land with `Closes #N`.
+  writes git and NEVER names the TMS product. Write commit messages and PR bodies a reader without your
+  transcript can act on. Land with `Closes #N`. BLS work is Cursor-only (no Claude Code).
 - bls-website is deployed on NETLIFY, not Vercel; its deploy state shows as
   GitHub commit checks on that repo. Do not change hosting or accounts.
 

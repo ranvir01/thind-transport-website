@@ -5,9 +5,10 @@ import path from "node:path"
 /**
  * Grok Bot instruction bodies are capped at 4,000 characters (product limit).
  * Files in docs/grok-bots/ are what the owner pastes into the 14 live Bots
- * (D-015: org CoS + venture chiefs + ICs who Fire Cursor). Going over the
- * cap silently truncates a charter; losing the "never git push" or the
- * reopen-the-source memory rule turns a watcher into a liability.
+ * (D-015 / D-016: org CoS + venture chiefs + ICs who Fire Cursor). Going over
+ * the cap silently truncates a charter; losing the "never git push" or the
+ * reopen-the-source memory rule turns a watcher into a liability. D-016 also
+ * forbids the TMS product code-name in instruction bodies.
  */
 
 const DIR = path.join(process.cwd(), "docs/grok-bots")
@@ -32,13 +33,14 @@ const INSTRUCTION_FILES = [
 const read = (file: string) => readFileSync(path.join(DIR, file), "utf-8")
 
 describe("grok-bot instruction files (14-seat org, paste-ready, ≤4k)", () => {
-  it("ships SETUP.md plus registries, routing, templates, and the 14 bodies", () => {
+  it("ships SETUP.md plus registries, routing, templates, GOGO-START, and the 14 bodies", () => {
     const names = new Set(readdirSync(DIR))
     expect(names.has("SETUP.md")).toBe(true)
     expect(names.has("README.md")).toBe(true)
     expect(names.has("SPAWN.md")).toBe(true)
     expect(names.has("GROUPS.md")).toBe(true)
     expect(names.has("RESEARCH.md")).toBe(true)
+    expect(names.has("GOGO-START.md")).toBe(true)
     for (const file of INSTRUCTION_FILES) {
       expect(names.has(file), `missing ${file}`).toBe(true)
     }
@@ -52,6 +54,7 @@ describe("grok-bot instruction files (14-seat org, paste-ready, ≤4k)", () => {
     expect(templates.has("venture-cos.md")).toBe(true)
     expect(templates.has("eng-ic.md")).toBe(true)
     expect(templates.has("labs-card.md")).toBe(true)
+    expect(templates.has("fire-cursor.md")).toBe(true)
 
     const setup = read("SETUP.md")
     expect(setup).toMatch(/THE FILE/)
@@ -66,7 +69,7 @@ describe("grok-bot instruction files (14-seat org, paste-ready, ≤4k)", () => {
     expect(setup).toMatch(/cursor\.com\/agents/)
     expect(setup).toMatch(/claude\.ai\/code/)
     expect(setup).toMatch(/\bHQ\b/)
-    expect(setup).toMatch(/LoadOff/)
+    expect(setup).toMatch(/\bHub\b/)
     expect(setup).toMatch(/Money/)
     expect(setup).toMatch(/Career/)
     expect(setup).toMatch(/\bLabs\b/)
@@ -83,23 +86,37 @@ describe("grok-bot instruction files (14-seat org, paste-ready, ≤4k)", () => {
     expect(setup).toMatch(/Form 2290/)
     expect(setup).toMatch(/save this method as\s+a skill/i)
     expect(setup).toMatch(/memory is not the record/i)
-    expect(setup).toMatch(/\/workspace\/loadoff\/board\.md/)
+    expect(setup).toMatch(/\/workspace\/hub\/board\.md/)
     expect(setup).toMatch(/MODEL-ROUTING/)
+    expect(setup).toMatch(/GOGO-START/)
     expect(setup).not.toMatch(/needsAuth/)
     expect(setup).not.toMatch(/gogo-tpm/)
+    expect(setup).not.toMatch(/LoadOff/)
 
     const spawn = read("SPAWN.md")
     expect(spawn).toMatch(/after.*yes/i)
     expect(spawn).toMatch(/templates/)
     expect(spawn).toMatch(/hard-stop|90%/)
+    expect(spawn).toMatch(/\bHub\b/)
 
     const groups = read("GROUPS.md")
     expect(groups).toMatch(/\bHQ\b/)
-    expect(groups).toMatch(/LoadOff/)
+    expect(groups).toMatch(/\bHub\b/)
     expect(groups).toMatch(/Money/)
     expect(groups).toMatch(/Career/)
     expect(groups).toMatch(/\bLabs\b/)
     expect(groups).toMatch(/Clients/)
+    expect(groups).toMatch(/JOB/)
+    expect(groups).toMatch(/CONNECTIONS/)
+    expect(groups).toMatch(/full charter|FULL charter|full charters/i)
+    expect(groups).not.toMatch(/LoadOff/)
+
+    const start = read("GOGO-START.md")
+    expect(start).toMatch(/Ranvir's yes|owner-yes/i)
+    expect(start).toMatch(/14/)
+    expect(start).toMatch(/GROUPS\.md/)
+    expect(start).toMatch(/\/workspace\/hub\/board\.md/)
+    expect(start).not.toMatch(/LoadOff/)
   })
 
   it("keeps every instruction body under the 4,000-character product cap", () => {
@@ -112,7 +129,7 @@ describe("grok-bot instruction files (14-seat org, paste-ready, ≤4k)", () => {
     }
   })
 
-  it("every body pins never-git, the memory rule, gogo, Frybox, takeover, and no SSH tunnel", () => {
+  it("every body pins never-git, the memory rule, gogo, Frybox, takeover, no SSH tunnel, and no product code-name", () => {
     for (const file of INSTRUCTION_FILES) {
       const body = read(file)
       expect(body, `${file} must pin never git push`).toMatch(/never git push/i)
@@ -121,10 +138,11 @@ describe("grok-bot instruction files (14-seat org, paste-ready, ≤4k)", () => {
       expect(body, `${file} must keep Frybox out of charter`).toMatch(/Frybox/)
       expect(body, `${file} must hand over the Agent Computer for secrets`).toMatch(/Agent Computer/)
       expect(body, `${file} must refuse SSH tunnels of the shared VM`).toMatch(/SSH-tunnel/)
+      expect(body, `${file} must not name the TMS product`).not.toMatch(/LoadOff/)
     }
   })
 
-  it("gogo is org CoS: routes, proposes spawn after yes, does not Fire Cursor herself", () => {
+  it("gogo is org CoS: routes, GOGO-START is yes for 14, does not Fire Cursor herself", () => {
     const gogo = read("gogo-cos.instructions.md")
     expect(gogo).toMatch(/Chief of Staff/)
     expect(gogo).toMatch(/pr-opened, pr-merged, ci-failed/)
@@ -140,6 +158,8 @@ describe("grok-bot instruction files (14-seat org, paste-ready, ≤4k)", () => {
     expect(gogo).toMatch(/PORTFOLIO\.md/)
     expect(gogo).toMatch(/2026-08-31/)
     expect(gogo).toMatch(/Netlify|BLS|Bee/)
+    expect(gogo).toMatch(/GOGO-START/)
+    expect(gogo).toMatch(/\bHub\b/)
   })
 
   it("Finch owns 70/90 meters and model routing", () => {
@@ -153,15 +173,17 @@ describe("grok-bot instruction files (14-seat org, paste-ready, ≤4k)", () => {
     expect(finch).toMatch(/\/workspace\/org\/usage\.md/)
   })
 
-  it("Wright stamps bots only after owner yes", () => {
+  it("Wright stamps the 14 from GOGO-START and a 15th only after owner yes", () => {
     const wright = read("wright-botwright.instructions.md")
     expect(wright).toMatch(/yes/)
     expect(wright).toMatch(/templates/)
     expect(wright).toMatch(/4000/)
     expect(wright).toMatch(/hard-stop|90%/)
+    expect(wright).toMatch(/GOGO-START/)
+    expect(wright).toMatch(/14/)
   })
 
-  it("Dex and Rex Fire Cursor and never merge", () => {
+  it("Dex and Rex Fire Cursor from a written SOP and never merge", () => {
     for (const file of ["dex-ic.instructions.md", "rex-ic.instructions.md"]) {
       const body = read(file)
       expect(body).toMatch(/Fire Cursor/)
@@ -169,14 +191,16 @@ describe("grok-bot instruction files (14-seat org, paste-ready, ≤4k)", () => {
       expect(body).toMatch(/never merge/i)
       expect(body).toMatch(/Goal \/ Files \/ Done when \/ Verify/)
       expect(body).toMatch(/Closes #N/)
+      expect(body).toMatch(/do not wait/i)
+      expect(body).toMatch(/\/workspace\/hub\//)
     }
     expect(read("dex-ic.instructions.md")).toMatch(/carrier_id|integer cents/)
     expect(read("rex-ic.instructions.md")).toMatch(/constants\.ts/)
   })
 
-  it("Em is the only writer of the LoadOff board and does not write product code", () => {
+  it("Em is the only writer of the hub board and does not write product code", () => {
     const em = read("em-engmgr.instructions.md")
-    expect(em).toMatch(/ONLY writer of \/workspace\/loadoff\/board\.md/i)
+    expect(em).toMatch(/ONLY writer of \/workspace\/hub\/board\.md/i)
     expect(em).toMatch(/do not write product code/i)
     expect(em).toMatch(/Fire Claude/)
   })
@@ -197,6 +221,7 @@ describe("grok-bot instruction files (14-seat org, paste-ready, ≤4k)", () => {
     expect(steve).toMatch(/SMTP 535/)
     expect(steve).toMatch(/\/workspace\/platform\/last\.md/)
     expect(steve).toMatch(/Fire Cursor/)
+    expect(steve).toMatch(/\/workspace\/hub\/board\.md/)
   })
 
   it("Jeff never mixes the two companies and owns the 8:30pm PT loadboard", () => {
@@ -222,10 +247,10 @@ describe("grok-bot instruction files (14-seat org, paste-ready, ≤4k)", () => {
     expect(jeff).toMatch(/Idempotent/)
   })
 
-  it("Rav is proof-only: no outreach, no scraping, claims map to open links", () => {
+  it("Rav hunts and applies with Auto Review; proof-only claims; no product or AI-tool names", () => {
     const rav = read("rav-career-coach.instructions.md")
     expect(rav).toMatch(/proof/i)
-    expect(rav).toMatch(/No LinkedIn connector/i)
+    expect(rav).toMatch(/LinkedIn/)
     expect(rav).toMatch(/do not scrape/i)
     expect(rav).toMatch(/FACTS\.md/)
     expect(rav).toMatch(/thindtransport\.com\/hub/)
@@ -234,17 +259,21 @@ describe("grok-bot instruction files (14-seat org, paste-ready, ≤4k)", () => {
     expect(rav).toMatch(/myco-website/)
     expect(rav).toMatch(/Salesforce/)
     expect(rav).toMatch(/Goldstein/)
-    expect(rav).toMatch(/LoadOff-as-AI/)
-    expect(rav).toMatch(/Never post, apply, email/i)
+    expect(rav).toMatch(/as-AI/)
     expect(rav).toMatch(/Talent Scout/)
     expect(rav).toMatch(/\/workspace\/career\//)
+    expect(rav).toMatch(/Apply|apply/)
+    expect(rav).toMatch(/Auto Review/)
+    expect(rav).not.toMatch(/Never post, apply, email/)
+    expect(rav).not.toMatch(/No LinkedIn connector/)
   })
 
-  it("Scout / Labs / Ridge run the bookmark → demo → model loop", () => {
+  it("Scout / Labs / Ridge run the bookmark → demo → model loop with a seen-file", () => {
     const scout = read("scout-bookmarks.instructions.md")
     expect(scout).toMatch(/16:00 PT/)
     expect(scout).toMatch(/labs\/ideas/)
     expect(scout).toMatch(/Do not post/)
+    expect(scout).toMatch(/_seen\.md/)
     const labs = read("labs-experiments.instructions.md")
     expect(labs).toMatch(/disposable/i)
     expect(labs).toMatch(/keep or kill|Keep-or-kill/i)
@@ -254,6 +283,16 @@ describe("grok-bot instruction files (14-seat org, paste-ready, ≤4k)", () => {
     expect(ridge).toMatch(/Grok 4\.6/)
     expect(ridge).toMatch(/Composer/)
     expect(ridge).toMatch(/\/workspace\/org\/models\.md/)
+  })
+
+  it("Bee runs BLS on Cursor only and never opens Claude Code", () => {
+    const bee = read("bee-bls.instructions.md")
+    expect(bee).toMatch(/Fire Cursor/)
+    expect(bee).toMatch(/cursor\.com\/agents/)
+    expect(bee).toMatch(/bls-website/)
+    expect(bee).toMatch(/never (open )?claude\.ai\/code/i)
+    expect(bee).toMatch(/NETLIFY/i)
+    expect(bee).not.toMatch(/Fire Claude/)
   })
 
   it("the agent preambles brief future sessions on the 14-seat Grok org", () => {
@@ -288,6 +327,8 @@ describe("grok-bot instruction files (14-seat org, paste-ready, ≤4k)", () => {
     expect(readme).toMatch(/PORTFOLIO/)
     expect(readme).toMatch(/retired/)
     expect(readme).toMatch(/Fire Cursor/)
+    expect(readme).toMatch(/GOGO-START/)
+    expect(readme).not.toMatch(/LoadOff/)
     for (const name of ["gogo", "Finch", "Wright", "Scout", "Em", "Dex", "Rex", "Steve", "Jeff", "Rav", "Labs", "Ridge", "Bee", "My"]) {
       expect(readme).toContain(name)
     }

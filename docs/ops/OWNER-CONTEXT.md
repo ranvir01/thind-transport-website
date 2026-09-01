@@ -76,12 +76,15 @@ deep-verify, or meta-governor while those Claude tasks are live.
 **GitHub Actions** keep `main` moving when Cursor is off: drain `:17`/`:47`,
 liveness `:10`, portfolio digest Fri `20:41`. Red runs file `should` issues.
 
-**Grok Bot** is the 14-seat org (D-015): gogo (org Chief of Staff), Finch
-(FinOps 70/90), Wright (Botwright, spawn after yes), Scout (X bookmarks), Em
-(LoadOff Eng Mgr), Dex + Rex (Fire Cursor), Steve, Jeff, Rav, Labs, Ridge,
-Bee, My. Six groups. Bounded fixes go to Cursor cloud agents via Fire Cursor;
-Grok never merges. Never git. Queue: collaborator-labeled `should` issues.
-**The one file:** `docs/grok-bots/SETUP.md`. Routing: `docs/ops/MODEL-ROUTING.md`.
+**Grok Bot** is the 14-seat org (D-015 / D-016): gogo (org Chief of Staff), Finch
+(FinOps 70/90), Wright (Botwright; 14 from GOGO-START, 15th after yes), Scout
+(X bookmarks), Em (Hub Eng Mgr), Dex + Rex (Fire Cursor), Steve, Jeff, Rav
+(hunt + apply), Labs, Ridge, Bee (BLS, Cursor-only), My. Six groups (HQ Hub
+Money Career Labs Clients). Bounded fixes go to Cursor cloud agents via Fire
+Cursor; Grok never merges and never names the TMS product. Never git. Queue:
+collaborator-labeled `should` issues. **The one file:** `docs/grok-bots/SETUP.md`.
+**Paste into live gogo:** `docs/grok-bots/GOGO-START.md`. Routing:
+`docs/ops/MODEL-ROUTING.md`.
 
 ## AR Payments (holding / billing company)
 

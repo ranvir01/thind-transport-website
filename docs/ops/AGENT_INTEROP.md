@@ -4,9 +4,10 @@ Four kinds of agent **write git** to this repo: Cursor scheduled automations (cu
 disabled on the dashboard, 2026-08-26), Cursor agents you prompt by hand, Claude Code
 sessions and Claude scheduled routines (the live 9-task Corps), plus GitHub Actions
 that publish history without any agent involved. **Grok Bot** is the 14-seat
-org (D-015): gogo org CoS, Em LoadOff Eng Mgr, Dex/Rex Fire Cursor, Finch
-70/90, Wright spawn-after-yes, plus Steve/Jeff/Rav/Labs/Ridge/Bee/My. Never
-pushes — [`docs/grok-bots/SETUP.md`](../grok-bots/SETUP.md).
+org (D-015 / D-016): gogo org CoS, Em Hub Eng Mgr, Dex/Rex Fire Cursor, Finch
+70/90, Wright stamps the 14 from GOGO-START, plus Steve/Jeff/Rav/Labs/Ridge/Bee/My.
+Never pushes — [`docs/grok-bots/SETUP.md`](../grok-bots/SETUP.md). Grok chat
+never names the TMS product.
 They share one `main`, one integrator branch, and one production alias. This file is the
 contract between them.
 
