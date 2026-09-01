@@ -80,22 +80,24 @@ suite("sim state commit keeps disjoint write sets", () => {
         }),
       ]
     )
-  })
+  }, 30_000)
 
   afterAll(async () => {
     if (!hasDb) return
     // Put the live sandbox back the way it was found. The fixture's own
     // SIM- invoice numbering and test epoch must not outlive the suite.
-    if (savedSettings) {
-      await query(
-        `UPDATE hub.carrier_settings SET settings = $2::jsonb, updated_at = NOW() WHERE carrier_id = $1`,
-        [C, JSON.stringify(savedSettings)]
-      ).catch(() => {})
-    } else {
-      await query(`DELETE FROM hub.carrier_settings WHERE carrier_id = $1`, [C]).catch(() => {})
+    if (typeof query === "function") {
+      if (savedSettings) {
+        await query(
+          `UPDATE hub.carrier_settings SET settings = $2::jsonb, updated_at = NOW() WHERE carrier_id = $1`,
+          [C, JSON.stringify(savedSettings)]
+        ).catch(() => {})
+      } else {
+        await query(`DELETE FROM hub.carrier_settings WHERE carrier_id = $1`, [C]).catch(() => {})
+      }
     }
     await unlockSandboxTenant(tenantLock)
-  })
+  }, 30_000)
 
   const readSim = async () =>
     (
