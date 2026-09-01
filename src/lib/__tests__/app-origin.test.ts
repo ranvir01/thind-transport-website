@@ -9,7 +9,7 @@
  */
 import { afterEach, describe, expect, it, vi } from "vitest"
 import { appHostLanding, inSegment } from "../app-host-routing"
-import { isAppHost } from "../app-origin"
+import { appPublicOrigin, isAppHost } from "../app-origin"
 import { escapesAppScope } from "../hub/standalone-scope"
 
 afterEach(() => vi.unstubAllEnvs())
@@ -41,6 +41,31 @@ describe("isAppHost", () => {
     expect(isAppHost("app.loadoff.com:3000")).toBe(true)
     expect(isAppHost(null)).toBe(false)
     expect(isAppHost(undefined)).toBe(false)
+  })
+})
+
+describe("appPublicOrigin", () => {
+  it("is NEXTAUTH_URL until an app host is configured — today's QR target", () => {
+    vi.stubEnv("NEXT_PUBLIC_APP_HOST", "")
+    vi.stubEnv("NEXTAUTH_URL", "https://thindtransport.com")
+    expect(appPublicOrigin()).toBe("https://thindtransport.com")
+  })
+
+  it("prefers the app host once it is set, even if NEXTAUTH_URL still points at the site", () => {
+    withAppHost("app.loadoff.com")
+    vi.stubEnv("NEXTAUTH_URL", "https://thindtransport.com")
+    expect(appPublicOrigin()).toBe("https://app.loadoff.com")
+  })
+
+  it("strips a scheme or trailing slash someone pasted into the env var", () => {
+    withAppHost("https://app.loadoff.com/")
+    expect(appPublicOrigin()).toBe("https://app.loadoff.com")
+  })
+
+  it("falls back to localhost when nothing is configured", () => {
+    vi.stubEnv("NEXT_PUBLIC_APP_HOST", "")
+    vi.stubEnv("NEXTAUTH_URL", "")
+    expect(appPublicOrigin()).toBe("http://localhost:3000")
   })
 })
 
