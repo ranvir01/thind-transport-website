@@ -95,8 +95,8 @@ export const HELP_TOPICS: HelpTopic[] = [
     question: "Can I watch every role without logging in?",
     answer:
       "Yes. The public LoadOff page walks dispatcher, driver, accountant, owner, broker, and shipper seats on mock data. The 90-second demo is the interactive version.",
-    href: "/loadoff#theater",
-    hrefLabel: "Open the persona theater",
+    href: "/hub/demo",
+    hrefLabel: "Open the 90-second demo",
   },
   {
     id: "preferences",
