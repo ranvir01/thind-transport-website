@@ -169,6 +169,12 @@ export async function seedSandbox(): Promise<void> {
           nextDropAt: null,
           activeSeats: {},
           telemetry: priorTelemetry,
+          // Which world got loaded. A bare seed IS the steady week;
+          // applySandboxScenario stamps 'crunch' over this after its overlay.
+          // Without a persisted name the app cannot tell a player which of the
+          // two companies they are looking at, and "crunch day" is invisible
+          // unless you already knew you picked it.
+          scenario: "steady",
         },
       })]
     )
@@ -944,6 +950,16 @@ export async function seedSandbox(): Promise<void> {
  */
 export async function applySandboxScenario(scenario: "steady" | "crunch"): Promise<void> {
   await seedSandbox()
+  // Stamp the name before the overlay, so a crash mid-overlay leaves the
+  // sandbox labelled with the world someone ASKED for rather than silently
+  // claiming to be the steady week it no longer is.
+  await query(
+    `UPDATE hub.carrier_settings
+        SET settings = jsonb_set(settings, '{sim,scenario}', to_jsonb($2::text), TRUE),
+            updated_at = NOW()
+      WHERE carrier_id = $1`,
+    [C, scenario]
+  )
   if (scenario === "steady") return
   const client = await hubDb().connect()
   try {
