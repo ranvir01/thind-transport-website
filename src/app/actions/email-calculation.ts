@@ -49,7 +49,7 @@ export async function emailCalculation(input: z.infer<typeof calculationSchema>)
       `Linehaul rate: $${data.lineHaulRate.toFixed(2)}/mi`,
       `Diesel price: $${data.fuelPrice.toFixed(2)}/gal`,
       ``,
-      `Estimated weekly gross (90% split + 100% fuel surcharge): ${formatUsd(data.weeklyGross)}`,
+      `Estimated weekly gross (91% split + 100% fuel surcharge): ${formatUsd(data.weeklyGross)}`,
       `Estimated weekly net after expenses: ${formatUsd(data.weeklyNet)}`,
       `Estimated extra vs. a typical 72% split: ${formatUsd(data.weeklyDifference)}/week`,
       `Estimated annual net (48 weeks): ${formatUsd(data.annualNet)}`,

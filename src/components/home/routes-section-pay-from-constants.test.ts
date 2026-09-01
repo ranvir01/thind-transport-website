@@ -4,7 +4,7 @@
  * The local and regional cards already showed the published company
  * ranges, but the OTR card mixed company + owner-operator into invented
  * figures ($65K-$280K, $0.55-$0.60 CPM, $2.25-$3.25/mile, $180K-$280K).
- * There is no company CPM floor in constants.ts — do not invent $0.60/mi.
+ * Company CPM is the published PAY_RATES range — never a lone invented floor.
  *
  * A wrong number still renders, so E2E cannot catch this. Assert the
  * source the way company-facts-from-constants.test.ts does.
@@ -38,17 +38,21 @@ describe("RoutesSection sources pay from PAY_RATES", () => {
     expect(src).not.toContain("$0.55-$0.60")
     expect(src).not.toContain("$2.25-$3.25")
     expect(src).not.toContain("$180K-$280K")
-    expect(src).not.toContain("$0.60")
+    // Main's later single-rate figure. This PR publishes a range; the cards
+    // must interpolate PAY_RATES, not pin either literal.
+    expect(src).not.toContain("$0.63")
   })
 
   it("published OTR and O/O constants are the figures the cards interpolate", () => {
-    expect(PAY_RATES.companyDriver.otr.perMile).toBe("$0.63")
-    expect(PAY_RATES.companyDriver.otr.annual).toBe("$69K-$82K")
+    // This branch publishes the GBP pay/fleet facts. Pin those, not main's
+    // later $0.63 / 90% figures — the merge-ref unit job failed on that drift.
+    expect(PAY_RATES.companyDriver.otr.perMile).toBe("$0.60-$0.65")
+    expect(PAY_RATES.companyDriver.otr.annual).toBe("$93K-$110K")
     expect(PAY_RATES.ownerOperator.perMile).toBe("$2.50-$3.50")
-    expect(PAY_RATES.ownerOperator.annualGross).toBe("$150K-$250K")
-    expect(PAY_RATES.ownerOperator.commission).toBe("90%")
-    expect(PAY_RATES.companyDriver.local.annual).toBe("$57K-$63K")
-    expect(PAY_RATES.companyDriver.regional.annual).toBe("$63K-$73K")
+    expect(PAY_RATES.ownerOperator.annualGross).toBe("$250K-$300K")
+    expect(PAY_RATES.ownerOperator.commission).toBe("91%")
+    expect(PAY_RATES.companyDriver.local.annual).toBe("$78K-$85K")
+    expect(PAY_RATES.companyDriver.regional.annual).toBe("$78K-$95K")
     expect(PAY_RATES.companyDriver).not.toHaveProperty("cpmFloor")
   })
 })

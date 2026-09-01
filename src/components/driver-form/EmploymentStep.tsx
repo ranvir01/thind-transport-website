@@ -195,7 +195,7 @@ export function EmploymentStep({ data, onChange, errors = {} }: EmploymentStepPr
                   <Input
                     value={employer.salary}
                     onChange={(e) => updateEmployer(index, 'salary', e.target.value)}
-                    placeholder="$0.63/mile"
+                    placeholder="$0.60-$0.65/mile"
                     className={inputClass(`employer_${index}_salary`)}
                   />
                 </div>

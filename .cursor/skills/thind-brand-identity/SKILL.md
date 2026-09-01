@@ -43,6 +43,6 @@ Rules:
 ## Voice & Copy Rules
 
 - Second person, present tense: "You drive. We handle the rest."
-- Numbers beat adjectives: "90% commission" not "industry-leading pay" (use both only when the number leads).
+- Numbers beat adjectives: "91% payout" not "industry-leading pay" (use both only when the number leads).
 - Company facts come from `src/lib/constants.ts` (`COMPANY_INFO`, `STATS`, `PAY_RATES`) — never hardcode phone numbers, rates, or stats in components.
 - Banned phrases: "synergy", "best-in-class", "world-class", "revolutionary", excessive trucker slang.

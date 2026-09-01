@@ -6,7 +6,7 @@ import {
   MapPin,
   ExternalLink,
 } from "lucide-react"
-import { COMPANY_INFO, FMCSA_LINKS, STATS } from "@/lib/constants"
+import { COMPANY_INFO, EQUIPMENT, FMCSA_LINKS, STATS } from "@/lib/constants"
 import { Reveal } from "@/components/ui/Reveal"
 
 /**
@@ -37,7 +37,7 @@ const credentials = [
     icon: Truck,
     value: `${STATS.trucksInFleet}+`,
     label: "Trucks",
-    sub: "2023-2025 Freightliners & Volvos",
+    sub: EQUIPMENT.short,
   },
   {
     icon: MapPin,

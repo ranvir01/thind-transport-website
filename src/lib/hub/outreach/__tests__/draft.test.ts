@@ -49,10 +49,10 @@ describe("draftOutreach — every audience", () => {
     expect(d.subject.toLowerCase()).toContain("direct")
   })
 
-  it("driver draft leads with the 90% split and the apply link", () => {
+  it("driver draft leads with the 91% split and the apply link", () => {
     const d = draftOutreach({ audience: "driver" }, C)
-    expect(d.body).toContain("90%")
-    expect(d.body).toContain("$0.63")
+    expect(d.body).toContain("91%")
+    expect(d.body).toContain("$0.60")
     expect(d.body).toContain("thindtransport.com/apply")
   })
 

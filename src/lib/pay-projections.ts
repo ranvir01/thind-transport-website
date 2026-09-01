@@ -10,7 +10,7 @@
  */
 import { PAY_RATES } from "./constants"
 
-/** "$69K-$82K" | "$150K-$250K" → [69000, 82000] dollars. Throws on drift so
+/** "$69K-$82K" | "$250K-$300K" → [69000, 82000] dollars. Throws on drift so
  * a reformatted constant fails the build, not the arithmetic. */
 export function parseAnnualRange(range: string): [number, number] {
   const matches = [...range.matchAll(/\$(\d+(?:\.\d+)?)K/gi)].map((m) => Number(m[1]) * 1000)

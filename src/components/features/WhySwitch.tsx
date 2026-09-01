@@ -1,6 +1,7 @@
 import { ArrowRight } from "lucide-react"
 import Link from "next/link"
 import { Reveal } from "@/components/ui/Reveal"
+import { EQUIPMENT, PAY_RATES } from "@/lib/constants"
 
 /**
  * Archetype C — dense data (docs/design/DIRECTION.md §3).
@@ -16,11 +17,11 @@ import { Reveal } from "@/components/ui/Reveal"
  */
 
 const comparisonData = [
-  { feature: "Pay split", competitor: "A cut you have to ask for", thind: "90% of gross, in writing" },
+  { feature: "Pay split", competitor: "A cut you have to ask for", thind: `${PAY_RATES.ownerOperator.commission} of gross, in writing` },
   { feature: "Fuel surcharge", competitor: "Partial pass-through", thind: "100% pass-through" },
   { feature: "Forced dispatch", competitor: "Yes", thind: "Never" },
   { feature: "Home time", competitor: "When convenient", thind: "Your schedule, honored" },
-  { feature: "Equipment age", competitor: "Whatever is on the yard", thind: "2023-2025 Cascadias & VNLs" },
+  { feature: "Equipment age", competitor: "Whatever is on the yard", thind: EQUIPMENT.short },
   { feature: "Dispatch response", competitor: "Call center queue", thind: "Direct line, real person" },
   { feature: "Pay timeline", competitor: "Whenever the invoice clears", thind: "Weekly direct deposit" },
   { feature: "Hidden fees", competitor: "ELD, compliance, admin", thind: "None" },

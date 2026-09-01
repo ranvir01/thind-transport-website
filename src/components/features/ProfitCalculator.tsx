@@ -342,7 +342,7 @@ export const ProfitCalculator = () => {
                   {currentWeeklyPay > 0 && (
                     <div className="p-3 bg-green-500/20 border border-green-500/30 rounded-lg">
                       <p className="text-green-400 text-sm font-semibold">
-                        With Thind's 90% split, you could earn approximately{' '}
+                        With Thind&apos;s {PAY_RATES.ownerOperator.commission} split, you could earn approximately{' '}
                         <span className="text-green-300 font-black text-lg">
                           {formatCurrency(currentWeeklyPay * (THIND_SPLIT * 100 / currentSplit) - currentWeeklyPay)} more
                         </span>{' '}
@@ -436,7 +436,7 @@ export const ProfitCalculator = () => {
                   +{Math.max(0, Math.round(((THIND_SPLIT * 100 - currentSplit) / currentSplit) * 100))}% MORE
                 </div>
                 <p className="text-orange-600 text-[10px] sm:text-xs font-semibold uppercase tracking-wider mb-1">Thind Transport</p>
-                <p className="text-xs sm:text-sm text-orange-700 mb-2 sm:mb-3">90% Split</p>
+                <p className="text-xs sm:text-sm text-orange-700 mb-2 sm:mb-3">{PAY_RATES.ownerOperator.commission} Split</p>
                 
                 <div className="space-y-2 relative z-0">
                   <div>
@@ -467,7 +467,7 @@ export const ProfitCalculator = () => {
                   </div>
                 </div>
                 <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
-                  <span className="text-xs text-orange-600 font-bold w-auto sm:w-16 font-mono shrink-0">90%</span>
+                  <span className="text-xs text-orange-600 font-bold w-auto sm:w-16 font-mono shrink-0">{PAY_RATES.ownerOperator.commission}</span>
                   <div className="flex-1 min-w-0 bg-orange/20 rounded-full h-6 overflow-hidden w-full">
                     <div 
                       className="h-full bg-gradient-to-r from-orange-700 to-orange-600 rounded-full transition-all duration-500 flex items-center justify-end pr-2"
@@ -600,7 +600,7 @@ export const ProfitCalculator = () => {
         {/* Bottom Context */}
         <div className="mt-8 text-center">
           <p className="text-white/80 text-sm max-w-2xl mx-auto">
-            <strong className="text-white">Why {PAY_RATES.ownerOperator.commission}?</strong> We take 10% of the
+            <strong className="text-white">Why {PAY_RATES.ownerOperator.commission}?</strong> We take {100 - THIND_SPLIT * 100}% of the
             linehaul to cover dispatch, billing, and admin, and pass the fuel surcharge through whole.
             No other deductions.
           </p>

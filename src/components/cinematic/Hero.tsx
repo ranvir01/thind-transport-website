@@ -36,7 +36,7 @@ export const CinematicHero = () => {
           </div>
 
           <h1 className="text-left text-white drop-shadow-md mb-5">
-            Keep <span className="text-gradient-accent">90% of your gross.</span>
+            Keep <span className="text-gradient-accent">{PAY_RATES.ownerOperator.commission} of your gross.</span>
             <span className="block text-xl sm:text-2xl md:text-3xl text-steel-200 font-bold mt-3 normal-case tracking-normal leading-snug">
               Real dispatch that answers, late-model Cascadias and VNLs, and zero forced loads &mdash; from a family that drives, too.
             </span>

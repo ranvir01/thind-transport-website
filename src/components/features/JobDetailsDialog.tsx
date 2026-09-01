@@ -26,7 +26,7 @@ export function JobDetailsDialog({ jobType = "company" }: JobDetailsDialogProps)
       title: "Regional Company Truck Driver",
       type: "Full-Time",
       salary: `${PAY_RATES.companyDriver.regional.annual}/year`,
-      description: "Join our team as a regional company driver. $0.63 per mile, the same rate local, regional or OTR, with flexible home time.",
+      description: `Join our team as a regional company driver. ${PAY_RATES.companyDriver.regional.perMile} per mile, the same rate local, regional or OTR, with flexible home time.`,
       requirements: [
         "Valid CDL Class A license",
         "Minimum 1 year company driver experience (REQUIRED)",
@@ -37,7 +37,7 @@ export function JobDetailsDialog({ jobType = "company" }: JobDetailsDialogProps)
       ],
       benefits: [
         `${PAY_RATES.companyDriver.signOnBonus.replace(" (First Year)", "")} sign-on bonus (first year)`,
-        "$0.63 per mile (regional)",
+        `${PAY_RATES.companyDriver.regional.perMile} per mile (regional)`,
         "Weekly direct deposit pay - Every Friday",
         "Flexible home time - Regional routes",
         "Home on weekends",
@@ -47,7 +47,7 @@ export function JobDetailsDialog({ jobType = "company" }: JobDetailsDialogProps)
         "Fuel card programs available"
       ],
       routes: [
-        "Regional routes: $0.63 per mile",
+        `Regional routes: ${PAY_RATES.companyDriver.regional.perMile} per mile`,
         "Home on weekends - Work 5 days",
         `Annual earning potential: ${PAY_RATES.companyDriver.regional.annual}`,
         "Consistent miles and freight",
@@ -58,7 +58,7 @@ export function JobDetailsDialog({ jobType = "company" }: JobDetailsDialogProps)
       title: "OTR → Owner Operator",
       type: "Independent Contractor",
       salary: `${PAY_RATES.ownerOperator.annualGross}/year`,
-      description: "Run OTR under our authority and keep 90% of the linehaul. No forced dispatch, no hidden deductions — you see the rate con on every load.",
+      description: `Run OTR under our authority and keep ${PAY_RATES.ownerOperator.commission} of the linehaul. No forced dispatch, no hidden deductions — you see the rate con on every load.`,
       requirements: [
         "Valid CDL Class A license",
         "Minimum 2 years OTR experience (REQUIRED)",
@@ -68,7 +68,7 @@ export function JobDetailsDialog({ jobType = "company" }: JobDetailsDialogProps)
         "MC authority (or we can help you get it)"
       ],
       benefits: [
-        "You keep 90% of the linehaul",
+        `You keep ${PAY_RATES.ownerOperator.commission} of the linehaul`,
         "$2,500 sign-on bonus",
         "No forced dispatch - you choose your loads",
         "No hidden fees or deductions",
@@ -83,7 +83,7 @@ export function JobDetailsDialog({ jobType = "company" }: JobDetailsDialogProps)
       ],
       routes: [
         `OTR loads nationwide: ${PAY_RATES.ownerOperator.perMile} per mile`,
-        "90% of gross - YOU keep 90%!",
+        `${PAY_RATES.ownerOperator.commission} of gross - YOU keep ${PAY_RATES.ownerOperator.commission}!`,
         "Flatbed, Reefer, or Dry Van freight",
         "No forced dispatch - pick your lanes",
         "Consistent freight year-round"

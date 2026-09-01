@@ -36,7 +36,7 @@ export function SignupForm() {
     ownerName: "", email: "", password: "",
   })
   // Pay step is prefilled with the platform defaults so "just keep going" stays valid.
-  const [pay, setPay] = useState({ perMile: "0.60", ownerOperatorPct: "90" })
+  const [pay, setPay] = useState({ perMile: "0.60", ownerOperatorPct: "91" })
 
   const verify = () => {
     setAuthorityError(null)

@@ -1,9 +1,9 @@
 import { Metadata } from "next"
-import { COMPANY_INFO, STATS } from "@/lib/constants"
+import { COMPANY_INFO, EQUIPMENT, STATS } from "@/lib/constants"
 
 export const metadata: Metadata = {
-  title: "Fleet & equipment — 2023-2025 Freightliners and Volvos",
-  description: `Drive the newest equipment at ${COMPANY_INFO.name}. Our fleet features 2023-2025 Freightliner Cascadias & Volvo VNL 860s with APU, inverters, and full safety suites. ${STATS.trucksInFleet} trucks, maintained on a preventive schedule.`,
+  title: `Fleet & equipment — ${EQUIPMENT.modelYears} Freightliners and Volvos`,
+  description: `Drive the newest equipment at ${COMPANY_INFO.name}. Our fleet features ${EQUIPMENT.modelYears} Freightliner Cascadias & Volvo VNL 860s with APU, inverters, and full safety suites. ${STATS.trucksInFleet} trucks, maintained on a preventive schedule.`,
   keywords: [
     "trucking company equipment",
     "Freightliner Cascadia 2024",
@@ -20,7 +20,7 @@ export const metadata: Metadata = {
   ],
   openGraph: {
     title: `Fleet & Equipment | ${COMPANY_INFO.name}`,
-    description: `Drive 2023-2025 Freightliner Cascadias & Volvo VNL 860s. APU, inverters, full safety suites standard. ${STATS.trucksInFleet} trucks with 24/7 maintenance support.`,
+    description: `Drive ${EQUIPMENT.modelYears} Freightliner Cascadias & Volvo VNL 860s. APU, inverters, full safety suites standard. ${STATS.trucksInFleet} trucks with 24/7 maintenance support.`,
     url: "https://thindtransport.com/fleet",
     siteName: COMPANY_INFO.name,
     locale: "en_US",
@@ -29,7 +29,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: `Fleet & Equipment | ${COMPANY_INFO.name}`,
-    description: "2023-2025 Freightliner & Volvo trucks. APU standard. 24/7 maintenance support.",
+    description: `${EQUIPMENT.modelYears} Freightliner & Volvo trucks. APU standard. 24/7 maintenance support.`,
   },
   alternates: {
     canonical: "https://thindtransport.com/fleet"
@@ -51,13 +51,13 @@ export default function FleetLayout({
             "@context": "https://schema.org",
             "@type": "ItemList",
             "name": `${COMPANY_INFO.name} Fleet Equipment`,
-            "description": "Modern trucking fleet featuring 2023-2025 Freightliner Cascadias and Volvo VNL trucks",
+            "description": `Modern trucking fleet featuring ${EQUIPMENT.modelYears} Freightliner Cascadias and Volvo VNL trucks`,
             "numberOfItems": 2,
             "itemListElement": [
               {
                 "@type": "Vehicle",
                 "position": 1,
-                "name": "Freightliner Cascadia 2023-2025",
+                "name": `Freightliner Cascadia ${EQUIPMENT.modelYears}`,
                 "vehicleConfiguration": "Semi-Truck",
                 "vehicleEngine": {
                   "@type": "EngineSpecification",

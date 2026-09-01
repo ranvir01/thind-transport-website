@@ -140,16 +140,21 @@ async function main() {
   await shot(page, "03-offer-signed")
 
   console.log("6. Conversion is gated until orientation is done")
-  // The hire button stays disabled (labeled "Finish orientation + signed offer
-  // first") — a click no-ops, so assert the gate directly instead of sleeping
-  // and hoping nothing happened.
-  await clickByText(page, "Finish orientation")
-  const gated = await page.evaluate(() => {
-    const btn = [...document.querySelectorAll("button")].find((b) =>
-      b.textContent?.includes("Finish orientation")
+  // Hire stays disabled (labeled "Finish orientation + signed offer first")
+  // until the checklist is done. clickByText skips disabled controls, so
+  // assert the gate on the button itself — do not tap it.
+  const gated = await page
+    .waitForFunction(
+      () => {
+        const btn = [...document.querySelectorAll("button")].find((b) =>
+          b.textContent?.includes("Finish orientation")
+        )
+        return Boolean(btn?.disabled)
+      },
+      { timeout: 15000 }
     )
-    return !!btn?.disabled
-  })
+    .then(() => true)
+    .catch(() => false)
   check(gated, "conversion gated (hire button disabled until orientation done)")
 
   console.log("7. Complete orientation checklist")

@@ -372,7 +372,7 @@ export function ApplicationForm() {
                     <div className="flex-1">
                       <div className="flex items-center justify-between">
                         <div className="font-bold text-gray-900 text-base">Owner Operator</div>
-                        <div className="text-xl text-orange-600 font-black">90% Gross</div>
+                        <div className="text-xl text-orange-600 font-black">91% Gross</div>
                       </div>
                       <div className="text-sm text-gray-500 mt-1 group-hover:text-gray-700 transition-colors">{PAY_RATES.ownerOperator.annualGross} • 2+ years OTR</div>
                     </div>

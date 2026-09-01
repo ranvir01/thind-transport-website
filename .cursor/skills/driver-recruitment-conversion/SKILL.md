@@ -22,7 +22,7 @@ Land (home / pay-rates / ad page)
 
 ## What Converts Drivers (priority order)
 
-1. **Pay, first viewport.** Real numbers from `PAY_RATES` in `src/lib/constants.ts` (90% commission O/O, $0.63/mi company, sign-on bonuses). If a page hides pay below the fold, fix it.
+1. **Pay, first viewport.** Real numbers from `PAY_RATES` in `src/lib/constants.ts` (91% payout O/O, $0.60-$0.65/mi company, sign-on bonuses). If a page hides pay below the fold, fix it.
 2. **Home time.** Local/Regional/OTR options with explicit home-time, near the pay numbers.
 3. **Proof of legitimacy.** DOT/MC numbers, FMCSA SAFER link (`FMCSA_LINKS.safer`), years in business, real fleet photos. Drivers verify carriers before applying.
 4. **A human.** Owner story, dispatch team, driver testimonials with names. Reinforce the "we lift each other up" identity.

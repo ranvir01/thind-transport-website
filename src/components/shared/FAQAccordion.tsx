@@ -10,6 +10,11 @@ import {
 import { HelpCircle } from "lucide-react"
 import { COMPANY_INFO, EQUIPMENT, FMCSA_LINKS, PAY_RATES, STATS } from "@/lib/constants"
 
+const ooSplitPct = Number(PAY_RATES.ownerOperator.commission.replace("%", ""))
+const ooTakePct = 100 - ooSplitPct
+const faqExampleGross = 3000
+const faqExampleKeep = Math.round((faqExampleGross * ooSplitPct) / 100)
+
 const defaultFaqs = [
   // Pay & Compensation
   {
@@ -18,15 +23,15 @@ const defaultFaqs = [
   },
   {
     question: "How much can I realistically earn?",
-    answer: "Company Drivers: $57K-$82K annually at $0.63 per mile (based on miles and route type), plus $1,000 sign-on bonus first year. Owner Operators: $150K-$250K gross annually with 90% commission (you keep 90% of gross!), plus $2,500 sign-on bonus. Pay is distributed weekly via direct deposit every Friday."
+    answer: `Company Drivers: ${PAY_RATES.companyDriver.local.annual} to ${PAY_RATES.companyDriver.otr.annual} annually at ${PAY_RATES.companyDriver.otr.perMile} per mile (based on miles and route type), plus ${PAY_RATES.companyDriver.signOnBonus}. Owner Operators: ${PAY_RATES.ownerOperator.annualGross} gross annually with ${PAY_RATES.ownerOperator.payout} payout (you keep ${PAY_RATES.ownerOperator.payout} of gross!), plus ${PAY_RATES.ownerOperator.signOnBonus} sign-on bonus. Pay is distributed weekly via direct deposit every Friday.`
   },
   {
-    question: "What's this 90% commission for owner operators?",
-    answer: "You keep 90% of the gross revenue from each load. There are NO hidden fees or surprise deductions. Fuel surcharge passes through 100% to you. Your weekly settlement shows exactly where every dollar goes. Transparent accounting, no games."
+    question: `What's this ${PAY_RATES.ownerOperator.payout} payout for owner operators?`,
+    answer: `You keep ${PAY_RATES.ownerOperator.payout} of the gross revenue from each load. There are NO hidden fees or surprise deductions. Fuel surcharge passes through 100% to you. Your weekly settlement shows exactly where every dollar goes. Transparent accounting, no games.`
   },
   {
-    question: "How does the 90% commission work exactly?",
-    answer: "Simple: If a load pays $3,000 gross, you receive $2,700 (90%). We take 10% to cover our back-office, dispatch, insurance, and administrative costs. NO other deductions. Fuel surcharge? You get 100%. Accessorial charges? You get 90%. Detention, layover, TONU - all 90% to you. Clean, transparent, fair."
+    question: `How does the ${PAY_RATES.ownerOperator.payout} payout work exactly?`,
+    answer: `Simple: If a load pays $${faqExampleGross.toLocaleString("en-US")} gross, you receive $${faqExampleKeep.toLocaleString("en-US")} (${PAY_RATES.ownerOperator.payout}). We take ${ooTakePct}% to cover our back-office, dispatch, insurance, and administrative costs. NO other deductions. Fuel surcharge? You get 100%. Accessorial charges? You get ${PAY_RATES.ownerOperator.payout}. Detention, layover, TONU - all ${PAY_RATES.ownerOperator.payout} to you. Clean, transparent, fair.`
   },
   {
     question: "What are the sign-on bonuses?",
@@ -69,7 +74,7 @@ const defaultFaqs = [
   // Benefits & Perks
   {
     question: "Do company drivers get benefits?",
-    answer: "Here's the honest list of what we offer today: $1,000 sign-on bonus in your first year; weekly direct deposit every Friday; performance and referral bonuses; home time you pick (local, regional, or OTR at the same $0.63/mile); modern 2023-2025 Freightliner Cascadias and Volvo VNLs; and 24/7 dispatch you can actually reach. Riders and pets are decided case by case — ask us. We do NOT currently offer company medical, dental, vision, life or disability insurance, or a 401(k) — we'd rather tell you now than at orientation. If that changes, this page changes with it."
+    answer: `Here's the honest list of what we offer today: ${PAY_RATES.companyDriver.signOnBonus}; weekly direct deposit every Friday; performance and referral bonuses; home time you pick (local, regional, or OTR at the same ${PAY_RATES.companyDriver.otr.perMile}/mile); modern ${EQUIPMENT.modelYears} ${EQUIPMENT.makes}; and 24/7 dispatch you can actually reach. Riders and pets are decided case by case — ask us. We do NOT currently offer company medical, dental, vision, life or disability insurance, or a 401(k) — we'd rather tell you now than at orientation. If that changes, this page changes with it.`
   },
   {
     question: "What fuel programs are available for owner operators?",
@@ -91,7 +96,7 @@ const defaultFaqs = [
   },
   {
     question: "What if I don't have my own truck yet?",
-    answer: "No problem! Start as a company driver ($0.63/mile) while you save up and learn our operations. Many of our current owner operators started as company drivers. We can guide you through the transition when you're ready to purchase your own truck. We don't do lease-purchase (those programs often trap drivers)."
+    answer: `No problem! Start as a company driver (${PAY_RATES.companyDriver.otr.perMile}/mile) while you save up and learn our operations. Many of our current owner operators started as company drivers. We can guide you through the transition when you're ready to purchase your own truck. We don't do lease-purchase (those programs often trap drivers).`
   },
   
   // Equipment & Requirements
@@ -125,7 +130,7 @@ const defaultFaqs = [
   },
   {
     question: "Why should I choose Thind over bigger carriers?",
-    answer: `We are ${STATS.trucksInFleet} trucks, so the dispatcher who books your load is the one who answers when you call. What we put in writing: ${PAY_RATES.ownerOperator.commission} of gross, no forced dispatch, settlements every Friday with no deductions beyond our 10%, and ${EQUIPMENT.modelYears} equipment. Compare that line by line against whoever else you are talking to.`
+    answer: `We are ${STATS.trucksInFleet} trucks, so the dispatcher who books your load is the one who answers when you call. What we put in writing: ${PAY_RATES.ownerOperator.commission} of gross, no forced dispatch, settlements every Friday with no deductions beyond our ${ooTakePct}%, and ${EQUIPMENT.modelYears} equipment. Compare that line by line against whoever else you are talking to.`
   }
 ]
 

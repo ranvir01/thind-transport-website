@@ -155,7 +155,7 @@ describe("createWorkspaceAction", () => {
 
     const pay = seededSettings(client).pay
     expect(pay.companyDriverPerMileCents).toBe(60)
-    expect(pay.ownerOperatorPercentage).toBe(0.9)
+    expect(pay.ownerOperatorPercentage).toBe(0.91)
   })
 
   it("rounds pay input to sane precision (cents per mile, basis points of share)", async () => {

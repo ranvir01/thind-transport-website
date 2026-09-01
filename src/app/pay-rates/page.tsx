@@ -15,29 +15,29 @@ import { RelatedLinks } from "@/components/shared/RelatedLinks"
 import { driverLinks } from "@/components/shared/link-sets"
 
 export const metadata: Metadata = {
-  title: `Pay rates — 90% owner-operator split, ${PAY_RATES.companyDriver.regional.perMile}/mile company`,
-  description: `Transparent trucking pay: Owner Operators keep 90% gross (${PAY_RATES.ownerOperator.annualGross}/year). Company Drivers ${PAY_RATES.companyDriver.regional.perMile}/mi (${PAY_RATES.companyDriver.regional.annual}/year). Weekly pay, no hidden fees.`,
+  title: `Pay rates — ${PAY_RATES.ownerOperator.commission} owner-operator split, ${PAY_RATES.companyDriver.regional.perMile}/mile company`,
+  description: `Transparent trucking pay: Owner Operators keep ${PAY_RATES.ownerOperator.commission} gross (${PAY_RATES.ownerOperator.annualGross}/year). Company Drivers ${PAY_RATES.companyDriver.regional.perMile}/mi (${PAY_RATES.companyDriver.regional.annual}/year). Weekly pay, no hidden fees.`,
   keywords: [
     "truck driver pay rates",
     "owner operator commission",
     "CDL driver salary",
     "trucking company pay",
-    "90 percent trucking",
+    `${PAY_RATES.ownerOperator.commission.replace("%", "")} percent trucking`,
     "truck driver weekly pay",
     "OTR driver income",
     "flatbed driver pay",
     "reefer driver pay",
   ],
   openGraph: {
-    title: `Truck Driver Pay Rates - 90% O/O | ${COMPANY_INFO.name}`,
-    description: `Owner Operators: 90% gross. Company Drivers: ${PAY_RATES.companyDriver.regional.perMile}/mi. No hidden fees. Weekly pay. See exactly what you'll earn.`,
+    title: `Truck Driver Pay Rates - ${PAY_RATES.ownerOperator.commission} O/O | ${COMPANY_INFO.name}`,
+    description: `Owner Operators: ${PAY_RATES.ownerOperator.commission} gross. Company Drivers: ${PAY_RATES.companyDriver.regional.perMile}/mi. No hidden fees. Weekly pay. See exactly what you'll earn.`,
     url: "https://thindtransport.com/pay-rates",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
     title: `Truck Driver Pay Rates | ${COMPANY_INFO.name}`,
-    description: `90% commission for O/O • ${PAY_RATES.companyDriver.regional.perMile}/mi for company • Weekly pay • No hidden fees`,
+    description: `${PAY_RATES.ownerOperator.commission} commission for O/O • ${PAY_RATES.companyDriver.regional.perMile}/mi for company • Weekly pay • No hidden fees`,
   },
   alternates: {
     canonical: "https://thindtransport.com/pay-rates",
@@ -59,7 +59,7 @@ export default function PayRatesPage() {
             Transparent <span className="text-orange">Pay Rates</span>
           </>
         }
-        description="No hidden fees. No surprises. Just straightforward, competitive pay — 90% split for owner-operators, $0.63/mile for company drivers."
+        description={`No hidden fees. No surprises. Just straightforward, competitive pay — ${PAY_RATES.ownerOperator.commission} split for owner-operators, ${PAY_RATES.companyDriver.regional.perMile}/mile for company drivers.`}
         primaryLabel="See What You'd Earn"
         primaryHref="#calculator"
       />
@@ -89,7 +89,7 @@ export default function PayRatesPage() {
                   <Badge className="bg-[#17181B] text-white px-3 py-1 font-bold">Full-Time</Badge>
                 </CardTitle>
                 <CardDescription className="text-base text-gray-700 font-medium">
-                  $0.63/mile — the same rate local, regional or OTR
+                  {PAY_RATES.companyDriver.regional.perMile}/mile — the same rate local, regional or OTR
                 </CardDescription>
               </CardHeader>
               <CardContent className="pt-6">
@@ -155,7 +155,7 @@ export default function PayRatesPage() {
                   <Badge className="bg-[#17181B] text-white px-3 py-1 font-bold">Independent</Badge>
                 </CardTitle>
                 <CardDescription className="text-base text-gray-700 font-medium">
-                  Highest earning potential with 90% commission
+                  Highest earning potential with {PAY_RATES.ownerOperator.commission} commission
                 </CardDescription>
               </CardHeader>
               <CardContent className="pt-6">

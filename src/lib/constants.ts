@@ -9,7 +9,7 @@ export const COMPANY_INFO = {
   mc: "876103",
   owner: "Sukhdev Thind",
   founded: 2014,
-  ownerExperience: "20+",
+  ownerExperience: "25+",
 } as const
 
 /** Official FMCSA links — Motus replaces legacy URS / FMCSA Portal for carrier registration (2026). */
@@ -32,26 +32,27 @@ export const SERVICES = {
 
 export const PAY_RATES = {
   ownerOperator: {
-    commission: "90%",
-    annualGross: "$150K-$250K",
+    payout: "91%",
+    commission: "91%",
+    annualGross: "$250K-$300K",
     perMile: "$2.50-$3.50",
     fuelSurcharge: "100%",
     signOnBonus: "$2,500",
   },
   companyDriver: {
     local: {
-      perMile: "$0.63",
-      annual: "$57K-$63K",
+      perMile: "$0.60-$0.65",
+      annual: "$78K-$85K",
       homeTime: "Daily",
     },
     regional: {
-      perMile: "$0.63",
-      annual: "$63K-$73K",
+      perMile: "$0.60-$0.65",
+      annual: "$78K-$95K",
       homeTime: "Weekly",
     },
     otr: {
-      perMile: "$0.63",
-      annual: "$69K-$82K",
+      perMile: "$0.60-$0.65",
+      annual: "$93K-$110K",
       homeTime: "2-3 weeks",
     },
     signOnBonus: "$1,000 (First Year)",
@@ -77,7 +78,7 @@ export const BENEFITS = {
     "Referral bonuses",
   ],
   ownerOperator: [
-    "90% commission on all loads",
+    `${PAY_RATES.ownerOperator.payout} payout on all loads`,
     "$2,500 sign-on bonus",
     "No forced dispatch - you choose your loads",
     "Weekly settlements and fast pay options",

@@ -31,7 +31,7 @@ const FUEL_LINKS = [
   {
     href: "/owner-operators",
     title: "Owner-operator terms",
-    blurb: "The 90% split, no forced dispatch, and what we don't deduct.",
+    blurb: "The 91% split, no forced dispatch, and what we don't deduct.",
     icon: Percent,
     kind: "Page" as const,
   },

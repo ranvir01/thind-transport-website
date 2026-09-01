@@ -12,7 +12,7 @@ import { driverLinks } from "@/components/shared/link-sets"
 export const metadata: Metadata = {
   title: "Drive for Thind Transport | CDL-A & owner-operators",
   description:
-    "Owner-operators keep 90% of gross with 100% fuel surcharge pass-through; company drivers earn $0.63/mile with weekly pay. 2023-2025 Cascadias and VNLs, 48 states, dispatch that picks up. Run your own numbers on the calculator, then start an application.",
+    `Owner-operators keep ${PAY_RATES.ownerOperator.commission} of gross with 100% fuel surcharge pass-through; company drivers earn ${PAY_RATES.companyDriver.otr.perMile}/mile with weekly pay. ${EQUIPMENT.short}, 48 states, dispatch that picks up. Run your own numbers on the calculator, then start an application.`,
   alternates: { canonical: "/drivers" },
 }
 

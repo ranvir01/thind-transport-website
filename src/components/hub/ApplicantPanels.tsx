@@ -75,7 +75,7 @@ export function OfferPanel({
               <label htmlFor="offer-pay" className={labelCls}>Pay summary</label>
               <input
                 id="offer-pay" required className={fieldCls}
-                placeholder="$0.63/mile loaded, weekly settlements"
+                placeholder="$0.60-$0.65/mile loaded, weekly settlements"
                 value={form.paySummary}
                 onChange={(e) => setForm({ ...form, paySummary: e.target.value })}
               />
@@ -253,7 +253,7 @@ export function ConvertPanel({
             id="conv-type" className={fieldCls} value={form.payType}
             onChange={(e) => {
               const payType = e.target.value as "per_mile" | "percentage"
-              setForm({ ...form, payType, payRate: payType === "per_mile" ? "0.63" : "0.9" })
+              setForm({ ...form, payType, payRate: payType === "per_mile" ? "0.63" : "0.91" })
             }}
           >
             <option value="per_mile">Per mile (company)</option>
@@ -262,7 +262,7 @@ export function ConvertPanel({
         </div>
         <div>
           <label htmlFor="conv-rate" className={labelCls}>
-            {form.payType === "per_mile" ? "Rate $/mile" : "Share (0.90 = 90%)"}
+            {form.payType === "per_mile" ? "Rate $/mile" : "Share (0.91 = 91%)"}
           </label>
           <input
             id="conv-rate" className={fieldCls} inputMode="decimal"

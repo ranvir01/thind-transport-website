@@ -109,7 +109,7 @@ export function DriverForm({ driverId, initial }: { driverId?: string; initial: 
           </div>
           <div>
             <label className={labelCls} htmlFor="pay_rate">
-              {form.pay_type === "percentage" ? "Commission (e.g. 0.90 = 90%)" : "Rate per mile ($)"}
+              {form.pay_type === "percentage" ? "Payout (e.g. 0.91 = 91%)" : "Rate per mile ($)"}
             </label>
             <input id="pay_rate" type="number" inputMode="decimal" step="0.01" min="0"
               className={fieldCls} value={form.pay_rate}

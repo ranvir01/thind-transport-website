@@ -17,7 +17,7 @@ import { RelatedLinks } from "@/components/shared/RelatedLinks"
 
 export const metadata: Metadata = {
   title: "Driver benefits — and what we don't offer",
-  description: "What Thind Transport actually offers CDL drivers: $0.63/mile, weekly direct deposit, a $1,000 first-year sign-on bonus, referral and performance bonuses, home time you pick, and late-model equipment. Plus a straight answer on what we don't offer yet.",
+  description: `What Thind Transport actually offers CDL drivers: ${PAY_RATES.companyDriver.otr.perMile}/mile, weekly direct deposit, a $1,000 first-year sign-on bonus, referral and performance bonuses, home time you pick, and late-model equipment. Plus a straight answer on what we don't offer yet.`,
   keywords: [
     "truck driver benefits",
     "driver sign on bonus",
@@ -111,8 +111,8 @@ const ownerOperatorBenefits = [
     color: "green",
     items: [
       {
-        title: "90% Gross Commission",
-        description: "You keep 90% of the linehaul on every load you haul",
+        title: `${PAY_RATES.ownerOperator.commission} Gross Commission`,
+        description: `You keep ${PAY_RATES.ownerOperator.commission} of the linehaul on every load you haul`,
         highlight: true,
       },
       {
@@ -290,6 +290,10 @@ const BENEFIT_LINKS = [
   },
 ]
 
+const ooCommissionPct = Number(PAY_RATES.ownerOperator.commission.replace("%", ""))
+const companyCpm = Number(PAY_RATES.companyDriver.otr.perMile.match(/\d+\.\d+/)?.[0] ?? "0")
+const fuelPassPct = Number(PAY_RATES.ownerOperator.fuelSurcharge.replace("%", ""))
+
 const colorClasses = {
   green: "from-green-500/10 to-green-600/5 border-green-500/20 text-green-600",
   orange: "from-orange-500/10 to-orange-600/5 border-orange-500/20 text-orange-600",
@@ -318,9 +322,9 @@ export default function BenefitsPage() {
         <div className="container">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto">
             {[
-              { value: 90, suffix: "%", label: "Commission", sublabel: "Owner Operators" },
-              { value: 0.63, prefix: "$", decimals: 2, label: "Per Mile", sublabel: "Company Drivers" },
-              { value: 100, suffix: "%", label: "Fuel Surcharge", sublabel: "Passed Through" },
+              { value: ooCommissionPct, suffix: "%", label: "Commission", sublabel: "Owner Operators" },
+              { value: companyCpm, prefix: "$", decimals: 2, label: "Per Mile", sublabel: "Company Drivers" },
+              { value: fuelPassPct, suffix: "%", label: "Fuel Surcharge", sublabel: "Passed Through" },
               { value: 24, suffix: "/7", label: "Support", sublabel: "Real People" },
             ].map((stat, i) => (
               <Reveal key={stat.label} index={Math.min(i, 4)}>
@@ -460,7 +464,7 @@ export default function BenefitsPage() {
               Owner Operators
             </Badge>
             <h2 className="text-3xl md:text-4xl font-black text-gray-900 mb-4">
-              90% of gross. No forced dispatch.
+              {PAY_RATES.ownerOperator.commission} of gross. No forced dispatch.
             </h2>
             <p className="text-lg text-gray-600 max-w-2xl mx-auto">
               Weekly settlements every Friday, and 100% of the fuel surcharge passed through.
@@ -582,7 +586,7 @@ export default function BenefitsPage() {
               Ready to Experience These Benefits?
             </h2>
             <p className="text-lg text-white/90 mb-8">
-              $0.63 a mile for company drivers, 90% of the linehaul for owner-operators,
+              {PAY_RATES.companyDriver.otr.perMile} a mile for company drivers, {PAY_RATES.ownerOperator.commission} of the linehaul for owner-operators,
               and a real person on the phone in Kent. Apply today and hear back within 24 hours on business days.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">

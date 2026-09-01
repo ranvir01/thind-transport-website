@@ -9,7 +9,7 @@ import {
   DollarSign, Heart, MapPin, BookOpen, Users,
   Truck, Shield, ChevronRight, LayoutDashboard,
 } from "lucide-react"
-import { COMPANY_INFO } from "@/lib/constants"
+import { COMPANY_INFO, EQUIPMENT, PAY_RATES } from "@/lib/constants"
 import { PersonaSwitcher } from "@/components/shared/PersonaSwitcher"
 
 // Navigation items with dropdowns
@@ -24,7 +24,7 @@ const driverMenuItems = [
   {
     href: "/pay-rates",
     label: "Pay Rates",
-    description: "90% O/O split",
+    description: `${PAY_RATES.ownerOperator.commission} O/O split`,
     icon: DollarSign,
   },
   {
@@ -63,7 +63,7 @@ const companyMenuItems = [
   {
     href: "/fleet",
     label: "Our Fleet",
-    description: "2023-2025 Cascadias & VNLs",
+    description: EQUIPMENT.short,
     icon: Truck,
   },
   {

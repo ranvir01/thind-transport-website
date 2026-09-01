@@ -199,7 +199,7 @@ export function PayRateVisualizations() {
 
           <div>
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-black text-gray-900">Owner Operator (90% gross)</span>
+              <span className="text-sm font-black text-gray-900">Owner Operator ({PAY_RATES.ownerOperator.commission} gross)</span>
               <span className="text-2xl font-black text-green-600">{projection.ownerOperator.label}</span>
             </div>
             <div className="w-full bg-gray-200 rounded-full h-7">
@@ -232,13 +232,13 @@ export function PayRateVisualizations() {
           <div>
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm text-gray-600">Our cut, all in</span>
-              <span className="font-semibold text-gray-900">10%</span>
+              <span className="font-semibold text-gray-900">{100 - Number(PAY_RATES.ownerOperator.commission.replace("%", ""))}%</span>
             </div>
             <div className="w-full bg-gray-200 rounded-full h-5">
-              <div className="bg-gray-400 h-5 rounded-full" style={{ width: '10%' }} />
+              <div className="bg-gray-400 h-5 rounded-full" style={{ width: `${100 - Number(PAY_RATES.ownerOperator.commission.replace("%", ""))}%` }} />
             </div>
             <p className="mt-1.5 text-xs text-gray-500">
-              Dispatch, billing and admin. On a $3,000 load that is $300 — and the fuel
+              Dispatch, billing and admin. On a $3,000 load that is ${((3000 * (100 - Number(PAY_RATES.ownerOperator.commission.replace("%", "")))) / 100).toLocaleString("en-US")} — and the fuel
               surcharge passes through whole.
             </p>
           </div>
@@ -251,9 +251,9 @@ export function PayRateVisualizations() {
             <div className="w-full bg-gray-200 rounded-full h-6">
               <div 
                 className="bg-gradient-to-r from-green-500 to-green-600 h-6 rounded-full flex items-center justify-end pr-2"
-                style={{ width: '90%' }}
+                style={{ width: PAY_RATES.ownerOperator.commission }}
               >
-                <span className="text-xs text-white font-black">90%</span>
+                <span className="text-xs text-white font-black">{PAY_RATES.ownerOperator.commission}</span>
               </div>
             </div>
             <div className="mt-2 flex items-center gap-2 text-xs text-green-700 font-semibold">

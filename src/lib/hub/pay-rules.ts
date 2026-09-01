@@ -407,7 +407,7 @@ export function describePayRules(ruleSet: PayRuleSet): { earnings: string[]; ded
 
 /**
  * Compact one-line summary of a rule set's earning rules for headers and
- * subtitles (e.g. "90% linehaul + 100% FSC", "$0.63/loaded mi"). Situational
+ * subtitles (e.g. "91% linehaul + 100% FSC", "$0.60/loaded mi"). Situational
  * bonus rules (referral, scorecard) are omitted — they don't describe the
  * base pay program.
  */

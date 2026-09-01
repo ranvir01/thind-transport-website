@@ -11,7 +11,7 @@ export const dynamic = "force-dynamic"
 const AUDIENCES: { key: Audience; label: string; blurb: string }[] = [
   { key: "broker", label: "Brokers", blurb: "Freight brokers to haul for — pitch our authority, equipment, and live tracking." },
   { key: "shipper", label: "Shippers", blurb: "Companies that ship direct — cut out the broker markup." },
-  { key: "driver", label: "Drivers", blurb: "CDL-A drivers and owner-ops — the 90% split and weekly pay." },
+  { key: "driver", label: "Drivers", blurb: "CDL-A drivers and owner-ops — the 91% split and weekly pay." },
 ]
 
 /**

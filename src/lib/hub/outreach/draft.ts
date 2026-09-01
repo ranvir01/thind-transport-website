@@ -12,6 +12,8 @@
  * every message already carries a compliant CAN-SPAM footer.
  */
 
+import { EQUIPMENT, PAY_RATES } from "@/lib/constants"
+
 export type Audience = "broker" | "shipper" | "driver"
 export type Channel = "email" | "sms"
 
@@ -149,14 +151,14 @@ function shipperDraft(p: ProspectInput, c: CompanyFacts): Omit<Draft, "channel">
 
 function driverDraft(p: ProspectInput, c: CompanyFacts): Omit<Draft, "channel"> {
   const years = new Date().getFullYear() - c.founded
-  const subject = `90% owner-op split, weekly pay — drive for ${c.name}`
+  const subject = `${PAY_RATES.ownerOperator.commission} owner-op split, weekly pay — drive for ${c.name}`
   const body = [
     greeting(p),
     "",
     `I'm with ${c.name}, a family-run carrier out of Kent, WA (${years} years, since ${c.founded}). We're hiring CDL-A drivers and owner-operators, and I thought the deal might be worth a look:`,
     "",
-    "• Owner-operators keep 90% of the gross",
-    "• Company drivers run new 2024 Freightliner Cascadias at $0.63/mile",
+    `• Owner-operators keep ${PAY_RATES.ownerOperator.commission} of the gross`,
+    `• Company drivers run ${EQUIPMENT.modelYears} ${EQUIPMENT.makes} at ${PAY_RATES.companyDriver.otr.perMile}/mile`,
     "• Weekly pay, no forced dispatch, real dispatch that answers",
     `• ${c.statesCovered} states — you pick the lanes that fit your life`,
     "",
@@ -167,10 +169,10 @@ function driverDraft(p: ProspectInput, c: CompanyFacts): Omit<Draft, "channel"> 
     "",
     canSpamFooter(c),
   ].join("\n")
-  const sms = `${c.name} (Kent WA, family-run): 90% O/O split or $0.63/mi company, weekly pay, no forced dispatch, 2024 Cascadias. Apply: thindtransport.com/apply or call ${c.phone}`
+  const sms = `${c.name} (Kent WA, family-run): ${PAY_RATES.ownerOperator.commission} O/O split or ${PAY_RATES.companyDriver.otr.perMile}/mi company, weekly pay, no forced dispatch, ${EQUIPMENT.short}. Apply: thindtransport.com/apply or call ${c.phone}`
   const callScript = [
     `Hey, this is ___ with ${c.name} out of Kent, Washington — we're a family-run carrier hiring drivers and owner-ops.`,
-    `Owner-operators keep 90%, company drivers are at $0.63 a mile on 2024 Cascadias, weekly pay, no forced dispatch.`,
+    `Owner-operators keep ${PAY_RATES.ownerOperator.commission}, company drivers are at ${PAY_RATES.companyDriver.otr.perMile} a mile on ${EQUIPMENT.short}, weekly pay, no forced dispatch.`,
     `Are you driving right now, or looking? I can walk you through it in five minutes. ${c.phone}.`,
   ].join(" ")
   return { subject, body, sms, callScript }
