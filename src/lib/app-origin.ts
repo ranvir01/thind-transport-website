@@ -53,11 +53,13 @@ export function isAppHost(host: string | null | undefined): boolean {
 }
 
 /**
- * Absolute origin for links that must land a user in the app (driver invite
- * QR, emailed driver invite, broker/shipper portal accept links, and the
- * Monday-numbers digest "Open the Hub" URL). Prefers NEXT_PUBLIC_APP_HOST so
- * a scan or tap opens the app origin once that env var is set; until then
- * NEXTAUTH_URL, same as today. Unset APP_HOST changes nothing.
+ * Absolute origin for links that must land a user (or a vendor webhook)
+ * in the app (driver invite QR, emailed driver invite, broker/shipper
+ * portal accept links, the Monday-numbers digest "Open the Hub" URL, and
+ * inbound integration webhook URLs on Settings → Integrations). Prefers
+ * NEXT_PUBLIC_APP_HOST so a scan, tap, or vendor POST opens the app origin
+ * once that env var is set; until then NEXTAUTH_URL, same as today. Unset
+ * APP_HOST changes nothing.
  */
 export function appPublicOrigin(): string {
   const configured = configuredAppHost()
