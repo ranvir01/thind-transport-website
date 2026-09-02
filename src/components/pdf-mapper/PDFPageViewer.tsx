@@ -261,7 +261,7 @@ export default function PDFPageViewer({
 
               {/* Resize handle - corner */}
               <div
-                className="absolute bottom-0 right-0 w-3 h-3 cursor-nwse-resize opacity-0 group-hover:opacity-100 bg-orange-600 hover:bg-orange-500 rounded-tl"
+                className="absolute bottom-0 right-0 w-3 h-3 cursor-nwse-resize opacity-0 group-hover:opacity-100 bg-orange-600 hover:bg-orange-700 rounded-tl"
                 onMouseDown={(e) => handleFieldMouseDown(e, field, 'resize-corner')}
                 title="Drag to resize"
               />

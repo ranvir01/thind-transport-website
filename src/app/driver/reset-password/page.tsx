@@ -111,7 +111,7 @@ function ResetPasswordForm() {
             </p>
 
             <Link href="/driver/login">
-              <Button className="w-full bg-orange-600 hover:bg-orange-500 text-white">
+              <Button className="w-full bg-orange-600 hover:bg-orange-700 text-white">
                 Go to Login
               </Button>
             </Link>
@@ -202,7 +202,7 @@ function ResetPasswordForm() {
               </ul>
             </div>
 
-            <Button type="submit" className="w-full bg-orange-600 hover:bg-orange-500 text-white" disabled={loading}>
+            <Button type="submit" className="w-full bg-orange-600 hover:bg-orange-700 text-white" disabled={loading}>
               {loading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />

@@ -186,7 +186,7 @@ export default function DriverDashboardPage() {
                   <Button
                     onClick={() => router.push("/driver/application")}
                     size="lg"
-                    className="bg-orange-600 hover:bg-orange-500 text-white font-bold w-full sm:w-auto"
+                    className="bg-orange-600 hover:bg-orange-700 text-white font-bold w-full sm:w-auto"
                   >
                     <FileText className="mr-2 h-4 w-4" />
                     Start DOT Application
