@@ -57,7 +57,9 @@ function MockFrame({
       {persona.id === "dispatcher" ? (
         <ul className="mt-5 space-y-3 text-base">
           <li className={cn("flex items-center justify-between rounded-control border px-3 py-3", tile)}>
-            <span>THD-1001 · Kent pickup 09:00</span>
+            <span>
+              {SHOWCASE_MOCK.due.ref} · {SHOWCASE_MOCK.due.lane} {SHOWCASE_MOCK.due.window}
+            </span>
             <span className={accent}>On time</span>
           </li>
           <li className={cn("flex items-center justify-between rounded-control border px-3 py-3", tile)}>

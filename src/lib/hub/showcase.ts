@@ -34,6 +34,11 @@ export interface ShowcasePersona {
 }
 
 export const SHOWCASE_MOCK = {
+  due: {
+    ref: "THD-1001",
+    lane: "Kent, WA pickup",
+    window: "09:00",
+  },
   load: {
     ref: "THD-1008",
     lane: "Kent, WA → Sacramento, CA",

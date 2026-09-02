@@ -27,6 +27,12 @@ describe("showcase personas", () => {
     expect(Number.isInteger(SHOWCASE_MOCK.money.unbilledCents)).toBe(true)
   })
 
+  it("uses current seed load refs, not the THD-200x series", () => {
+    expect(SHOWCASE_MOCK.due.ref).toBe("THD-1001")
+    expect(SHOWCASE_MOCK.active.ref).toBe("THD-1003")
+    expect(SHOWCASE_MOCK.load.ref).toBe("THD-1008")
+  })
+
   it("looks up personas by id", () => {
     expect(getPersona("driver")?.device).toBe("phone")
     expect(getPersona("missing")).toBeUndefined()
