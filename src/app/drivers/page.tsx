@@ -119,21 +119,10 @@ export default function DriversPage() {
         </div>
       </section>
 
-      {/* The signature instrument, front and centre — not buried mid-homepage. */}
-      <section id="calculator" className="py-16 md:py-24 scroll-mt-20">
-        <div className="container px-4">
-          <Reveal className="mx-auto max-w-measure text-center">
-            <h2 className="font-display text-m-h2 font-bold text-ink">Run your own numbers</h2>
-            <p className="mt-3 text-m-body text-ink-2">
-              Current market rates by equipment, fuel at today&apos;s price, real fixed costs.
-              Change anything — it&apos;s your projection, not our promise.
-            </p>
-          </Reveal>
-          <div className="mx-auto mt-10 max-w-5xl">
-            <ProfitCalculator />
-          </div>
-        </div>
-      </section>
+      {/* Shared instrument carries its own heading; keep the hash so hero CTAs still land. */}
+      <div id="calculator" className="scroll-mt-20">
+        <ProfitCalculator />
+      </div>
 
       <section className="border-t border-ink/10 py-16 md:py-24">
         <div className="container px-4">

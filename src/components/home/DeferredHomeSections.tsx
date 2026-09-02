@@ -22,7 +22,7 @@ const ApplicationFormInner = dynamic(
 
 export function DeferredProfitCalculator() {
   return (
-    <LazyMount minHeight={900} id="calculator" className="scroll-mt-20">
+    <LazyMount minHeight={1100} id="calculator" className="scroll-mt-20">
       <ProfitCalculatorInner />
     </LazyMount>
   )

@@ -68,6 +68,8 @@ export const ProfitCalculator = () => {
   const [emailSent, setEmailSent] = useState(false)
   const [emailError, setEmailError] = useState<string | null>(null)
   const [isSending, setIsSending] = useState(false)
+  const [showGuarantee, setShowGuarantee] = useState(false)
+  const [showInputs, setShowInputs] = useState(false)
 
   // Update rate when equipment type changes
   useEffect(() => {
@@ -153,11 +155,11 @@ export const ProfitCalculator = () => {
 
 
   return (
-    <section className="py-20 md:py-28 brand-section-panel scroll-mt-20 overflow-x-hidden border-t-0">
+    <section data-testid="profit-calculator" className="py-8 md:py-16 brand-section-panel scroll-mt-20 overflow-x-hidden border-t-0">
       <div className="container max-w-6xl mx-auto px-4 overflow-hidden">
-        <div className="fleet-section-heading">
-          <span className="fleet-badge mb-4">Owner-operator pay</span>
-          <h2 className="text-white mb-4">
+        <div className="text-center mb-6 md:mb-10">
+          <span className="fleet-badge mb-3">Owner-operator pay</span>
+          <h2 className="text-white mb-2 md:mb-4">
             Calculate your <span className="text-orange">real</span> take-home
           </h2>
           <p className="text-base md:text-lg text-steel-300 max-w-2xl mx-auto">
@@ -166,10 +168,10 @@ export const ProfitCalculator = () => {
           </p>
         </div>
 
-        <div className="grid lg:grid-cols-2 gap-6 md:gap-8 items-start">
-            {/* Inputs Panel */}
-          <div className="fleet-panel p-4 md:p-8">
-            <div className="flex items-center gap-3 mb-6">
+        <div className="grid lg:grid-cols-2 gap-4 md:gap-8 items-start">
+            {/* Inputs — collapsed on a phone so take-home + Apply fit the first screen; always open on lg. */}
+          <div className={`${showInputs ? "order-3" : "hidden"} fleet-panel p-3 lg:order-1 lg:block lg:p-8`}>
+            <div className="flex items-center gap-3 mb-4 md:mb-6">
               <div className="w-10 h-10 rounded-lg bg-orange/20 flex items-center justify-center">
                 <Calculator className="w-5 h-5 text-orange" />
               </div>
@@ -177,9 +179,9 @@ export const ProfitCalculator = () => {
             </div>
 
             {/* Equipment Type Selection */}
-            <div className="mb-6">
-              <label className="font-semibold text-white/90 mb-3 block text-sm">Equipment Type</label>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+            <div className="mb-4 md:mb-6">
+              <label className="font-semibold text-white/90 mb-2 md:mb-3 block text-sm">Equipment Type</label>
+              <div className="grid grid-cols-3 gap-2">
                 {(Object.entries(EQUIPMENT_RATES) as [EquipmentType, typeof EQUIPMENT_RATES[EquipmentType]][]).map(([key, value]) => (
                   <button
                     key={key}
@@ -200,7 +202,7 @@ export const ProfitCalculator = () => {
             </div>
 
             {/* Miles Slider */}
-            <div className="mb-6">
+            <div className="mb-4 md:mb-6">
               <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1 mb-3">
                 <label htmlFor="calc-miles" className="font-semibold text-white/90 text-sm flex items-center gap-2">
                   <Truck className="w-4 h-4 text-orange" />
@@ -228,7 +230,7 @@ export const ProfitCalculator = () => {
             </div>
 
             {/* Rate Slider */}
-            <div className="mb-6">
+            <div className="mb-4 md:mb-6">
               <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1 mb-3">
                 <label htmlFor="calc-rate" className="font-semibold text-white/90 text-sm flex items-center gap-2">
                   <DollarSign className="w-4 h-4 text-orange" />
@@ -260,7 +262,7 @@ export const ProfitCalculator = () => {
             </div>
 
             {/* Fuel Price Slider */}
-            <div className="mb-6">
+            <div className="mb-4 md:mb-6">
               <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1 mb-3">
                 <label htmlFor="calc-fuel" className="font-semibold text-white/90 text-sm flex items-center gap-2">
                   <Fuel className="w-4 h-4 text-orange" />
@@ -286,7 +288,7 @@ export const ProfitCalculator = () => {
             </div>
 
             {/* Compare to Your Current Pay */}
-            <div className="mb-6">
+            <div className="mb-4 md:mb-6">
               <button
                 onClick={() => setShowComparison(!showComparison)}
                 className="w-full flex items-center justify-between p-3 rounded-lg border border-orange/30 bg-orange/10 hover:bg-orange/20 transition-colors text-white"
@@ -407,12 +409,12 @@ export const ProfitCalculator = () => {
             )}
           </div>
 
-          {/* Results Panel */}
-          <div className="bg-white rounded-2xl shadow-brand-lg p-4 md:p-8 flex flex-col" data-light>
-            <h3 className="text-lg md:text-xl font-bold text-navy mb-6 text-center">Your Weekly Take-Home</h3>
+          {/* Results — first on a phone so pay is in the first viewport of the instrument. */}
+          <div className="bg-white rounded-2xl shadow-brand-lg order-1 p-3 lg:order-2 lg:p-8 flex flex-col" data-light>
+            <h3 className="text-lg md:text-xl font-bold text-navy mb-4 md:mb-6 text-center">Your Weekly Take-Home</h3>
             
             {/* Main Comparison Cards */}
-            <div className="grid grid-cols-2 gap-2 sm:gap-4 mb-6">
+            <div className="grid grid-cols-2 gap-2 sm:gap-4 mb-4 md:mb-6">
               {/* The visitor's current split — their number, not an invented one */}
               <div className="bg-gray-100 rounded-xl p-3 sm:p-4 border-2 border-gray-200">
                 <p className="text-gray-700 text-[10px] sm:text-xs font-semibold uppercase tracking-wider mb-1">Your Carrier Now</p>
@@ -451,8 +453,8 @@ export const ProfitCalculator = () => {
               </div>
             </div>
 
-            {/* Visual Bar Comparison */}
-            <div className="mb-6">
+            {/* Visual Bar Comparison — desktop only; the cards above already carry the same numbers. */}
+            <div className="mb-6 hidden md:block">
               <p className="text-sm text-gray-700 mb-3 font-semibold">Net Weekly Comparison</p>
               <div className="space-y-2">
                 <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
@@ -481,7 +483,7 @@ export const ProfitCalculator = () => {
             </div>
 
             {/* Difference Callouts */}
-            <div className="grid grid-cols-2 gap-2 sm:gap-3 mb-6">
+            <div className="grid grid-cols-2 gap-2 sm:gap-3 mb-4 md:mb-6">
               <div className="bg-green-50 border border-green-200 rounded-lg p-3 sm:p-4 text-center">
                 <p className="text-green-800 font-semibold text-[10px] sm:text-xs mb-1 uppercase tracking-wider">Weekly Extra</p>
                 <p className="text-lg sm:text-2xl font-black text-green-700">
@@ -496,8 +498,8 @@ export const ProfitCalculator = () => {
               </div>
             </div>
 
-            {/* Annual Summary */}
-            <div className="bg-navy/5 rounded-xl p-4 mb-6 border border-navy/10">
+            {/* Annual Summary — desktop; weekly extra already carries the phone-sized claim. */}
+            <div className="bg-navy/5 rounded-xl p-3 md:p-4 mb-4 md:mb-6 border border-navy/10 hidden md:block">
               <p className="text-navy font-bold text-sm mb-3">Annual Projection (48 weeks)</p>
               <div className="grid grid-cols-2 gap-2 sm:gap-4 text-center">
                 <div>
@@ -511,12 +513,21 @@ export const ProfitCalculator = () => {
               </div>
             </div>
 
-            {/* Transparency Guarantee */}
-            <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-xl">
-               <h4 className="flex items-center gap-2 font-bold text-green-900 mb-3">
-                 <CheckCircle2 className="w-5 h-5 text-green-700" />
-                 The &ldquo;No Hidden Fees&rdquo; Guarantee
-               </h4>
+            {/* Transparency Guarantee — collapsed by default so the take-home + CTA stay in the first phone screen. */}
+            <button
+              type="button"
+              onClick={() => setShowGuarantee(!showGuarantee)}
+              className="mb-3 md:mb-4 w-full flex items-center justify-between p-3 rounded-xl border border-green-200 bg-green-50 text-green-900 min-h-[44px]"
+              aria-expanded={showGuarantee}
+            >
+              <span className="flex items-center gap-2 font-bold text-sm">
+                <CheckCircle2 className="w-5 h-5 text-green-700 shrink-0" />
+                The &ldquo;No Hidden Fees&rdquo; Guarantee
+              </span>
+              <ChevronDown className={`w-4 h-4 shrink-0 transition-transform ${showGuarantee ? "rotate-180" : ""}`} />
+            </button>
+            {showGuarantee && (
+              <div className="mb-4 md:mb-6 p-3 md:p-4 bg-green-50 border border-green-200 rounded-xl">
                <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-2 gap-x-4">
                  {[
                    "No Trailer Rental Fees",
@@ -534,7 +545,8 @@ export const ProfitCalculator = () => {
                    </div>
                  ))}
                </div>
-            </div>
+              </div>
+            )}
 
             {/* CTA */}
             <Link 
@@ -546,7 +558,7 @@ export const ProfitCalculator = () => {
             </Link>
 
             {/* Save Calculation Feature */}
-            <div className="mt-4 p-3 sm:p-4 bg-navy/5 rounded-xl border border-navy/10">
+            <div className="mt-3 md:mt-4 p-3 sm:p-4 bg-navy/5 rounded-xl border border-navy/10">
               <p className="text-sm font-semibold text-navy mb-3 flex items-center gap-2">
                 <Mail className="w-4 h-4 shrink-0" />
                 Save Your Calculation
@@ -595,10 +607,23 @@ export const ProfitCalculator = () => {
               * Estimates based on current market conditions. Actual earnings depend on loads, lanes, and individual expenses.
             </p>
           </div>
+
+          <div className="order-2 lg:hidden">
+            <button
+              type="button"
+              onClick={() => setShowInputs(!showInputs)}
+              className="w-full min-h-[44px] flex items-center justify-center gap-2 rounded-lg border border-white/20 bg-white/5 px-4 py-3 text-sm font-semibold text-white"
+              aria-expanded={showInputs}
+            >
+              <Calculator className="w-4 h-4 text-orange shrink-0" />
+              {showInputs ? "Hide load details" : "Adjust miles, rate, and fuel"}
+              <ChevronDown className={`w-4 h-4 text-orange shrink-0 transition-transform ${showInputs ? "rotate-180" : ""}`} />
+            </button>
+          </div>
         </div>
 
         {/* Bottom Context */}
-        <div className="mt-8 text-center">
+        <div className="mt-4 md:mt-8 text-center">
           <p className="text-white/80 text-sm max-w-2xl mx-auto">
             <strong className="text-white">Why {PAY_RATES.ownerOperator.commission}?</strong> We take 10% of the
             linehaul to cover dispatch, billing, and admin, and pass the fuel surcharge through whole.
