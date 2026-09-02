@@ -114,7 +114,7 @@ export default function CreateFillablePDFPage() {
                     onClick={createFillablePDF}
                     disabled={isProcessing}
                     size="lg"
-                    className="bg-orange-600 hover:bg-orange-500 text-white"
+                    className="bg-orange-600 hover:bg-orange-700 text-white"
                   >
                     {isProcessing ? (
                       <>
@@ -149,7 +149,7 @@ export default function CreateFillablePDFPage() {
                     Generate New
                   </Button>
                   <Link href="/driver/dashboard">
-                    <Button className="bg-orange-600 hover:bg-orange-500 text-white">
+                    <Button className="bg-orange-600 hover:bg-orange-700 text-white">
                       Back to Dashboard
                     </Button>
                   </Link>

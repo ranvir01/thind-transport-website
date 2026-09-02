@@ -92,7 +92,7 @@ export const WhySwitch = () => {
             </p>
             <Link
               href="/#calculator"
-              className="mt-4 inline-flex min-h-[48px] items-center gap-2 rounded-fleet bg-signal px-6 text-m-body font-semibold text-paper transition-colors duration-base hover:bg-signal-up"
+              className="mt-4 inline-flex min-h-[48px] items-center gap-2 rounded-fleet bg-signal px-6 text-m-body font-semibold text-paper transition-colors duration-base hover:bg-orange-700"
             >
               Work out your take-home
               <ArrowRight className="h-4 w-4" />
