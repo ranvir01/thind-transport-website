@@ -89,7 +89,7 @@ async function main() {
   await login(cascade, "owner@cascademo.example")
   await waitForText(cascade, "Cascade Demo Lines".toUpperCase())
   await cascade.goto(`${BASE}/hub/loads`, { waitUntil: "networkidle2" })
-  await waitForText(cascade, ANCHORS.loads)
+  await waitForText(cascade, "Search, filter, and manage every load.")
   const loadsText = await cascade.evaluate(() => document.body.innerText)
   if (!loadsText.includes("CAS-5001")) throw new Error("Cascade load missing")
   if (loadsText.includes("THD-")) throw new Error("CASCADE SEES THIND LOADS — isolation broken!")

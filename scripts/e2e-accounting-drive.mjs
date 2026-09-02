@@ -99,7 +99,7 @@ async function main() {
   await waitForText(page, "Payment recorded")
   await page.waitForFunction(
     () => {
-      const dt = [...document.querySelectorAll("dt")].find((n) => n.textContent.trim() === ANCHORS.openBalance)
+      const dt = [...document.querySelectorAll("dt")].find((n) => n.textContent.trim() === "Open balance")
       return /\$0\.00/.test(dt?.parentElement?.querySelector("dd")?.textContent ?? "")
     },
     { timeout: 20000 }
