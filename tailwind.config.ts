@@ -273,6 +273,19 @@ const config: Config = {
         warn: { DEFAULT: "var(--amber)", soft: "var(--amber-soft)" },
         bad: { DEFAULT: "var(--red)", soft: "var(--red-soft)", fg: "var(--bad-fg)" },
         info: { DEFAULT: "var(--blue)", soft: "var(--blue-soft)" },
+        // Forced-dark surfaces (driver PWA, portal): their own ladder, set on
+        // [data-surface="dark"] in hub-theme.css. Never mode-dependent.
+        driver: {
+          bg: "var(--driver-bg)",
+          surface: "var(--driver-surface)",
+          "surface-2": "var(--driver-surface-2)",
+          border: "var(--driver-border)",
+          "border-strong": "var(--driver-border-strong)",
+          "border-control": "var(--driver-border-control)",
+          text: "var(--driver-text)",
+          "text-2": "var(--driver-text-2)",
+          "text-3": "var(--driver-text-3)",
+        },
       },
       fontSize: {
         // Mobile-first typography (min 16px body)

@@ -176,10 +176,57 @@
   }
 }
 
-/* Forced-dark surfaces (driver PWA, portal) are dark whatever the stored office
-   mode is; tell the UA so native controls and scrollbars follow. */
+/* ---- Forced-dark surfaces (driver PWA, portal) ---------------------------
+   These ignore the stored office mode, so they must never read --surface /
+   --border (those resolve to LIGHT values when the office is light — see
+   AGENTS.md). They get their own ladder instead: page < card < raised, cards
+   step UP (Material/Apple dark), edges whisper at 6%, and depth comes from the
+   surface step plus a 1px inner top highlight rather than an outline. The page
+   stays #121316 (the boot script's theme-color and the body paint below agree). */
 [data-app="hauldesk"][data-surface="dark"] {
   color-scheme: dark;
+  --driver-bg: #121316;
+  --driver-surface: #1c1e23;
+  --driver-surface-2: #262930;
+  --driver-border: rgba(255, 255, 255, 0.06);
+  --driver-border-strong: rgba(255, 255, 255, 0.12);
+  --driver-border-control: #6b6f7a;
+  --driver-text: #ffffff;
+  --driver-text-2: #d2d3d6;
+  --driver-text-3: #abadb2;
+  --driver-overlay: rgba(0, 0, 0, 0.72);
+  --driver-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 1px 2px rgba(0, 0, 0, 0.4), 0 6px 20px rgba(0, 0, 0, 0.3);
+  --driver-shadow-raised: 0 0 0 1px rgba(255, 255, 255, 0.07), 0 8px 24px rgba(0, 0, 0, 0.5), 0 24px 48px rgba(0, 0, 0, 0.4);
+}
+/* The card on a forced-dark surface. Radius is the ladder's 14px; the class
+   wins over a stray rounded-xl/2xl utility on purpose (siblings must agree). */
+[data-app="hauldesk"] .driver-card {
+  background: var(--driver-surface, #1c1e23);
+  border: 1px solid var(--driver-border, rgba(255, 255, 255, 0.06));
+  border-radius: 14px;
+  box-shadow: var(--driver-shadow, inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 1px 2px rgba(0, 0, 0, 0.4));
+}
+[data-app="hauldesk"] .driver-card--raised {
+  background: var(--driver-surface-2, #262930);
+  box-shadow: var(--driver-shadow-raised, 0 0 0 1px rgba(255, 255, 255, 0.07), 0 8px 24px rgba(0, 0, 0, 0.5));
+}
+[data-app="hauldesk"] .driver-card--well {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: transparent;
+  box-shadow: none;
+}
+@media (forced-colors: active) {
+  [data-app="hauldesk"] .driver-card {
+    border-color: CanvasText;
+  }
+}
+/* Toasts on the forced-dark surfaces: the office .app-toast paints --surface,
+   which is WHITE when the stored mode is light. */
+[data-app="hauldesk"][data-surface="dark"] .app-toast {
+  background: var(--driver-surface-2) !important;
+  color: var(--driver-text) !important;
+  border-color: var(--driver-border-strong) !important;
+  box-shadow: var(--driver-shadow-raised) !important;
 }
 
 /* Windows High Contrast strips backgrounds and alpha edges: give every token

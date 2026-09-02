@@ -47,10 +47,11 @@ const FORCED_DARK_BAR = "#121316"
  * live toggle so the bar changes with the page, not on the next reload.
  */
 export function themeColorFor(mode: HubColorMode, pathname: string): string {
-  // Driver and portal are navy by class, not by data-mode, so a stored "light"
-  // must never put a white bar over the driver app. The trailing boundary
-  // matters: /hub/drivers is the OFFICE roster and takes office chrome.
-  const forcedDark = /^\/hub\/(driver|portal)(\/|$)/.test(pathname)
+  // Driver, portal and the driver-invite landing are navy by class, not by
+  // data-mode, so a stored "light" must never put a white bar over them. The
+  // trailing boundary matters: /hub/drivers is the OFFICE roster and takes
+  // office chrome.
+  const forcedDark = /^\/hub\/(driver|portal|driver-invite)(\/|$)/.test(pathname)
   return forcedDark ? FORCED_DARK_BAR : BAR_COLOR[mode]
 }
 

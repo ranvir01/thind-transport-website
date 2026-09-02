@@ -25,7 +25,15 @@ describe("themeColorFor", () => {
   })
 
   it("keeps driver and portal navy whatever mode is stored", () => {
-    for (const path of ["/hub/driver", "/hub/driver/loads/1", "/hub/portal", "/hub/portal/loads"]) {
+    for (const path of [
+      "/hub/driver",
+      "/hub/driver/loads/1",
+      "/hub/portal",
+      "/hub/portal/loads",
+      // The invite landing renders bg-navy without a session; it was the one
+      // navy page the regex missed, flashing white on overscroll.
+      "/hub/driver-invite/abc",
+    ]) {
       expect(themeColorFor("light", path)).toBe(NAVY)
       expect(themeColorFor("dark", path)).toBe(NAVY)
     }
@@ -48,7 +56,7 @@ describe("first-paint boot script", () => {
     // Not a bare prefix test: /hub/drivers is the office roster and must keep
     // office chrome. The pure half above proves the rule; this proves the boot
     // script uses the same one.
-    expect(layout).toContain("(driver|portal)")
+    expect(layout).toContain("(driver|portal|driver-invite)")
     expect(layout).toContain("(\\\\/|$)")
   })
 
