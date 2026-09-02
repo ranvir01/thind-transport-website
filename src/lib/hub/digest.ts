@@ -2,6 +2,7 @@
  * Weekly owner digest (Phase 6 §9): the Monday-morning numbers email —
  * everything real, nothing fabricated, links straight into the Hub.
  */
+import { appPublicOrigin } from "@/lib/app-origin"
 import { queryOne } from "./db"
 import { getCarrier, getCarrierSettings } from "./settings"
 
@@ -76,7 +77,7 @@ export async function sendOwnerDigest(carrierId: string): Promise<{ sent: boolea
     from: mailFrom(carrier?.name ?? "LoadOff"),
     to,
     subject: `${carrier?.name ?? "Fleet"} — your Monday numbers`,
-    text: `${lines.join("\n")}\n\nOpen the Hub: ${process.env.NEXTAUTH_URL ?? ""}/hub`,
+    text: `${lines.join("\n")}\n\nOpen the Hub: ${appPublicOrigin()}/hub`,
   })
   return { sent: true }
 }

@@ -11,7 +11,7 @@
  * Same class as the trailer audit (b003891) that taught complianceEntries about
  * trailers. Fix counts red equipment and refuses the all-clear while any is red.
  */
-import { beforeEach, describe, expect, it, vi } from "vitest"
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
 const { queryOneMock, sendMail } = vi.hoisted(() => ({
   queryOneMock: vi.fn(),
@@ -119,5 +119,26 @@ describe("sendOwnerDigest — equipment compliance", () => {
     const res = await sendOwnerDigest(CARRIER)
     expect(res.sent).toBe(false)
     expect(sendMail).not.toHaveBeenCalled()
+  })
+})
+
+describe("sendOwnerDigest — Open the Hub origin", () => {
+  afterEach(() => vi.unstubAllEnvs())
+
+  it("uses NEXTAUTH_URL until an app host is configured", async () => {
+    vi.stubEnv("NEXT_PUBLIC_APP_HOST", "")
+    vi.stubEnv("NEXTAUTH_URL", "https://thindtransport.com")
+    queryOneMock.mockResolvedValue({ ...baseStats })
+    await sendOwnerDigest(CARRIER)
+    expect(sentBody()).toContain("Open the Hub: https://thindtransport.com/hub")
+  })
+
+  it("prefers NEXT_PUBLIC_APP_HOST once the app origin is configured", async () => {
+    vi.stubEnv("NEXT_PUBLIC_APP_HOST", "app.loadoff.com")
+    vi.stubEnv("NEXTAUTH_URL", "https://thindtransport.com")
+    queryOneMock.mockResolvedValue({ ...baseStats })
+    await sendOwnerDigest(CARRIER)
+    expect(sentBody()).toContain("Open the Hub: https://app.loadoff.com/hub")
+    expect(sentBody()).not.toContain("https://thindtransport.com/hub")
   })
 })
