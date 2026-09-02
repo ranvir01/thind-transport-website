@@ -1,25 +1,50 @@
 /**
- * HaulDesk software UI tokens — scoped to [data-app="hauldesk"] on <html>.
+ * LoadOff software UI tokens — scoped to [data-app="hauldesk"] on <html>.
  * Marketing site keeps navy/orange/gold; this is the operations product only.
+ *
+ * TWO AXES, TWO OWNERS — the rule that keeps dark mode dark for every theme:
+ *
+ *   MODE  ([data-mode="light"|"dark"]) owns every NEUTRAL:
+ *         --bg --surface --surface-2 --surface-3 --border --border-strong
+ *         --border-control --hover --selected --overlay --text --text-2 --text-3
+ *         --shadow --shadow-raised --shadow-overlay --skeleton-sheen --bad-fg
+ *         and the tone ramps (--green/--amber/--red/--blue + -soft).
+ *   THEME ([data-theme="indigo"|"teal"|"ink"]) owns HUE only:
+ *         --accent --accent-hover --accent-fg --accent-soft --accent-text --ring.
+ *
+ * Why this shape: the previous file let the teal/ink LIGHT blocks declare
+ * --border/--hover. They sat after the dark block at equal specificity, so in
+ * dark mode + teal/ink every card carried a near-white hairline and hovered
+ * rows went white-on-white. Hue blocks are now wrapped in :where() (specificity
+ * 0,0,0) so a theme can never out-specify a neutral even if one is re-added by
+ * mistake, the two mode blocks are bare, and dark comes last.
+ * Enforced by src/lib/hub/__tests__/hub-theme-tokens.test.ts.
+ *
+ * Neutrals are declared twice on purpose: literal values first (every engine),
+ * then derived from --text via color-mix() inside @supports, so alpha borders
+ * composite correctly on any surface. A custom property accepts any token
+ * stream, so an unguarded color-mix() would be "valid" and then invalidate
+ * `background: var(--bg)` on engines without color-mix — hence the guard.
  */
 
-[data-app="hauldesk"],
-[data-app="hauldesk"][data-theme="indigo"] {
+/* ---- MODE: light (default) ---------------------------------------------- */
+[data-app="hauldesk"] {
+  color-scheme: light;
   --bg: #fbfbfd;
   --surface: #ffffff;
   --surface-2: #f5f6f8;
+  --surface-3: #eef0f3;
   --border: #eceef1;
   --border-strong: #e0e3e8;
+  /* Solid, ≥3:1 against --surface: inputs, checkboxes, toggles, dashed empty
+     states — WCAG 1.4.11 applies to controls, not to decorative card edges. */
+  --border-control: #8f94a0;
+  --hover: #f3f4f6;
+  --selected: rgba(22, 24, 29, 0.08);
+  --overlay: rgba(16, 18, 29, 0.45);
   --text: #16181d;
   --text-2: #565c66;
   --text-3: #656c7a;
-  --hover: #f3f4f6;
-  --accent: #5b5bd6;
-  --accent-hover: #4d4dc9;
-  --accent-fg: #ffffff;
-  --accent-soft: #eeeefa;
-  --accent-text: #4842be;
-  --ring: rgba(91, 91, 214, 0.28);
   --green: #15704a;
   --green-soft: #e7f4ec;
   --amber: #8a6108;
@@ -28,64 +53,60 @@
   --red-soft: #fbeaea;
   --blue: #2560c9;
   --blue-soft: #e9f1fd;
+  /* Label colour on a --red fill (white on light red fails in dark). */
+  --bad-fg: #ffffff;
+  --skeleton-sheen: rgba(22, 24, 29, 0.05);
+  /* Elevation ladder: background < card (--shadow) < raised (menus/popovers)
+     < overlay (sheets/dialogs). Consumed as shadow-card / shadow-raised /
+     shadow-overlay via tailwind.config.ts. */
   --shadow: 0 1px 2px rgba(16, 18, 29, 0.04), 0 1px 3px rgba(16, 18, 29, 0.05);
+  --shadow-raised: 0 0 0 1px rgba(16, 18, 29, 0.06), 0 2px 6px rgba(16, 18, 29, 0.06), 0 8px 24px rgba(16, 18, 29, 0.09);
+  --shadow-overlay: 0 0 0 1px rgba(16, 18, 29, 0.06), 0 -4px 16px rgba(16, 18, 29, 0.06), 0 12px 48px rgba(16, 18, 29, 0.18);
 }
 
-/* Dark is remastered for OLED phones: the page sits near-black, cards step
-   UP from it visibly (surface ladder, not outlines), borders whisper, and
-   every card carries a 1px inner top highlight — depth reads like iOS dark,
-   not a wireframe. */
-[data-app="hauldesk"][data-mode="dark"],
-[data-app="hauldesk"][data-mode="dark"][data-theme="indigo"] {
-  --bg: #08090d;
-  --surface: #14161f;
-  --surface-2: #1f222e;
-  --border: rgba(255, 255, 255, 0.065);
-  --border-strong: rgba(255, 255, 255, 0.14);
-  --text: #eef0f4;
-  --text-2: #a3a8b4;
-  --text-3: #8f95a3;
-  --hover: rgba(255, 255, 255, 0.055);
+/* ---- THEME: hue only, light --------------------------------------------- */
+:where([data-app="hauldesk"]),
+:where([data-app="hauldesk"][data-theme="indigo"]) {
+  --accent: #5b5bd6;
+  --accent-hover: #4d4dc9;
+  --accent-fg: #ffffff;
+  --accent-soft: #eeeefa;
+  --accent-text: #4842be;
+  --ring: rgba(91, 91, 214, 0.28);
+}
+
+:where([data-app="hauldesk"][data-theme="teal"]) {
+  /* #0b7a6e: white label on the fill is 5.2:1 (the old #0e9384 was 3.8:1). */
+  --accent: #0b7a6e;
+  --accent-hover: #096b60;
+  --accent-fg: #ffffff;
+  --accent-soft: #e2f3f0;
+  --accent-text: #0b6e66;
+  --ring: rgba(11, 122, 110, 0.28);
+}
+
+:where([data-app="hauldesk"][data-theme="ink"]) {
+  --accent: #1c1b19;
+  --accent-hover: #000000;
+  --accent-fg: #ffffff;
+  /* A visible chip: the old #eeedea was indistinguishable from --hover. */
+  --accent-soft: #e6e3dd;
+  --accent-text: #000000;
+  --ring: rgba(0, 0, 0, 0.2);
+}
+
+/* ---- THEME: hue only, dark ---------------------------------------------- */
+:where([data-app="hauldesk"][data-mode="dark"]),
+:where([data-app="hauldesk"][data-mode="dark"][data-theme="indigo"]) {
   --accent: #7f80ee;
   --accent-hover: #9192f2;
   --accent-fg: #0b0c10;
   --accent-soft: rgba(127, 128, 238, 0.21);
   --accent-text: #b0b1f6;
   --ring: rgba(127, 128, 238, 0.4);
-  --green: #3ecd82;
-  --green-soft: rgba(62, 205, 130, 0.16);
-  --amber: #e5b13d;
-  --amber-soft: rgba(229, 177, 61, 0.15);
-  --red: #f8857f;
-  --red-soft: rgba(244, 107, 102, 0.14);
-  --blue: #6ba1f2;
-  --blue-soft: rgba(107, 161, 242, 0.16);
-  --shadow: inset 0 1px 0 rgba(255, 255, 255, 0.045), 0 1px 2px rgba(0, 0, 0, 0.5), 0 4px 16px rgba(0, 0, 0, 0.35);
 }
 
-[data-app="hauldesk"][data-theme="teal"] {
-  --bg: #fbfbfb;
-  --surface-2: #f5f6f6;
-  --border: #eceeee;
-  --border-strong: #dfe3e3;
-  --text: #16191a;
-  --text-2: #565b5c;
-  --text-3: #6b7273;
-  --hover: #f2f4f3;
-  --accent: #0e9384;
-  --accent-hover: #0c8175;
-  --accent-soft: #e2f3f0;
-  --accent-text: #0b6e66;
-  --ring: rgba(14, 147, 132, 0.26);
-}
-
-[data-app="hauldesk"][data-mode="dark"][data-theme="teal"] {
-  --bg: #070b0a;
-  --surface: #131917;
-  --surface-2: #1d2521;
-  --text: #ecefee;
-  --text-2: #a0a8a5;
-  --text-3: #8e9793;
+:where([data-app="hauldesk"][data-mode="dark"][data-theme="teal"]) {
   --accent: #26bfac;
   --accent-hover: #3accba;
   --accent-fg: #04130f;
@@ -94,36 +115,140 @@
   --ring: rgba(38, 191, 172, 0.38);
 }
 
-[data-app="hauldesk"][data-theme="ink"] {
-  --bg: #faf9f7;
-  --surface-2: #f5f4f1;
-  --border: #eae8e4;
-  --border-strong: #dedbd5;
-  --text: #1a1814;
-  --text-2: #57534c;
-  --text-3: #6f6a61;
-  --hover: #f1efeb;
-  --accent: #1c1b19;
-  --accent-hover: #000000;
-  --accent-soft: #eeedea;
-  --accent-text: #1c1b19;
-  --ring: rgba(0, 0, 0, 0.16);
+:where([data-app="hauldesk"][data-mode="dark"][data-theme="ink"]) {
+  /* Achromatic accent tops out below white and presses DARKER (Uber Base). */
+  --accent: #e6e3dd;
+  --accent-hover: #cfcbc4;
+  --accent-fg: #191714;
+  --accent-soft: rgba(255, 255, 255, 0.16);
+  --accent-text: #ece9e3;
+  --ring: rgba(255, 255, 255, 0.28);
 }
 
-[data-app="hauldesk"][data-mode="dark"][data-theme="ink"] {
-  --bg: #0a0908;
-  --surface: #171512;
-  --surface-2: #221f1b;
-  --hover: rgba(255, 255, 255, 0.05);
-  --text: #f0ede8;
-  --text-2: #a8a29a;
-  --text-3: #999288;
-  --accent: #f0ede8;
-  --accent-hover: #ffffff;
-  --accent-fg: #191714;
-  --accent-soft: rgba(255, 255, 255, 0.11);
-  --accent-text: #ece9e3;
-  --ring: rgba(255, 255, 255, 0.2);
+/* ---- MODE: dark (last on purpose) --------------------------------------- */
+/* Remastered for OLED phones: the page sits near-black, cards step UP from it
+   (surface ladder, not outlines), borders whisper at ≤7% white, and every
+   raised surface carries a 1px inner ring — depth reads like iOS dark, not a
+   wireframe. */
+[data-app="hauldesk"][data-mode="dark"] {
+  color-scheme: dark;
+  --bg: #08090d;
+  --surface: #14161f;
+  --surface-2: #1f222e;
+  --surface-3: #2a2d3a;
+  --border: rgba(255, 255, 255, 0.065);
+  --border-strong: rgba(255, 255, 255, 0.14);
+  --border-control: #6b6f7a;
+  --hover: rgba(255, 255, 255, 0.055);
+  --selected: rgba(255, 255, 255, 0.1);
+  --overlay: rgba(0, 0, 0, 0.72);
+  --text: #eef0f4;
+  --text-2: #a3a8b4;
+  --text-3: #8f95a3;
+  --green: #3ecd82;
+  --green-soft: rgba(62, 205, 130, 0.15);
+  --amber: #e5b13d;
+  --amber-soft: rgba(229, 177, 61, 0.15);
+  --red: #f8857f;
+  --red-soft: rgba(244, 107, 102, 0.15);
+  --blue: #6ba1f2;
+  --blue-soft: rgba(107, 161, 242, 0.15);
+  --bad-fg: #2a0b0a;
+  --skeleton-sheen: rgba(255, 255, 255, 0.06);
+  --shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 1px 2px rgba(0, 0, 0, 0.5), 0 4px 16px rgba(0, 0, 0, 0.35);
+  --shadow-raised: 0 0 0 1px rgba(255, 255, 255, 0.07), 0 4px 8px rgba(0, 0, 0, 0.4), 0 24px 48px rgba(0, 0, 0, 0.4);
+  --shadow-overlay: 0 0 0 1px rgba(255, 255, 255, 0.07), 0 8px 16px rgba(0, 0, 0, 0.5), 0 48px 96px rgba(0, 0, 0, 0.5);
+}
+
+/* Derived neutrals: alpha of --text so borders, hover and selection composite
+   correctly on bg, card and popover alike. Guarded — see the header note. */
+@supports (color: color-mix(in oklab, red 50%, blue)) {
+  [data-app="hauldesk"],
+  [data-app="hauldesk"][data-mode="dark"] {
+    --border: color-mix(in oklab, var(--text) 9%, transparent);
+    --border-strong: color-mix(in oklab, var(--text) 16%, transparent);
+    --hover: color-mix(in oklab, var(--text) 5.5%, transparent);
+    --selected: color-mix(in oklab, var(--text) 10%, transparent);
+  }
+  [data-app="hauldesk"][data-mode="dark"] {
+    --border: color-mix(in oklab, var(--text) 7%, transparent);
+    --border-strong: color-mix(in oklab, var(--text) 14%, transparent);
+  }
+}
+
+/* ---- Forced-dark surfaces (driver PWA, portal) ---------------------------
+   These ignore the stored office mode, so they must never read --surface /
+   --border (those resolve to LIGHT values when the office is light — see
+   AGENTS.md). They get their own ladder instead: page < card < raised, cards
+   step UP (Material/Apple dark), edges whisper at 6%, and depth comes from the
+   surface step plus a 1px inner top highlight rather than an outline. The page
+   stays #121316 (the boot script's theme-color and the body paint below agree). */
+[data-app="hauldesk"][data-surface="dark"] {
+  color-scheme: dark;
+  --driver-bg: #121316;
+  --driver-surface: #1c1e23;
+  --driver-surface-2: #262930;
+  --driver-border: rgba(255, 255, 255, 0.06);
+  --driver-border-strong: rgba(255, 255, 255, 0.12);
+  --driver-border-control: #6b6f7a;
+  --driver-text: #ffffff;
+  --driver-text-2: #d2d3d6;
+  --driver-text-3: #abadb2;
+  --driver-overlay: rgba(0, 0, 0, 0.72);
+  --driver-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 1px 2px rgba(0, 0, 0, 0.4), 0 6px 20px rgba(0, 0, 0, 0.3);
+  --driver-shadow-raised: 0 0 0 1px rgba(255, 255, 255, 0.07), 0 8px 24px rgba(0, 0, 0, 0.5), 0 24px 48px rgba(0, 0, 0, 0.4);
+}
+/* The card on a forced-dark surface. Radius is the ladder's 14px; the class
+   wins over a stray rounded-xl/2xl utility on purpose (siblings must agree). */
+[data-app="hauldesk"] .driver-card {
+  background: var(--driver-surface, #1c1e23);
+  border: 1px solid var(--driver-border, rgba(255, 255, 255, 0.06));
+  border-radius: 14px;
+  box-shadow: var(--driver-shadow, inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 1px 2px rgba(0, 0, 0, 0.4));
+}
+[data-app="hauldesk"] .driver-card--raised {
+  background: var(--driver-surface-2, #262930);
+  box-shadow: var(--driver-shadow-raised, 0 0 0 1px rgba(255, 255, 255, 0.07), 0 8px 24px rgba(0, 0, 0, 0.5));
+}
+[data-app="hauldesk"] .driver-card--well {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: transparent;
+  box-shadow: none;
+}
+@media (forced-colors: active) {
+  [data-app="hauldesk"] .driver-card {
+    border-color: CanvasText;
+  }
+}
+/* Toasts on the forced-dark surfaces: the office .app-toast paints --surface,
+   which is WHITE when the stored mode is light. */
+[data-app="hauldesk"][data-surface="dark"] .app-toast {
+  background: var(--driver-surface-2) !important;
+  color: var(--driver-text) !important;
+  border-color: var(--driver-border-strong) !important;
+  box-shadow: var(--driver-shadow-raised) !important;
+}
+
+/* Windows High Contrast strips backgrounds and alpha edges: give every token
+   border a system-colour edge so the surface ladder still reads. */
+@media (forced-colors: active) {
+  [data-app="hauldesk"] {
+    --border: CanvasText;
+    --border-strong: CanvasText;
+    --border-control: CanvasText;
+  }
+}
+
+/* Increased-contrast preference: lift the whisper borders and tertiary text. */
+@media (prefers-contrast: more) {
+  [data-app="hauldesk"] {
+    --border: var(--border-strong);
+    --text-3: var(--text-2);
+  }
+  [data-app="hauldesk"][data-mode="dark"] {
+    --border: rgba(255, 255, 255, 0.24);
+    --border-strong: rgba(255, 255, 255, 0.36);
+  }
 }
 
 [data-app="hauldesk"] {
@@ -184,19 +309,6 @@
   color: inherit;
 }
 
-/* Elevation ladder: background < card (--shadow) < raised (menus/popovers)
-   < overlay (sheets/dialogs). Consumed as shadow-card / shadow-raised /
-   shadow-overlay via tailwind.config.ts. */
-[data-app="hauldesk"],
-[data-app="hauldesk"][data-theme="indigo"] {
-  --shadow-raised: 0 2px 6px rgba(16, 18, 29, 0.06), 0 8px 24px rgba(16, 18, 29, 0.09);
-  --shadow-overlay: 0 -4px 16px rgba(16, 18, 29, 0.06), 0 12px 48px rgba(16, 18, 29, 0.18);
-}
-[data-app="hauldesk"][data-mode="dark"] {
-  --shadow-raised: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 2px 8px rgba(0, 0, 0, 0.45), 0 10px 28px rgba(0, 0, 0, 0.5);
-  --shadow-overlay: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 -4px 16px rgba(0, 0, 0, 0.4), 0 12px 48px rgba(0, 0, 0, 0.6);
-}
-
 /* 0ms press feedback on everything tappable: scale + opacity, compositor
    props only. touch-action:manipulation kills the iOS double-tap delay.
    Opt out with .no-press (e.g. the pressed element manages its own motion). */
@@ -240,6 +352,20 @@
   border-radius: 14px !important;
   box-shadow: var(--shadow-raised) !important;
 }
+/* sonner's richColors used to be neutralised by the surface !important above;
+   tint success/error/warning from the tone ramps so a toast's kind is visible. */
+[data-app="hauldesk"] .app-toast[data-type="success"] {
+  background: color-mix(in srgb, var(--green-soft) 60%, var(--surface)) !important;
+  border-color: color-mix(in srgb, var(--green) 30%, transparent) !important;
+}
+[data-app="hauldesk"] .app-toast[data-type="error"] {
+  background: color-mix(in srgb, var(--red-soft) 60%, var(--surface)) !important;
+  border-color: color-mix(in srgb, var(--red) 30%, transparent) !important;
+}
+[data-app="hauldesk"] .app-toast[data-type="warning"] {
+  background: color-mix(in srgb, var(--amber-soft) 60%, var(--surface)) !important;
+  border-color: color-mix(in srgb, var(--amber) 30%, transparent) !important;
+}
 
 /* Data tables: sticky header, zebra rows, hover highlight. */
 [data-app="hauldesk"] .hub-table thead th {
@@ -249,7 +375,7 @@
   z-index: 1;
 }
 [data-app="hauldesk"] .hub-table tbody tr:nth-child(even) {
-  background: color-mix(in srgb, var(--surface-2) 45%, transparent);
+  background: color-mix(in srgb, var(--text) 2.5%, transparent);
 }
 [data-app="hauldesk"] .hub-table tbody tr:hover {
   background: var(--hover);
@@ -292,15 +418,22 @@
   position: relative;
   overflow: hidden;
   background: var(--surface-2);
-  border-radius: 9px;
+  border-radius: inherit;
 }
 [data-app="hauldesk"] .hub-skeleton::after {
   content: "";
   position: absolute;
   inset: 0;
   transform: translateX(-100%);
-  background: linear-gradient(90deg, transparent, var(--hover), transparent);
+  background: linear-gradient(90deg, transparent, var(--skeleton-sheen), transparent);
   animation: hub-shimmer 1.4s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-app="hauldesk"] .hub-skeleton::after {
+    animation: none;
+    transform: none;
+    opacity: 0.5;
+  }
 }
 
 /* Route-change motion: 200ms shared-axis entrance on the page body.
@@ -605,7 +738,7 @@
    stays legible in every theme/mode. Selector specificity (attr + element +
    class + pseudo) intentionally beats the opacity utility. */
 @supports (background-color: color-mix(in srgb, red 50%, white)) {
-  [data-app="hauldesk"] button.bg-accent:disabled {
+  [data-app="hauldesk"]:not([data-surface="dark"]) button.bg-accent:disabled {
     opacity: 1;
     background-color: color-mix(in srgb, var(--accent) 60%, var(--bg));
   }

@@ -10,8 +10,9 @@ import { PRODUCT } from "@/lib/hub/product"
 type Surface = "office" | "driver" | "portal" | "login"
 
 function surfaceFromPath(pathname: string): Surface {
-  if (pathname.startsWith("/hub/driver")) return "driver"
-  if (pathname.startsWith("/hub/portal")) return "portal"
+  // Boundary matters: /hub/drivers is the OFFICE roster, not the driver app.
+  if (/^\/hub\/(driver|driver-invite)(\/|$)/.test(pathname)) return "driver"
+  if (/^\/hub\/portal(\/|$)/.test(pathname)) return "portal"
   if (pathname.startsWith("/hub/login")) return "login"
   return "office"
 }

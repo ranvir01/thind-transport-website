@@ -10,7 +10,7 @@ surfaces are a review defect.
 
 | Layer | File | Notes |
 |---|---|---|
-| CSS variables (3 themes × light/dark) | `src/app/hub/hub-theme.css` | Scoped to `[data-app="hauldesk"]`; dark blocks are OLED-remastered |
+| CSS variables (3 themes × light/dark) | `src/app/hub/hub-theme.css` | Scoped to `[data-app="hauldesk"]`; **MODE blocks own every neutral, THEME blocks (wrapped in `:where()`) own hue only** — see "Two axes" below |
 | Tailwind mapping | `tailwind.config.ts` | `bg-surface`, `text-fg-*`, `shadow-card/raised/overlay`, radii, motion |
 | Interaction foundation | `hub-theme.css` | Press states, snap rows, skeletons, route/tab/sheet keyframes |
 
@@ -22,15 +22,26 @@ surfaces are a review defect.
 
 ## Color
 
-Semantic aliases (per theme × mode, see hub-theme.css):
-`--bg < --surface < --surface-2` (elevation by surface, not outlines) ·
-`--text/-2/-3` · `--border/--border-strong` · `--hover` ·
-`--accent/-hover/-fg/-soft/-text` · tones `--green/--amber/--red/--blue` (+`-soft`).
+**Two axes, two owners.** `data-mode` (light/dark) owns every neutral:
+`--bg < --surface < --surface-2 < --surface-3` (elevation by surface, not outlines) ·
+`--text/-2/-3` · `--border/--border-strong` (whisper hairlines for cards) ·
+`--border-control` (solid, ≥3:1 — inputs, checkboxes, toggles, dashed empty
+states) · `--hover/--selected` · `--overlay` · `--shadow*` · `--skeleton-sheen` ·
+tones `--green/--amber/--red/--blue` (+`-soft`) · `--bad-fg`.
+`data-theme` (indigo/teal/ink) owns hue only: `--accent/-hover/-fg/-soft/-text`
+and `--ring`. Theme blocks are wrapped in `:where()` so they can never
+out-specify a neutral; the dark mode block is the last block in the file.
+A theme block that declares a neutral is a build failure
+(`src/lib/hub/__tests__/hub-theme-tokens.test.ts`) — that exact leak is how
+dark teal/ink shipped with near-white borders for a month while every dark
+screenshot in the repo was indigo. Neutrals are declared as literals first and
+then re-derived from `--text` via `color-mix()` inside `@supports`, so alpha
+borders composite on any surface. The mode blocks also set `color-scheme`.
 
 Rules:
 - Body text ≥ 4.5:1; large text and every border/icon/UI component ≥ 3:1 (WCAG 2.2 AA). `npm run design-qa` enforces contrast + overflow; disabled controls are exempt (WCAG 1.4.3).
 - Tone colors are **data-only** (paid green / pending amber / overdue red) — never decoration.
-- Dark mode: page near-black, cards step UP visibly, borders whisper (≤7% white), every card carries a 1px inner top highlight. Depth by surface + shadow, never outlines.
+- Dark mode: page near-black, cards step UP visibly, borders whisper (≤7% white — decorative edges are exempt from 3:1 when the surface step carries the boundary; controls use `--border-control`), every card carries a 1px inner top highlight and raised/overlay surfaces a full 1px 7% ring. Depth by surface + shadow, never outlines.
 - One interactive accent (user theme). Tenant branding accent = identity chip, portal, PDFs only.
 
 ## Type

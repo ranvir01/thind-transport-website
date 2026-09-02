@@ -22,7 +22,13 @@
  *   Server must be running (npm run build && npm run start, or npm run dev).
  *     node scripts/design-qa.mjs                 # default marketing routes
  *     node scripts/design-qa.mjs /loadoff /apply # specific routes
- *     DESIGN_QA_HUB=1 node scripts/design-qa.mjs  # also audit hub routes (needs demo login)
+ *     DESIGN_QA_HUB=1 node scripts/design-qa.mjs  # also audit hub routes (needs demo login):
+ *                                                 #   office light/indigo on every route, then
+ *                                                 #   dark × indigo/teal/ink on DARK_THEMED_ROUTES,
+ *                                                 #   then the driver PWA and the broker portal
+ *     DESIGN_QA_MODE=dark DESIGN_QA_THEME=teal node scripts/design-qa.mjs /hub/loads
+ *                                                 # pin one appearance — for CLI routes, or with
+ *                                                 # DESIGN_QA_HUB=1 for every office route
  *     E2E_BASE_URL=http://localhost:3000 node scripts/design-qa.mjs
  *   Exit code is non-zero when any hard FAIL is found — wire it into a routine.
  *
@@ -68,7 +74,6 @@ const PUBLIC_ROUTES = [
   "/veterans",
   "/fuel-program",
   "/resources",
-  "/load-board",
   "/privacy",
   "/cdl-jobs",
   "/cdl-jobs/washington",
@@ -83,8 +88,8 @@ const HUB_ROUTES = [
   "/hub",
   "/hub/loads",
   "/hub/dispatch",
-  "/hub/invoices",
-  "/hub/settlements",
+  "/hub/money/invoices",
+  "/hub/money/settlements",
   "/hub/fleet",
   "/hub/compliance",
   "/hub/leads",
@@ -107,12 +112,49 @@ const HUB_ROUTES = [
 ]
 
 // The driver PWA is a forced-dark surface with its own token rules, so it is
-// audited as its own group rather than mixed in with the office routes.
+// audited as its own group, under the DRIVER login — requireDriverUser bounces
+// an office session to /hub, so the old owner-login sweep of these audited the
+// Today desk again and called it the driver app. Every entry is a real page
+// under src/app/hub/driver (/hub/driver/loads never existed).
 const DRIVER_ROUTES = [
   "/hub/driver",
-  "/hub/driver/loads",
+  "/hub/driver/pay",
+  "/hub/driver/messages",
+  "/hub/driver/more",
   "/hub/driver/dvir",
+  "/hub/driver/timeoff",
+  "/hub/driver/incident",
+  "/hub/driver/docs",
 ]
+
+// The broker portal: forced-dark like the driver app, with its own login.
+const PORTAL_ROUTES = ["/hub/portal"]
+
+// Demo-seed logins per persona (the password is e2e-lib `login`'s default).
+const PERSONAS = {
+  office: "owner@demo.thind",
+  driver: "driver@demo.thind",
+  broker: "broker@demo.thind",
+}
+
+// Appearance axis. The boot script in app/hub/layout.tsx stamps data-mode and
+// data-theme from these two localStorage keys on first paint. This script
+// used to seed neither, so every hub audit was light/indigo — the one
+// combination that never had the dark teal/ink border leak. Office routes now
+// run light/indigo in full, then dark under all three accents on a capped
+// list (the four screens with the densest card / border / hover surface).
+const MODES = ["light", "dark"]
+const THEMES = ["indigo", "teal", "ink"]
+const DARK_THEMED_ROUTES = ["/hub", "/hub/loads", "/hub/money", "/hub/dispatch"]
+const MODE_OVERRIDE = process.env.DESIGN_QA_MODE || null
+const THEME_OVERRIDE = process.env.DESIGN_QA_THEME || null
+
+async function seedAppearance(page, mode, theme) {
+  await page.evaluateOnNewDocument((m, t) => {
+    try { localStorage.setItem("hauldesk-mode", m) } catch {}
+    try { localStorage.setItem("hauldesk-theme", t) } catch {}
+  }, mode, theme)
+}
 
 const cliRoutes = process.argv.slice(2).filter((a) => a.startsWith("/"))
 
@@ -355,40 +397,101 @@ async function auditRoute(page, route, viewport) {
   return { route, viewport: viewport.name, fails, warns }
 }
 
-async function main() {
-  const routes = cliRoutes.length ? cliRoutes : PUBLIC_ROUTES
+/**
+ * Build the run as a list of passes. A pass is one appearance (mode/theme,
+ * null for the marketing site which has no data-app) over a route list under
+ * one persona's login — so each pass gets its own page with the appearance
+ * seeded before the first navigation, and each persona its own browser
+ * context so the three logins never overwrite each other's session cookie.
+ */
+function planPasses() {
   const includeHub = process.env.DESIGN_QA_HUB === "1"
-  const allRoutes =
-    includeHub && !cliRoutes.length ? [...routes, ...HUB_ROUTES, ...DRIVER_ROUTES] : routes
+  if (MODE_OVERRIDE && !MODES.includes(MODE_OVERRIDE)) {
+    throw new Error(`DESIGN_QA_MODE must be one of ${MODES.join("|")}, got "${MODE_OVERRIDE}"`)
+  }
+  if (THEME_OVERRIDE && !THEMES.includes(THEME_OVERRIDE)) {
+    throw new Error(`DESIGN_QA_THEME must be one of ${THEMES.join("|")}, got "${THEME_OVERRIDE}"`)
+  }
+  const pinned = Boolean(MODE_OVERRIDE || THEME_OVERRIDE)
+  const pinnedMode = MODE_OVERRIDE || "light"
+  const pinnedTheme = THEME_OVERRIDE || "indigo"
+
+  const passes = []
+  if (cliRoutes.length) {
+    // Explicit routes: one appearance (default light/indigo, or the pinned
+    // one), owner login only when the hub flag is on — as before.
+    passes.push({ persona: includeHub ? "office" : null, mode: pinnedMode, theme: pinnedTheme, routes: cliRoutes })
+    return passes
+  }
+  passes.push({ persona: null, mode: null, theme: null, routes: PUBLIC_ROUTES })
+  if (!includeHub) return passes
+  if (pinned) {
+    passes.push({ persona: "office", mode: pinnedMode, theme: pinnedTheme, routes: HUB_ROUTES })
+  } else {
+    passes.push({ persona: "office", mode: "light", theme: "indigo", routes: HUB_ROUTES })
+    for (const theme of THEMES) {
+      passes.push({ persona: "office", mode: "dark", theme, routes: DARK_THEMED_ROUTES })
+    }
+  }
+  // Forced-dark surfaces: the stored office appearance does not reach them,
+  // so one pass each, seeded with the defaults a fresh phone would have.
+  passes.push({ persona: "driver", mode: "light", theme: "indigo", routes: DRIVER_ROUTES })
+  passes.push({ persona: "broker", mode: "light", theme: "indigo", routes: PORTAL_ROUTES })
+  return passes
+}
+
+async function main() {
+  const passes = planPasses()
+  const jobs = passes.reduce((n, p) => n + p.routes.length, 0)
 
   console.log(`\n🎨 design-qa against ${BASE}`)
-  console.log(`   ${allRoutes.length} routes × ${VIEWPORTS.length} viewports\n`)
+  console.log(`   ${jobs} route-passes × ${VIEWPORTS.length} viewports\n`)
 
   const browser = await launchBrowser()
   const results = []
-  try {
-    if (includeHub) {
-      const authed = await browser.newPage()
-      await login(authed, "owner@demo.thind")
+  const contexts = new Map()
+  const contextFor = async (persona) => {
+    if (contexts.has(persona)) return contexts.get(persona)
+    const context = await browser.createBrowserContext()
+    if (persona) {
+      const authed = await context.newPage()
+      try {
+        await login(authed, PERSONAS[persona])
+      } catch (err) {
+        throw new Error(`login as ${persona} (${PERSONAS[persona]}) failed: ${err.message}`)
+      }
       await authed.close()
     }
-    const page = await browser.newPage()
-    for (const route of allRoutes) {
-      for (const viewport of VIEWPORTS) {
-        const r = await auditRoute(page, route, viewport)
-        results.push(r)
-        const f = r.fails.length
-        const w = r.warns.length
-        const mark = f > 0 ? "❌" : w > 0 ? "⚠️ " : "✅"
-        console.log(`${mark} ${route}  [${r.viewport}]  ${f} fail, ${w} warn`)
-        for (const fail of r.fails.slice(0, 6)) {
-          if (fail.type === "contrast") {
-            console.log(`     FAIL contrast ${fail.ratio}:1 (need ${fail.required}) — "${fail.text}"  fg rgb(${fail.fg}) on rgb(${fail.bg})  ${fail.selector}`)
-          } else if (fail.type === "overflow") {
-            console.log(`     FAIL overflow right=${fail.right}px (vw exceeded) — ${fail.selector} "${fail.text}"`)
+    contexts.set(persona, context)
+    return context
+  }
+  try {
+    for (const pass of passes) {
+      const context = await contextFor(pass.persona)
+      const page = await context.newPage()
+      if (pass.mode) await seedAppearance(page, pass.mode, pass.theme)
+      const label = pass.mode ? ` ${pass.mode}/${pass.theme}` : ""
+      for (const route of pass.routes) {
+        for (const viewport of VIEWPORTS) {
+          const r = await auditRoute(page, route, viewport)
+          r.persona = pass.persona
+          r.mode = pass.mode
+          r.theme = pass.theme
+          results.push(r)
+          const f = r.fails.length
+          const w = r.warns.length
+          const mark = f > 0 ? "❌" : w > 0 ? "⚠️ " : "✅"
+          console.log(`${mark} ${route}  [${r.viewport}${label}]  ${f} fail, ${w} warn`)
+          for (const fail of r.fails.slice(0, 6)) {
+            if (fail.type === "contrast") {
+              console.log(`     FAIL contrast ${fail.ratio}:1 (need ${fail.required}) — "${fail.text}"  fg rgb(${fail.fg}) on rgb(${fail.bg})  ${fail.selector}`)
+            } else if (fail.type === "overflow") {
+              console.log(`     FAIL overflow right=${fail.right}px (vw exceeded) — ${fail.selector} "${fail.text}"`)
+            }
           }
         }
       }
+      await page.close()
     }
   } finally {
     await browser.close()
