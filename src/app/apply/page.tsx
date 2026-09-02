@@ -108,10 +108,10 @@ export default function ApplyPage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jobPostingSchema) }}
       />
 
-      <div className="brand-page-shell min-h-screen overflow-x-hidden bg-[#060607]">
+      <div className="brand-page-shell min-h-screen overflow-x-hidden bg-navy-950">
         <PageBreadcrumb pageName="Apply Now" category="Drivers" />
 
-        <section className="border-b border-white/5 bg-[#060607] py-10 md:py-20">
+        <section className="border-b border-white/5 bg-navy-950 py-10 md:py-20">
           <div className="container">
             <div className="grid items-start gap-8 lg:grid-cols-12 lg:gap-12">
               <div className="lg:col-span-5 lg:sticky lg:top-24 space-y-6">
@@ -203,7 +203,7 @@ export default function ApplyPage() {
           <div className="container">
             <div className="grid gap-8 lg:grid-cols-3 lg:gap-12">
               <div className="space-y-8 lg:col-span-2">
-                <div className="rounded-2xl border border-white/5 bg-[#060607] p-6 md:p-8">
+                <div className="rounded-2xl border border-white/5 bg-navy-950 p-6 md:p-8">
                   <h2 className="mb-6 text-2xl font-bold text-white">What To Expect</h2>
                   <div className="grid gap-6 md:grid-cols-2">
                     <div className="space-y-3">
@@ -251,7 +251,7 @@ export default function ApplyPage() {
               </div>
 
               <div className="space-y-6 lg:sticky lg:top-24">
-                <div className="rounded-2xl border border-white/5 bg-[#060607] p-6">
+                <div className="rounded-2xl border border-white/5 bg-navy-950 p-6">
                   <h3 className="mb-4 text-lg font-bold text-white">Application Notes</h3>
                   <div className="space-y-4">
                     {[

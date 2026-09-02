@@ -3,19 +3,24 @@ import { cva, type VariantProps } from "class-variance-authority"
 
 import { cn } from "@/lib/utils"
 
+/**
+ * 16px text at every size on touch widths: iOS Safari zooms the viewport into
+ * any focused field below 16px and does not zoom back out — 81 of the 86
+ * fields in the apply funnel were 14px. Focus is the global outline.
+ */
 const inputVariants = cva(
-  "flex w-full rounded-xl border-2 bg-white text-neutral-900 shadow-sm ring-offset-white transition-all duration-200 file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-neutral-500 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary-500/25 focus-visible:ring-offset-0 focus-visible:shadow-md hover:border-neutral-400 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:border-neutral-300",
+  "flex w-full rounded-fleet border bg-white text-neutral-900 shadow-sm transition-colors duration-fast file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-neutral-500 hover:border-neutral-400 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:border-neutral-300",
   {
     variants: {
       variant: {
-        default: "border-neutral-200 focus-visible:border-primary-500",
-        error: "border-red-300 focus-visible:ring-red-500/25 focus-visible:border-red-500",
-        success: "border-green-300 focus-visible:ring-green-500/25 focus-visible:border-green-500",
+        default: "border-neutral-300 focus-visible:border-orange-600",
+        error: "border-red-400 focus-visible:border-red-600",
+        success: "border-green-400 focus-visible:border-green-600",
       },
       inputSize: {
-        default: "h-11 px-4 py-2.5 text-sm",
-        sm: "h-9 px-3 py-2 text-xs",
-        lg: "h-12 px-5 py-3 text-base",
+        default: "h-12 px-4 text-base md:h-11 md:text-sm",
+        sm: "h-11 px-3 text-base md:h-10 md:text-sm",
+        lg: "h-14 px-5 text-base",
       },
     },
     defaultVariants: {

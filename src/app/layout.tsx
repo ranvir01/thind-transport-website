@@ -114,6 +114,10 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 5,
+  // The fixed mobile command bar pads itself by env(safe-area-inset-bottom);
+  // without cover the inset reads 0 in standalone/landscape and the bar sits
+  // under the home indicator.
+  viewportFit: "cover",
   themeColor: "#121316",
 }
 
@@ -149,7 +153,7 @@ export default function RootLayout({
         <AttributionCapture />
       </head>
       <body
-        className={`${sourceSans.className} antialiased overflow-x-hidden`}
+        className={`${sourceSans.className} antialiased`}
         suppressHydrationWarning
       >
         <Providers>

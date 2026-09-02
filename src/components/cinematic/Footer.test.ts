@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs"
 import { describe, expect, it } from "vitest"
 import { shouldHideMobileCommandBar } from "./Footer"
 
@@ -30,6 +31,15 @@ describe("shouldHideMobileCommandBar", () => {
     expect(shouldHideMobileCommandBar("/pre-qualify")).toBe(true)
   })
 
+  it("hides on pages whose one primary action is not the driver Apply", () => {
+    // A shipper on /shippers, a broker on /brokers, an owner on /loadoff and
+    // someone booking on /schedule-meeting each have their own CTA; a fixed red
+    // "Apply Now" competed with it (and violated one-primary-per-viewport).
+    for (const path of ["/shippers", "/brokers", "/quote", "/trust", "/loadoff", "/schedule-meeting"]) {
+      expect(shouldHideMobileCommandBar(path)).toBe(true)
+    }
+  })
+
   it("shows on marketing routes", () => {
     expect(shouldHideMobileCommandBar("/")).toBe(false)
     expect(shouldHideMobileCommandBar("/pay-rates")).toBe(false)
@@ -39,5 +49,21 @@ describe("shouldHideMobileCommandBar", () => {
   it("does not treat unrelated routes with matching prefixes as excluded", () => {
     expect(shouldHideMobileCommandBar("/apply-now")).toBe(false)
     expect(shouldHideMobileCommandBar("/pre-qualify-faq")).toBe(false)
+    expect(shouldHideMobileCommandBar("/shippers/faq")).toBe(false)
+  })
+})
+
+describe("MobileCommandBar (source guard)", () => {
+  const source = readFileSync(new URL("./Footer.tsx", import.meta.url), "utf-8")
+
+  it("carries two actions — Call and Apply — never a third", () => {
+    expect(source).not.toMatch(/sms:/)
+    expect(source).not.toContain(">Text<")
+  })
+
+  it("mounts only past the hero and never over a form the visitor is filling in", () => {
+    expect(source).toContain("pastHero")
+    expect(source).toContain("scrollY")
+    expect(source).toContain('querySelectorAll<HTMLFormElement>("main form")')
   })
 })

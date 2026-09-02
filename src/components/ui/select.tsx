@@ -22,7 +22,7 @@ const SelectTrigger = React.forwardRef<
       // vanishes). data-[placeholder] colors Radix's placeholder span — the
       // placeholder:text-gray-500 utility only targets native ::placeholder, not
       // the Radix span, so the "Select" text was invisible on light forms.
-      "flex h-10 w-full items-center justify-between rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 ring-offset-white data-[placeholder]:text-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-950 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 [&>span]:line-clamp-1",
+      "flex h-12 md:h-11 w-full items-center justify-between rounded-fleet border border-neutral-300 bg-white px-4 py-2 text-base md:text-sm text-gray-900 data-[placeholder]:text-gray-500 hover:border-neutral-400 focus-visible:border-orange-600 disabled:cursor-not-allowed disabled:opacity-50 [&>span]:line-clamp-1",
       className
     )}
     {...props}

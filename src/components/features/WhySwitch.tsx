@@ -28,22 +28,22 @@ const comparisonData = [
 
 export const WhySwitch = () => {
   return (
-    <section className="bg-paper py-16 md:py-24">
-      <div className="container px-4">
+    <section aria-labelledby="whyswitch-heading" className="bg-paper py-section md:py-section-loose">
+      <div className="container">
         <Reveal className="mx-auto max-w-measure text-center">
           <p className="font-display text-m-micro font-bold uppercase tracking-[0.2em] text-signal">
             Side by side
           </p>
-          <h2 className="mt-3 font-display text-m-h2 font-bold text-ink">Why drivers switch</h2>
+          <h2 id="whyswitch-heading" className="mt-3 font-display text-m-h2 font-bold text-ink">Why drivers switch</h2>
           <p className="mt-3 text-m-body text-ink-2">
             We&apos;re not a mega-carrier call center. Here&apos;s the list every driver asks about.
           </p>
         </Reveal>
 
-        <div className="mx-auto mt-10 max-w-3xl">
+        <div className="mx-auto mt-8 max-w-3xl">
           {/* Column headers are desktop-only: a header row scrolled off-screen
               is useless, so each row carries its own labels on mobile. */}
-          <div className="hidden grid-cols-3 gap-4 border-b border-[rgba(20,22,24,0.15)] pb-2 md:grid">
+          <div className="hidden grid-cols-3 gap-4 border-b border-ink/15 pb-2 md:grid">
             <span className="font-display text-m-micro font-bold uppercase tracking-[0.15em] text-ink-3">
               What you&apos;re comparing
             </span>
@@ -61,24 +61,21 @@ export const WhySwitch = () => {
                 as="li"
                 key={row.feature}
                 index={Math.min(i, 4)}
-                className="grid grid-cols-2 items-baseline gap-x-4 gap-y-1 border-b border-[rgba(20,22,24,0.1)] py-4 md:grid-cols-3"
+                className="grid grid-cols-1 gap-x-4 gap-y-0.5 border-b border-ink/10 py-3 md:grid-cols-3 md:items-baseline md:py-4"
               >
-                <span className="col-span-2 text-m-body font-semibold text-ink md:col-span-1">
-                  {row.feature}
+                <span className="text-m-body font-semibold text-ink">{row.feature}</span>
+
+                {/* Phone width: one line each, prefixed — the desktop column
+                    headers scroll away, and a per-row eyebrow doubled every
+                    row's height. */}
+                <span className="text-m-body text-ink-3">
+                  <span className="md:hidden">Elsewhere: </span>
+                  {row.competitor}
                 </span>
 
-                <span className="flex flex-col">
-                  <span className="font-display text-m-micro uppercase tracking-[0.12em] text-ink-3 md:hidden">
-                    What you may be used to
-                  </span>
-                  <span className="text-m-body text-ink-3">{row.competitor}</span>
-                </span>
-
-                <span className="flex flex-col">
-                  <span className="font-display text-m-micro uppercase tracking-[0.12em] text-signal md:hidden">
-                    Thind
-                  </span>
-                  <span className="text-m-body font-semibold text-ink">{row.thind}</span>
+                <span className="text-m-body font-semibold text-ink">
+                  <span className="text-signal md:hidden">Thind: </span>
+                  {row.thind}
                 </span>
               </Reveal>
             ))}
@@ -95,7 +92,7 @@ export const WhySwitch = () => {
             </p>
             <Link
               href="/#calculator"
-              className="mt-4 inline-flex min-h-[44px] items-center gap-2 rounded-m-2 bg-signal px-6 py-3 font-display text-m-body font-bold uppercase tracking-wide text-paper transition-colors duration-base ease-entrance hover:bg-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-signal focus-visible:ring-offset-2 focus-visible:ring-offset-paper"
+              className="mt-4 inline-flex min-h-[48px] items-center gap-2 rounded-fleet bg-signal px-6 text-m-body font-semibold text-paper transition-colors duration-base hover:bg-signal-up"
             >
               Work out your take-home
               <ArrowRight className="h-4 w-4" />
