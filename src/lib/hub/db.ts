@@ -30,7 +30,9 @@ function createPool(): Pool {
   // parameters. All Hub SQL uses fully qualified hub.* table names.
   const pool = new Pool({
     connectionString: connectionStringForPool(url),
-    ssl: isLocal ? undefined : { rejectUnauthorized: false },
+    // Remote Neon/Vercel Postgres uses CA-signed certs — verify them (no
+    // rejectUnauthorized:false). Local dev has no TLS.
+    ssl: isLocal ? undefined : true,
     max: 5,
   })
   pool.on("error", (err) => console.error("Hub pool error:", err.message))
