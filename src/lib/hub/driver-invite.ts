@@ -8,6 +8,7 @@
  */
 import { createHmac, timingSafeEqual } from "crypto"
 import bcrypt from "bcrypt"
+import { appPublicOrigin } from "@/lib/app-origin"
 import { query, queryOne } from "./db"
 
 const INVITE_TTL_DAYS = 7
@@ -100,7 +101,7 @@ export async function sendDriverInviteEmail(
 ): Promise<boolean> {
   const token = createDriverInviteToken({ carrierId, driverId: recipient.driverId, email: recipient.email })
   if (!token) return false // no auth secret configured — no invite could ever verify
-  const baseUrl = process.env.NEXTAUTH_URL ?? "http://localhost:3000"
+  const baseUrl = appPublicOrigin()
   try {
     await transport.sendMail({
       from: mailFrom(carrierName),

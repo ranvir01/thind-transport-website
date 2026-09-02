@@ -23,7 +23,12 @@ const queryOneMock = vi.mocked(queryOne)
 
 const PAYLOAD = { carrierId: "carrier-1", driverId: "driver-1", email: "amar@example.com" }
 
-const ORIGINAL = { NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET, AUTH_SECRET: process.env.AUTH_SECRET }
+const ORIGINAL = {
+  NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET,
+  AUTH_SECRET: process.env.AUTH_SECRET,
+  NEXTAUTH_URL: process.env.NEXTAUTH_URL,
+  NEXT_PUBLIC_APP_HOST: process.env.NEXT_PUBLIC_APP_HOST,
+}
 
 beforeEach(() => {
   vi.clearAllMocks()
@@ -31,6 +36,8 @@ beforeEach(() => {
   queryOneMock.mockResolvedValue(null)
   process.env.NEXTAUTH_SECRET = "test-secret"
   delete process.env.AUTH_SECRET
+  delete process.env.NEXT_PUBLIC_APP_HOST
+  process.env.NEXTAUTH_URL = "https://thindtransport.com"
 })
 
 afterEach(() => {
@@ -158,7 +165,19 @@ describe("sendDriverInviteEmail", () => {
       expect.objectContaining({
         from: '"Demo Carrier" <noreply@test>',
         to: "amar@example.com",
-        text: expect.stringMatching(/\/hub\/driver-invite\/[\w-]+\.[\w-]+/),
+        text: expect.stringMatching(/https:\/\/thindtransport\.com\/hub\/driver-invite\/[\w-]+\.[\w-]+/),
+      })
+    )
+  })
+
+  it("prefers NEXT_PUBLIC_APP_HOST for the emailed link once the app origin is configured", async () => {
+    process.env.NEXT_PUBLIC_APP_HOST = "app.loadoff.com"
+    const sendMail = vi.fn(async () => undefined)
+    const ok = await sendDriverInviteEmail({ sendMail }, mailFrom, "carrier-1", "Demo Carrier", recipient)
+    expect(ok).toBe(true)
+    expect(sendMail).toHaveBeenCalledWith(
+      expect.objectContaining({
+        text: expect.stringMatching(/https:\/\/app\.loadoff\.com\/hub\/driver-invite\/[\w-]+\.[\w-]+/),
       })
     )
   })
