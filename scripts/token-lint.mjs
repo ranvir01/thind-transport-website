@@ -1,14 +1,16 @@
 /**
- * Token lint (redesign hard rule): no raw hex colors, no raw pixel values in
- * the redesigned marketing components — every color, space, radius, shadow,
+ * Token lint — two scopes, two strictness levels.
+ *
+ * MARKETING (strict; exit 1): no raw hex colors, no raw pixel values in the
+ * redesigned marketing components — every color, space, radius, shadow,
  * duration and easing must reference a token (tailwind.config.ts m-* system
  * or a semantic utility).
  *
  * Scope is the REDESIGNED surface only, listed below. Legacy marketing pages
- * and the hub keep their own conventions until their redesign pass touches
- * them — a repo-wide rule today would fail on hundreds of files nobody is
- * editing, and a lint that's always red teaches everyone to ignore it. Add
- * each file/dir here as it is redesigned.
+ * keep their own conventions until their redesign pass touches them — a
+ * repo-wide rule today would fail on hundreds of files nobody is editing, and
+ * a lint that's always red teaches everyone to ignore it. Add each file/dir
+ * here as it is redesigned.
  *
  * Allowed exceptions (each one deliberate):
  *  - 44px / 48px / 24px inside arbitrary values: WCAG tap-target minimums are
@@ -16,7 +18,27 @@
  *  - 1px hairlines.
  *  - px inside comments and import paths.
  *
- * Run: node scripts/token-lint.mjs   (exit 1 on any violation)
+ * HUB (report mode by default; TOKEN_LINT_HUB_STRICT=1 makes it fail): the
+ * office, driver and portal route trees plus src/components/hub. Two rules:
+ *  - Raw hex colours in class/style code — a Tailwind arbitrary value
+ *    (`bg-[#e9e5dc]`), a colour property (`fill="#fff"`, `color: "#666"`,
+ *    `ctx.strokeStyle = "#…"`) or a standalone hex string literal. Every hub
+ *    colour is a token from src/app/hub/hub-theme.css, which is excluded here
+ *    because it is the token source (all hex by design) and has its own gate,
+ *    src/lib/hub/__tests__/hub-theme-tokens.test.ts. `#202` in a truck number
+ *    or `load #4411` in prose is not a colour and is not flagged.
+ *  - An opacity modifier on a var()-backed token (`border-border/60`,
+ *    `bg-accent/10`). Tailwind cannot split `var(--x)` into channels, so it
+ *    drops the class SILENTLY — the element ships with no border/background
+ *    at all. Use a *-soft token or a real rgba token instead.
+ *  The px rule is deliberately NOT applied to the hub: it legitimately uses
+ *  many arbitrary px sizes (text-[13.5px], min-h-[58px], w-[212px], …).
+ *  Report mode exists so this gate is not red from its first commit — the
+ *  violations print on every run, and the env var makes them fail. Ratchet:
+ *  fix them, then make strict the default.
+ *
+ * Run: node scripts/token-lint.mjs                        (exit 1 on marketing violations)
+ *      TOKEN_LINT_HUB_STRICT=1 node scripts/token-lint.mjs (…or hub violations)
  */
 import { readFileSync, readdirSync, statSync } from "node:fs"
 import { join } from "node:path"
@@ -31,9 +53,27 @@ const SCOPE = [
   "src/app/drivers",
 ]
 
+const HUB_SCOPE = [
+  "src/app/hub/(office)",
+  "src/app/hub/driver",
+  "src/app/hub/portal",
+  "src/components/hub",
+]
+const HUB_STRICT = process.env.TOKEN_LINT_HUB_STRICT === "1"
+const isHubExcluded = (file) =>
+  file === "src/app/hub/hub-theme.css" || /(^|\/)__tests__\//.test(file) || /\.test\.tsx?$/.test(file)
+
 // 0px included: IntersectionObserver rootMargin strings require units even
 // for zero — that's a browser API contract, not a design value.
 const ALLOWED_PX = new Set(["0px", "1px", "24px", "44px", "48px"])
+
+const HEX = /#(?:[0-9a-fA-F]{3,4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})\b/g
+const OPACITY_TRAP =
+  /\b(bg|text|border|ring|divide|from|to|via)-(surface|surface-2|bg|fg|fg-2|fg-3|border|border-strong|hover|accent|accent-soft|accent-text|ok|warn|bad|info)(-\w+)?\/\d+/g
+/** A colour-ish property name, then `:` or `=`, with no statement boundary
+ *  before the match — `border:2px solid #fff` and `color: "#666"` both count. */
+const COLOR_PROP_BEFORE =
+  /(?:fill|stroke|color|background|border|outline|shadow|accent|strokeStyle|fillStyle|stopColor|theme-color)[\w-]*\s*[:=][^;{}]*$/i
 
 function* files(path) {
   const st = statSync(path)
@@ -46,31 +86,109 @@ function* files(path) {
   }
 }
 
-const violations = []
+/** Strip comments the way the marketing rule always has: prose is not code. */
+function codeOf(line) {
+  const trimmed = line.trimStart()
+  if (trimmed.startsWith("*") || trimmed.startsWith("/*")) return null
+  return line.replace(/\/\/.*$/, "").replace(/\/\*.*?\*\//g, "")
+}
+
+/**
+ * Is this hex match a colour in class/style code, rather than a truck number,
+ * a load reference in placeholder prose, or a URL fragment?
+ */
+function isColorContext(code, index, hex) {
+  const before = code.slice(0, index)
+  const after = code.slice(index + hex.length)
+  // URL fragment or anchor: `/hub/loads#abc`, `href="#faq"`.
+  if (before.endsWith("/") || /href\s*=\s*["'{`]*$/.test(before)) return false
+  // Tailwind arbitrary value: an unclosed `[` earlier on the line.
+  const open = before.lastIndexOf("[")
+  if (open >= 0 && before.indexOf("]", open) === -1) return true
+  // Colour property value: fill="#fff", color: "#666", strokeStyle = "#…".
+  if (COLOR_PROP_BEFORE.test(before.slice(-64))) return true
+  // A standalone hex string literal ("#d97706"). Three/four digits need a
+  // letter to count — "#202" is a truck, "#4411" a load; #000/#fff-style
+  // greys are caught by the property rule above when they are painted.
+  const digits = hex.slice(1)
+  const standalone = /["'`]$/.test(before) && /^["'`]/.test(after)
+  if (standalone && (digits.length >= 6 || /[a-f]/i.test(digits))) return true
+  return false
+}
+
+/** file → ["  :line  message", …] */
+const marketing = new Map()
+const hub = new Map()
+const add = (bucket, file, line, msg) => {
+  if (!bucket.has(file)) bucket.set(file, [])
+  bucket.get(file).push(`:${line}  ${msg}`)
+}
 
 for (const root of SCOPE) {
   for (const file of files(root)) {
     if (!/\.(tsx|ts|css)$/.test(file)) continue
     const lines = readFileSync(file, "utf8").split("\n")
     lines.forEach((line, i) => {
-      const trimmed = line.trimStart()
-      // Block-comment bodies (` * ...`) are prose, not code.
-      if (trimmed.startsWith("*") || trimmed.startsWith("/*")) return
-      const code = line.replace(/\/\/.*$/, "").replace(/\/\*.*?\*\//g, "")
+      const code = codeOf(line)
+      if (code === null) return
       // Raw hex color anywhere in class/style code.
       const hex = code.match(/#[0-9a-fA-F]{3,8}\b/g)
-      if (hex) violations.push(`${file}:${i + 1}  raw hex ${hex.join(", ")}`)
+      if (hex) add(marketing, file, i + 1, `raw hex ${hex.join(", ")}`)
       // Raw px outside the allowed accessibility constants.
       for (const m of code.matchAll(/\b(\d+(?:\.\d+)?px)\b/g)) {
-        if (!ALLOWED_PX.has(m[1])) violations.push(`${file}:${i + 1}  raw ${m[1]}`)
+        if (!ALLOWED_PX.has(m[1])) add(marketing, file, i + 1, `raw ${m[1]}`)
       }
     })
   }
 }
 
-if (violations.length) {
-  console.error(`❌ token-lint: ${violations.length} violation(s) — use m-* tokens, not raw values:\n`)
-  for (const v of violations) console.error("  " + v)
-  process.exit(1)
+for (const root of HUB_SCOPE) {
+  for (const file of files(root)) {
+    if (!/\.(tsx|ts|css)$/.test(file) || isHubExcluded(file)) continue
+    const lines = readFileSync(file, "utf8").split("\n")
+    lines.forEach((line, i) => {
+      const code = codeOf(line)
+      if (code === null) return
+      for (const m of code.matchAll(HEX)) {
+        if (isColorContext(code, m.index, m[0])) add(hub, file, i + 1, `raw hex ${m[0]} — use a hub-theme.css token`)
+      }
+      for (const m of code.matchAll(OPACITY_TRAP)) {
+        add(
+          hub, file, i + 1,
+          `${m[0]} — opacity modifier on a var() token; Tailwind drops the class silently. Use a *-soft token or an rgba token`
+        )
+      }
+    })
+  }
 }
-console.log("✅ token-lint: redesigned marketing scope is raw-hex/px free")
+
+const count = (bucket) => [...bucket.values()].reduce((n, v) => n + v.length, 0)
+const printGrouped = (bucket, out) => {
+  for (const [file, items] of [...bucket.entries()].sort(([a], [b]) => a.localeCompare(b))) {
+    out(`  ${file}`)
+    for (const item of items) out(`    ${item}`)
+  }
+  out("")
+}
+
+const marketingCount = count(marketing)
+if (marketingCount) {
+  console.error(`❌ token-lint: ${marketingCount} violation(s) in the redesigned marketing scope — use m-* tokens, not raw values:\n`)
+  printGrouped(marketing, console.error)
+} else {
+  console.log("✅ token-lint: redesigned marketing scope is raw-hex/px free")
+}
+
+const hubCount = count(hub)
+if (hubCount) {
+  const out = HUB_STRICT ? console.error : console.log
+  out(
+    `${HUB_STRICT ? "❌" : "⚠️ "} token-lint (hub): ${hubCount} violation(s) in ${hub.size} file(s)` +
+      `${HUB_STRICT ? "" : " — report mode; TOKEN_LINT_HUB_STRICT=1 makes these fail"}:\n`
+  )
+  printGrouped(hub, out)
+} else {
+  console.log("✅ token-lint (hub): no raw hex in class/style code, no opacity modifiers on var() tokens")
+}
+
+process.exit(marketingCount > 0 || (HUB_STRICT && hubCount > 0) ? 1 : 0)
