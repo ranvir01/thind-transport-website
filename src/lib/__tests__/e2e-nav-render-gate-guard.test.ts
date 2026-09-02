@@ -28,10 +28,37 @@
  */
 import { describe, expect, it } from "vitest"
 import { readdirSync, readFileSync } from "node:fs"
+
 import path from "node:path"
 
 const ROOT = process.cwd()
 const SCRIPTS_DIR = path.join(ROOT, "scripts")
+
+/**
+ * Smokes reference shared page copy as `ANCHORS.<key>` (scripts/e2e-lib.mjs)
+ * rather than repeating the literal. This guard reasons about the literal —
+ * "does the script wait on the destination's own copy?" — so resolve the map
+ * back into the source before analysing it. Parsed from the lib's source
+ * rather than imported: e2e-lib.mjs pulls in puppeteer at module load.
+ * A key the lib does not define is left as-is and fails the literal checks,
+ * which is the right failure for a typo.
+ */
+function anchorMap(): Record<string, string> {
+  const lib = readFileSync(path.join(ROOT, "scripts", "e2e-lib.mjs"), "utf-8")
+  const block = /export const ANCHORS = Object\.freeze\(\{([\s\S]*?)\}\)/.exec(lib)
+  if (!block) throw new Error("ANCHORS block not found in scripts/e2e-lib.mjs")
+  const map: Record<string, string> = {}
+  for (const m of block[1].matchAll(/^\s*(\w+):\s*"((?:[^"\\]|\\.)*)",?\s*$/gm)) map[m[1]] = m[2]
+  return map
+}
+const ANCHOR_TEXT = anchorMap()
+
+function readSmoke(file: string): string {
+  return readFileSync(path.join(SCRIPTS_DIR, file)).toString("utf-8").replace(
+    /\bANCHORS\.(\w+)\b/g,
+    (whole, key: string) => (key in ANCHOR_TEXT ? JSON.stringify(ANCHOR_TEXT[key]) : whole)
+  )
+}
 
 /**
  * Nav-bar labels are always in the DOM (they render in the app chrome, not the
@@ -429,7 +456,7 @@ const scripts = readdirSync(SCRIPTS_DIR).filter(
  *   content read→ VIOLATION, we read the skeleton.
  */
 function violationsIn(file: string): string[] {
-  const lines = stripComments(readFileSync(path.join(SCRIPTS_DIR, file), "utf-8")).split("\n")
+  const lines = stripComments(readSmoke(file)).split("\n")
   const out: string[] = []
   lines.forEach((line, i) => {
     if (!LANDING_GATE.test(line) || LEAVING_GATE.test(line)) return
@@ -450,7 +477,7 @@ describe("e2e soft-nav landing gates wait for render before reading", () => {
     const total = scripts.reduce(
       (n, f) =>
         n +
-        readFileSync(path.join(SCRIPTS_DIR, f), "utf-8")
+        readSmoke(f)
           .split("\n")
           .filter((l) => LANDING_GATE.test(l) && !LEAVING_GATE.test(l)).length,
       0
@@ -462,7 +489,7 @@ describe("e2e soft-nav landing gates wait for render before reading", () => {
     let pathWaits = 0
     let asLanding = 0
     for (const f of scripts) {
-      for (const line of readFileSync(path.join(SCRIPTS_DIR, f), "utf-8").split("\n")) {
+      for (const line of readSmoke(f).split("\n")) {
         if (!/\bwaitForPath\(/.test(line)) continue
         pathWaits += 1
         if (LANDING_GATE.test(line) && !LEAVING_GATE.test(line)) asLanding += 1
@@ -480,7 +507,7 @@ describe("e2e soft-nav landing gates wait for render before reading", () => {
     const TEXT_RE = /(?:waitForText|textAppears)\(\s*[\w$]+\s*,\s*"([^"]+)"/
     const misses: string[] = []
     for (const f of scripts) {
-      const lines = stripComments(readFileSync(path.join(SCRIPTS_DIR, f), "utf-8")).split("\n")
+      const lines = stripComments(readSmoke(f)).split("\n")
       lines.forEach((line, i) => {
         const pathMatch = PATH_RE.exec(line)
         if (!pathMatch) return
@@ -648,7 +675,7 @@ describe("e2e soft-nav landing gates wait for render before reading", () => {
     const misses: string[] = []
     let gates = 0
     for (const f of scripts) {
-      const lines = stripComments(readFileSync(path.join(SCRIPTS_DIR, f), "utf-8")).split("\n")
+      const lines = stripComments(readSmoke(f)).split("\n")
       lines.forEach((line, i) => {
         const pathMatch = HARD_GOTO_PATH_RE.exec(line)
         if (!pathMatch) return

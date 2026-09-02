@@ -12,7 +12,7 @@
  * Usage: node scripts/e2e-fuel-smoke.mjs [outputDir]
  */
 import { mkdirSync } from "node:fs"
-import { launchBrowser, BASE, failures, check, waitForText, textGone, login, makeShot, clickByText, reseed, realConsoleErrors } from "./e2e-lib.mjs"
+import { ANCHORS, launchBrowser, BASE, failures, check, waitForText, textGone, login, makeShot, clickByText, reseed, realConsoleErrors } from "./e2e-lib.mjs"
 
 const OUT = process.argv[2] ?? "e2e-shots-fuel"
 mkdirSync(OUT, { recursive: true })
@@ -48,7 +48,7 @@ async function main() {
   console.log("1. Login as owner, open the fuel screen")
   await login(page, "owner@demo.thind")
   await page.goto(`${BASE}/hub/fuel`, { waitUntil: "networkidle2" })
-  await waitForText(page, "Last 92 days across every card program.")
+  await waitForText(page, ANCHORS.fuel)
   // Headings render CSS-uppercased, and innerText reflects the transform.
   const screen = await page.evaluate(() => {
     const text = document.body.innerText.toLowerCase()
@@ -113,7 +113,7 @@ async function main() {
 
   console.log("4. Unassigned count dropped by exactly one")
   await page.goto(`${BASE}/hub/fuel`, { waitUntil: "networkidle2" })
-  await waitForText(page, "Last 92 days across every card program.")
+  await waitForText(page, ANCHORS.fuel)
   const countAfter = await unassignedCount(page)
   check(
     countAfter === countBefore - 1,
@@ -128,7 +128,7 @@ async function main() {
   await clickByText(page, "Reefer fuel")
   await waitForText(page, "Marked as reefer")
   await page.goto(`${BASE}/hub/fuel`, { waitUntil: "networkidle2" })
-  await waitForText(page, "Last 92 days across every card program.")
+  await waitForText(page, ANCHORS.fuel)
   const reeferAfter = await badgeCount(page, "Reefer")
   check(
     reeferAfter === reeferBefore + 1,

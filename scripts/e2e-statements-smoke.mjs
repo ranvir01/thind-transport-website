@@ -10,7 +10,7 @@
  * Usage: node scripts/e2e-statements-smoke.mjs [outputDir]
  */
 import { mkdirSync } from "node:fs"
-import { launchBrowser, BASE, failures, check, waitForText, textAppears, login, makeShot, reseed, realConsoleErrors } from "./e2e-lib.mjs"
+import { ANCHORS, launchBrowser, BASE, failures, check, waitForText, textAppears, login, makeShot, reseed, realConsoleErrors } from "./e2e-lib.mjs"
 
 const OUT = process.argv[2] ?? "e2e-shots-statements"
 mkdirSync(OUT, { recursive: true })
@@ -29,7 +29,7 @@ async function main() {
   console.log("1. Login as owner, open the money page")
   await login(page, "owner@demo.thind")
   await page.goto(`${BASE}/hub/money`, { waitUntil: "networkidle2" })
-  await waitForText(page, "receivables, invoices, and driver pay")
+  await waitForText(page, ANCHORS.money)
   await waitForText(page, "Customer statements")
   await shot(page, "01-money-statements-panel")
 
@@ -86,7 +86,7 @@ async function main() {
   })
   await login(page2, "dispatch@demo.thind")
   await page2.goto(`${BASE}/hub/money`, { waitUntil: "networkidle2" })
-  await waitForText(page2, "receivables, invoices, and driver pay")
+  await waitForText(page2, ANCHORS.money)
   await waitForText(page2, "Customer statements")
   const dispatcherView = await page2.evaluate(() => {
     const h2 = [...document.querySelectorAll("h2")].find((h) => h.textContent.trim() === "Customer statements")

@@ -13,7 +13,7 @@
  * Usage: node scripts/e2e-invoices-smoke.mjs [outputDir]
  */
 import { mkdirSync } from "node:fs"
-import { launchBrowser, BASE, failures, check, waitForText, login, makeShot, clickByText, reseed, trackPageErrors } from "./e2e-lib.mjs"
+import { ANCHORS, launchBrowser, BASE, failures, check, waitForText, login, makeShot, clickByText, reseed, trackPageErrors } from "./e2e-lib.mjs"
 
 const OUT = process.argv[2] ?? "e2e-shots-invoices"
 mkdirSync(OUT, { recursive: true })
@@ -53,12 +53,12 @@ async function recordPayment(page, dollars, expectedOpenCents) {
   await clickByText(page, "Record payment", { tag: "button" })
   await waitForText(page, "Payment recorded")
   // The Summary block only reflects the new balance after the server action
-  // resolves and router.refresh() re-renders — poll the "Open balance" dd
+  // resolves and router.refresh() re-renders — poll the ANCHORS.openBalance dd
   // for the expected cents instead of sleeping a fixed 1500ms.
   await page
     .waitForFunction(
       (expectedCents) => {
-        const dt = [...document.querySelectorAll("dt")].find((n) => n.textContent.trim() === "Open balance")
+        const dt = [...document.querySelectorAll("dt")].find((n) => n.textContent.trim() === ANCHORS.openBalance)
         const text = dt?.parentElement?.querySelector("dd")?.textContent?.trim() ?? ""
         const m = text.match(/(-?)\$?([\d,]+)\.(\d{2})/)
         if (!m) return false
@@ -98,7 +98,7 @@ async function main() {
 
   console.log("3. Find the POD-received steel-beams load")
   await page.goto(`${BASE}/hub/loads?status=pod_received`, { waitUntil: "networkidle2" })
-  await waitForText(page, "Search, filter, and manage every load.")
+  await waitForText(page, ANCHORS.loads)
   const hrefs = await page.evaluate(() =>
     [...new Set(
       [...document.querySelectorAll('a[href^="/hub/loads/"]')]
@@ -126,7 +126,7 @@ async function main() {
     () => /\/hub\/money\/invoices\/[0-9a-f-]{36}$/.test(location.pathname),
     { timeout: 20000 }
   )
-  await waitForText(page, "Open balance")
+  await waitForText(page, ANCHORS.openBalance)
   const invoiceUrl = await page.evaluate(() => location.pathname)
   const number = await page.evaluate(() => document.body.innerText.match(/THD-INV-\d+/)?.[0] ?? null)
   check(!!number, `invoice numbered from tenant settings (${number})`)
@@ -134,7 +134,7 @@ async function main() {
   const amount = parseCents(await summaryValue(page, "Amount"))
   check(amount === EXPECTED_TOTAL_CENTS,
     `amount is linehaul+FSC+tarp to the cent (${amount} vs ${EXPECTED_TOTAL_CENTS})`)
-  const open0 = parseCents(await summaryValue(page, "Open balance"))
+  const open0 = parseCents(await summaryValue(page, ANCHORS.openBalance))
   check(open0 === EXPECTED_TOTAL_CENTS, `open balance equals amount (${open0})`)
   // innerText reflects CSS text-transform (the label renders "REMIT TO") — compare lowercased.
   check(
@@ -169,14 +169,14 @@ async function main() {
   check((await summaryValue(page, "Status"))?.toLowerCase() === "partial", "status flips to partial")
   check(parseCents(await summaryValue(page, "Paid")) === PARTIAL_CENTS,
     `paid shows exact cents (${await summaryValue(page, "Paid")})`)
-  check(parseCents(await summaryValue(page, "Open balance")) === REMAINDER_CENTS,
-    `open balance is exact remainder (${await summaryValue(page, "Open balance")})`)
+  check(parseCents(await summaryValue(page, ANCHORS.openBalance)) === REMAINDER_CENTS,
+    `open balance is exact remainder (${await summaryValue(page, ANCHORS.openBalance)})`)
   await shot(page, "04-invoice-partial")
 
   console.log("7. Pay the remainder — invoice paid, load paid")
   await recordPayment(page, (REMAINDER_CENTS / 100).toFixed(2), 0)
   check((await summaryValue(page, "Status"))?.toLowerCase() === "paid", "status flips to paid")
-  check(parseCents(await summaryValue(page, "Open balance")) === 0, "open balance is $0.00")
+  check(parseCents(await summaryValue(page, ANCHORS.openBalance)) === 0, "open balance is $0.00")
   const formGone = await page.evaluate(() => !document.querySelector("#pay_amount"))
   check(formGone, "record-payment form hidden once settled")
   const paymentRows = await page.evaluate(() =>
@@ -197,7 +197,7 @@ async function main() {
   trackPageErrors(page2, consoleErrors)
   await login(page2, "dispatch@demo.thind")
   await page2.goto(`${BASE}${invoiceUrl}`, { waitUntil: "networkidle2" })
-  await waitForText(page2, "Open balance")
+  await waitForText(page2, ANCHORS.openBalance)
   const dispatcher = await page2.evaluate(() => ({
     seesSummary: document.body.innerText.toLowerCase().includes("summary"),
     hasPayForm: !!document.querySelector("#pay_amount"),

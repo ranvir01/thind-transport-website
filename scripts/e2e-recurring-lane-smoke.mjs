@@ -20,7 +20,7 @@
  * Usage: node scripts/e2e-recurring-lane-smoke.mjs [outputDir]
  */
 import { mkdirSync } from "node:fs"
-import { BASE, failures, check, waitForText, login, makeShot, reseed, clickByText, realConsoleErrors, launchBrowser, waitForLoadDetail} from "./e2e-lib.mjs"
+import { ANCHORS, BASE, failures, check, waitForText, login, makeShot, reseed, clickByText, realConsoleErrors, launchBrowser, waitForLoadDetail} from "./e2e-lib.mjs"
 
 // Fail fast on a fresh rig: the cron step authenticates with Bearer CRON_SECRET.
 // Against a localhost BASE, e2e-lib has already loaded .env.local into this
@@ -71,7 +71,7 @@ async function main() {
   console.log("1. Owner opens the settled Pipe load")
   await login(page, "owner@demo.thind")
   await page.goto(`${BASE}/hub/loads?status=all&q=Pipe`, { waitUntil: "networkidle2" })
-  await waitForText(page, "Search, filter, and manage every load.")
+  await waitForText(page, ANCHORS.loads)
   await waitForText(page, "Sacramento")
   const loadHref = await page.evaluate(() => {
     const row = [...document.querySelectorAll("a")].find(
@@ -129,7 +129,7 @@ async function main() {
   await shot(page, "03-rule-last-booked")
 
   await page.goto(`${BASE}/hub/loads?status=all&q=${bookedRef}`, { waitUntil: "networkidle2" })
-  await waitForText(page, "Search, filter, and manage every load.")
+  await waitForText(page, ANCHORS.loads)
   const copyHref = await page.evaluate((ref) => {
     const row = [...document.querySelectorAll("a")].find(
       (a) => /\/hub\/loads\/[0-9a-f-]{36}/.test(a.getAttribute("href") ?? "") && a.textContent.includes(ref)

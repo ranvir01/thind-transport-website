@@ -7,7 +7,7 @@
  */
 import { mkdirSync } from "node:fs"
 import path from "node:path"
-import { launchBrowser, BASE, reseed, waitForText, login, waitForStableText } from "./e2e-lib.mjs"
+import { ANCHORS, launchBrowser, BASE, reseed, waitForText, login, waitForStableText } from "./e2e-lib.mjs"
 
 const OUT = process.argv[2] ?? "e2e-shots-planner"
 mkdirSync(OUT, { recursive: true })
@@ -57,7 +57,7 @@ async function main() {
   // the mission line it used to greet with was dropped in the app-chrome
   // redesign (the string survives in product.ts, so grep won't tell you).
   await page.goto(`${BASE}/hub`, { waitUntil: "networkidle2" })
-  await waitForText(page, "Unconfirmed drivers")
+  await waitForText(page, ANCHORS.today)
   await page.screenshot({ path: path.join(OUT, "01-today.png"), fullPage: true })
   console.log("  📸 01-today")
 

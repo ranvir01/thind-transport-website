@@ -12,7 +12,7 @@
 import pg from "pg"
 import { writeFileSync, mkdirSync } from "node:fs"
 import path from "node:path"
-import { launchBrowser, BASE, clickByText, waitForText, textGone, makeShot, reseed, check, failures, trackPageErrors } from "./e2e-lib.mjs"
+import { ANCHORS, launchBrowser, BASE, clickByText, waitForText, textGone, makeShot, reseed, check, failures, trackPageErrors } from "./e2e-lib.mjs"
 
 const OUT = process.argv[2] ?? "e2e-shots"
 mkdirSync(OUT, { recursive: true })
@@ -57,7 +57,7 @@ async function main() {
   try {
     console.log("1. Login as demo driver at 390px")
     await page.goto(`${BASE}/hub/login`, { waitUntil: "networkidle2" })
-    await waitForText(page, "One login for dispatch, drivers, and partners.")
+    await waitForText(page, ANCHORS.login)
     await page.type("#email", "driver@demo.thind")
     await page.type("#password", "ThindDemo1!")
     await Promise.all([
@@ -70,7 +70,7 @@ async function main() {
 
     console.log("2. Confirm dispatch")
     await clickByText(page, "confirm this dispatch")
-    await waitForText(page, "Dispatch confirmed")
+    await waitForText(page, ANCHORS.toastDispatchConfirmed)
     check(true, "dispatch confirmed toast shown")
     // The toast fires before router.refresh() re-renders the card without the
     // (now acknowledged_at-gated) confirm button — wait for that button to

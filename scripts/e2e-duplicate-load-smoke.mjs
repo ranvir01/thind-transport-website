@@ -17,7 +17,7 @@
  * Reseeds demo data first. Usage: node scripts/e2e-duplicate-load-smoke.mjs [outputDir]
  */
 import { mkdirSync } from "node:fs"
-import { BASE, failures, check, waitForText, login, makeShot, reseed, clickByText, realConsoleErrors, launchBrowser, waitForLoadDetail} from "./e2e-lib.mjs"
+import { ANCHORS, BASE, failures, check, waitForText, login, makeShot, reseed, clickByText, realConsoleErrors, launchBrowser, waitForLoadDetail} from "./e2e-lib.mjs"
 
 const OUT = process.argv[2] ?? "e2e-shots-duplicate-load"
 mkdirSync(OUT, { recursive: true })
@@ -36,7 +36,7 @@ async function main() {
   console.log("1. Owner opens the settled Pipe load")
   await login(page, "owner@demo.thind")
   await page.goto(`${BASE}/hub/loads?status=all&q=Pipe`, { waitUntil: "networkidle2" })
-  await waitForText(page, "Search, filter, and manage every load.")
+  await waitForText(page, ANCHORS.loads)
   // The list row shows reference/lane, not the commodity — the q=Pipe filter
   // already narrows the table to the one Pipe load.
   await waitForText(page, "Sacramento")

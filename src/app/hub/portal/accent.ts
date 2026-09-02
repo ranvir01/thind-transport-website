@@ -12,8 +12,13 @@
 
 const HEX_COLOR = /^#[0-9a-fA-F]{6}$/
 const GOLD = "#F2A900"
-/** The portal chrome backdrop (tailwind `navy` / `navy-500`). */
-const NAVY = "#0E1621"
+/**
+ * The forced-dark CARD surface (`--driver-surface` in hub-theme.css) — the
+ * lightest backdrop the accent label sits on, so passing here passes on the
+ * #121316 page too. The previous constant was #0E1621, a colour that exists
+ * nowhere in the palette (it predates the navy scale).
+ */
+const NAVY = "#1C1E23"
 /** WCAG AA for normal-size text — the label is 10px, so no bold discount. */
 const MIN_TEXT_CONTRAST = 4.5
 /** Same subtlety as the stock `border-white/10` hairline it replaces. */

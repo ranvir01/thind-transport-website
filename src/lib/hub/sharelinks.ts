@@ -2,6 +2,7 @@ import { randomBytes } from "crypto"
 import { query, queryOne } from "./db"
 import { assertCarrierRefs } from "./tenancy"
 import { loadEta } from "./eta-load"
+import { latestPickupVerification } from "./pickup-verifications"
 import { formatEta } from "./eta"
 import type { Load, Stop } from "./types"
 
@@ -80,6 +81,12 @@ export interface TrackedLoad {
    * so it reads as an estimate, never a promise.
    */
   eta: { at: string; label: string; stopType: "pickup" | "delivery"; late: boolean } | null
+  /**
+   * True only on a POSITIVE verification (driver, location and photo all
+   * matched). Never "unverified": an offline driver or a denied GPS prompt is
+   * the usual case, and a public page must not read it as an accusation.
+   */
+  pickupVerified: boolean
 }
 
 /** Public lookup by token — exposes status + stops + city-level position only. */
@@ -124,7 +131,10 @@ export async function getTrackedLoad(token: string): Promise<TrackedLoad | null>
   // Only while the position is being shared: loadEta itself refuses
   // non-rolling statuses, but keying it to the same gate keeps the public
   // page's two live facts (position, ETA) appearing and disappearing together.
-  const arrival = latestPosition ? await loadEta(link.carrier_id, link.load_id).catch(() => null) : null
+  const [arrival, verification] = await Promise.all([
+    latestPosition ? loadEta(link.carrier_id, link.load_id).catch(() => null) : Promise.resolve(null),
+    latestPickupVerification(link.carrier_id, link.load_id).catch(() => null),
+  ])
 
   return {
     load: { id: load.id, reference: load.reference, status: load.status, equipment: load.equipment, truck_id: load.truck_id },
@@ -139,5 +149,6 @@ export async function getTrackedLoad(token: string): Promise<TrackedLoad | null>
           late: arrival.eta.lateMinutes > 60,
         }
       : null,
+    pickupVerified: verification?.result === "verified",
   }
 }

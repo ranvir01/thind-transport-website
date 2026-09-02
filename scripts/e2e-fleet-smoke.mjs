@@ -16,7 +16,7 @@
  * Usage: node scripts/e2e-fleet-smoke.mjs [outputDir]
  */
 import { mkdirSync } from "node:fs"
-import { launchBrowser, BASE, failures, check, waitForText, login, makeShot, clickByText, reseed, realConsoleErrors } from "./e2e-lib.mjs"
+import { ANCHORS, launchBrowser, BASE, failures, check, waitForText, login, makeShot, clickByText, reseed, realConsoleErrors } from "./e2e-lib.mjs"
 
 const OUT = process.argv[2] ?? "e2e-shots-fleet"
 mkdirSync(OUT, { recursive: true })
@@ -58,7 +58,7 @@ async function main() {
   console.log("1. Login as dispatcher, open Fleet")
   await login(page, "dispatch@demo.thind")
   await page.goto(`${BASE}/hub/fleet`, { waitUntil: "networkidle2" })
-  await waitForText(page, "Trucks, trailers, and their paperwork.")
+  await waitForText(page, ANCHORS.fleet)
   await waitForText(page, `Trucks (${SEED_TRUCKS})`)
   const fleet = await page.evaluate(() => {
     const text = document.body.innerText
@@ -178,7 +178,7 @@ async function main() {
   await acctPage.setViewport({ width: 1440, height: 900 })
   await login(acctPage, "accounting@demo.thind")
   await acctPage.goto(`${BASE}/hub/fleet`, { waitUntil: "networkidle2" })
-  await waitForText(acctPage, "Trucks, trailers, and their paperwork.")
+  await waitForText(acctPage, ANCHORS.fleet)
   await waitForText(acctPage, `Trucks (${SEED_TRUCKS + 1})`)
   check(true, "accountant sees the fleet list (fleet:read)")
   await acctPage.goto(`${BASE}/hub/fleet/trucks/new`, { waitUntil: "networkidle2" })
@@ -189,7 +189,7 @@ async function main() {
   check(true, "server action refuses accountant (Forbidden: accountant cannot fleet:write)")
   await shot(acctPage, "07-accountant-refused")
   await acctPage.goto(`${BASE}/hub/fleet`, { waitUntil: "networkidle2" })
-  await waitForText(acctPage, "Trucks, trailers, and their paperwork.")
+  await waitForText(acctPage, ANCHORS.fleet)
   await waitForText(acctPage, `Trucks (${SEED_TRUCKS + 1})`)
   const noPhantom = await acctPage.evaluate(() => !document.body.innerText.includes("SMK-999"))
   check(noPhantom, `refused save wrote nothing (still ${SEED_TRUCKS + 1} trucks, no SMK-999)`)

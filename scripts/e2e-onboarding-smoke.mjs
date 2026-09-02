@@ -5,7 +5,7 @@
  * Usage: node scripts/e2e-onboarding-smoke.mjs [outputDir]
  */
 import { mkdirSync } from "node:fs"
-import { launchBrowser, BASE, waitForText, login, makeShot, clickSelector } from "./e2e-lib.mjs"
+import { ANCHORS, launchBrowser, BASE, waitForText, login, makeShot, clickSelector } from "./e2e-lib.mjs"
 
 const OUT = process.argv[2] ?? "e2e-shots-onboarding"
 mkdirSync(OUT, { recursive: true })
@@ -89,7 +89,7 @@ async function main() {
   await login(cascade, "owner@cascademo.example")
   await waitForText(cascade, "Cascade Demo Lines".toUpperCase())
   await cascade.goto(`${BASE}/hub/loads`, { waitUntil: "networkidle2" })
-  await waitForText(cascade, "Search, filter, and manage every load.")
+  await waitForText(cascade, ANCHORS.loads)
   const loadsText = await cascade.evaluate(() => document.body.innerText)
   if (!loadsText.includes("CAS-5001")) throw new Error("Cascade load missing")
   if (loadsText.includes("THD-")) throw new Error("CASCADE SEES THIND LOADS — isolation broken!")

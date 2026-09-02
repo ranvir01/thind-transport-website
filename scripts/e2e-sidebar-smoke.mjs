@@ -15,7 +15,7 @@
  * Usage: node scripts/e2e-sidebar-smoke.mjs [outputDir]
  */
 import { mkdirSync } from "node:fs"
-import {
+import { ANCHORS,
   BASE, failures, check, waitForText, login, makeShot, reseed, realConsoleErrors, launchBrowser,
 } from "./e2e-lib.mjs"
 
@@ -39,7 +39,7 @@ async function main() {
   console.log("1. Owner opens Today — sidebar expanded, three groups")
   await login(page, "owner@demo.thind")
   await page.goto(`${BASE}/hub`, { waitUntil: "networkidle2" })
-  await waitForText(page, "Unconfirmed drivers")
+  await waitForText(page, ANCHORS.today)
   check((await railState(page)) === "expanded", `sidebar starts expanded (${await railState(page)})`)
   check((await asideWidth(page)) === 212, `expanded width is the deliberate 212px (${await asideWidth(page)})`)
   const groups = await page.evaluate(() =>
@@ -92,7 +92,7 @@ async function main() {
 
   console.log("4. Preference persists across a full reload")
   await page.goto(`${BASE}/hub/loads`, { waitUntil: "networkidle2" })
-  await waitForText(page, "Search, filter, and manage every load.")
+  await waitForText(page, ANCHORS.loads)
   check((await railState(page)) === "collapsed", `still collapsed after reload on another page (${await railState(page)})`)
   const activeLoads = await page.evaluate(() =>
     document.querySelector('aside nav[aria-label="Sections"] a[aria-current="page"]')?.getAttribute("aria-label") ?? null
@@ -104,7 +104,7 @@ async function main() {
   await page.waitForFunction(() => document.querySelector("aside[data-rail]")?.getAttribute("data-rail") === "expanded", { timeout: 5000 })
   check((await railState(page)) === "expanded", "More expands the sidebar")
   await page.goto(`${BASE}/hub`, { waitUntil: "networkidle2" })
-  await waitForText(page, "Unconfirmed drivers")
+  await waitForText(page, ANCHORS.today)
   check((await railState(page)) === "expanded", "expanded state persisted too")
   await shot(page, "04-expanded-again")
 
@@ -119,7 +119,7 @@ async function main() {
   })
   await login(page2, "dispatch@demo.thind")
   await page2.goto(`${BASE}/hub`, { waitUntil: "networkidle2" })
-  await waitForText(page2, "Unconfirmed drivers")
+  await waitForText(page2, ANCHORS.today)
   check((await railState(page2)) === "expanded", `dispatcher's sidebar is expanded (${await railState(page2)})`)
   const ownerOnlyLeak = await page2.$$eval('aside [data-nav-group="setup"] a, aside a', (as) =>
     as.some((a) => a.getAttribute("href") === "/hub/settings/users")
