@@ -11,7 +11,7 @@
  * Usage: node scripts/e2e-qbo-iif-smoke.mjs [outputDir]
  */
 import { mkdirSync } from "node:fs"
-import { launchBrowser, BASE, check, failures, login, makeShot, reseed, waitForText, realConsoleErrors } from "./e2e-lib.mjs"
+import { ANCHORS, launchBrowser, BASE, check, failures, login, makeShot, reseed, waitForText, realConsoleErrors } from "./e2e-lib.mjs"
 
 const OUT = process.argv[2] ?? "e2e-shots-qbo-iif"
 mkdirSync(OUT, { recursive: true })
@@ -63,7 +63,7 @@ async function main() {
   console.log("1. Login as owner, open the money page")
   await login(page, "owner@demo.thind")
   await page.goto(`${BASE}/hub/money`, { waitUntil: "networkidle2" })
-  await waitForText(page, "receivables, invoices, and driver pay")
+  await waitForText(page, ANCHORS.money)
   await waitForText(page, "Customer statements")
 
   // The nine-chip export wall became one "Export" button opening a sheet

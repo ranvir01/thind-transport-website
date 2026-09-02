@@ -22,7 +22,7 @@
 import { mkdirSync, writeFileSync } from "node:fs"
 import path from "node:path"
 import pg from "pg"
-import { launchBrowser, BASE, failures, check, waitForText, textAppears, textGone, waitForPathAndText, login, makeShot, clickByText, reseed, realConsoleErrors } from "./e2e-lib.mjs"
+import { ANCHORS, launchBrowser, BASE, failures, check, waitForText, textAppears, textGone, waitForPathAndText, login, makeShot, clickByText, reseed, realConsoleErrors } from "./e2e-lib.mjs"
 
 const CARRIER = "11111111-1111-1111-1111-111111111111" // Thind (created by migration 002)
 
@@ -87,8 +87,8 @@ async function registerCount(page) {
 
 /**
  * The toast waits alone can match a still-visible toast from a previous tap
- * (both stops toast "Arrival recorded"/"Departure recorded", and every status
- * advance toasts "Status updated"), letting the script outrun the server's
+ * (both stops toast "Arrival recorded"/ANCHORS.toastDepartureRecorded, and every status
+ * advance toasts ANCHORS.toastStatusUpdated), letting the script outrun the server's
  * commits — while a tap is pending every button on the card is disabled, so
  * an early click is silently lost. Each tap is therefore gated on the DOM
  * change its commit causes: the ack button unmounting, the advance button
@@ -97,33 +97,33 @@ async function registerCount(page) {
 async function advanceDriverLoadToDelivered(page) {
   await waitForText(page, "THD-")
   await clickByText(page, "confirm this dispatch")
-  await waitForText(page, "Dispatch confirmed")
+  await waitForText(page, ANCHORS.toastDispatchConfirmed)
   check(await textGone(page, "confirm this dispatch"), "dispatch ack committed (confirm button gone)")
 
   await clickByText(page, "I'm heading to the pickup")
-  await waitForText(page, "Status updated")
+  await waitForText(page, ANCHORS.toastStatusUpdated)
   check(await textAppears(page, "Loaded — rolling now"), "status advanced to at_pickup (next advance offered)")
 
   await clickByText(page, "I'm here")
   await waitForText(page, "Arrival recorded")
-  check(await textAppears(page, "Leaving now"), "pickup arrival committed (Leaving now offered)")
-  await clickByText(page, "Leaving now")
-  await waitForText(page, "Departure recorded")
-  check(await textGone(page, "Leaving now"), "pickup departure committed (stop closed out)")
+  check(await textAppears(page, ANCHORS.leavingNow), "pickup arrival committed (Leaving now offered)")
+  await clickByText(page, ANCHORS.leavingNow)
+  await waitForText(page, ANCHORS.toastDepartureRecorded)
+  check(await textGone(page, ANCHORS.leavingNow), "pickup departure committed (stop closed out)")
 
   await clickByText(page, "Loaded — rolling now")
-  await waitForText(page, "Status updated")
+  await waitForText(page, ANCHORS.toastStatusUpdated)
   check(await textGone(page, "Loaded — rolling now"), "status advanced to in_transit")
 
   await clickByText(page, "I'm here")
   await waitForText(page, "Arrival recorded")
-  check(await textAppears(page, "Leaving now"), "delivery arrival committed (Leaving now offered)")
-  await clickByText(page, "Leaving now")
-  await waitForText(page, "Departure recorded")
-  check(await textGone(page, "Leaving now"), "delivery departure committed (stop closed out)")
+  check(await textAppears(page, ANCHORS.leavingNow), "delivery arrival committed (Leaving now offered)")
+  await clickByText(page, ANCHORS.leavingNow)
+  await waitForText(page, ANCHORS.toastDepartureRecorded)
+  check(await textGone(page, ANCHORS.leavingNow), "delivery departure committed (stop closed out)")
 
   await clickByText(page, "Delivered", { timeout: 20000 })
-  await waitForText(page, "Status updated")
+  await waitForText(page, ANCHORS.toastStatusUpdated)
   check(await textAppears(page, "delivered — send the pod"), "load is delivered and awaiting POD")
 }
 
@@ -168,7 +168,7 @@ async function main() {
   console.log("1. Owner opens Safety — DOT register + seeded incidents")
   await login(page, "owner@demo.thind")
   await page.goto(`${BASE}/hub/safety`, { waitUntil: "networkidle2" })
-  await waitForText(page, "flow to the register automatically")
+  await waitForText(page, ANCHORS.moneyRegister)
   const beforeCount = await registerCount(page)
   check(beforeCount === 1, `DOT register shows 1 recordable incident (got ${beforeCount})`)
   const wall = await page.evaluate(() => document.body.innerText)
@@ -196,7 +196,7 @@ async function main() {
     "clicking the HOS row opens Harpreet's driver profile"
   )
   await page.goto(`${BASE}/hub/safety`, { waitUntil: "networkidle2" })
-  await waitForText(page, "flow to the register automatically")
+  await waitForText(page, ANCHORS.moneyRegister)
   await waitForText(page, "Hours of service")
 
   console.log("2. Close the seeded DOT-recordable incident (stays on the register)")
@@ -208,7 +208,7 @@ async function main() {
   // The edit form router.push()es back to /hub/safety once the write has
   // committed; wait for that landing instead of sleeping through it.
   check(
-    await waitForPathAndText(page, "/hub/safety", "flow to the register automatically"),
+    await waitForPathAndText(page, "/hub/safety", ANCHORS.moneyRegister),
     "returned to Safety after closing the incident"
   )
   const afterCloseWall = await page.evaluate(() => document.body.innerText)

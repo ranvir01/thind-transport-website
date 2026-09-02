@@ -294,6 +294,9 @@ export async function updateLoad(
   return rows[0] ?? null
 }
 
+/** The transitions a broker is told about. Kept local so loads.ts never imports the mailer. */
+const BROKER_UPDATE_STAGES: ReadonlySet<LoadStatus> = new Set<LoadStatus>(["at_pickup", "in_transit", "delivered"])
+
 export async function changeLoadStatus(
   carrierId: string,
   id: string,
@@ -341,6 +344,21 @@ export async function changeLoadStatus(
         })
       } catch (err) {
         console.error("dispatch notification failed:", err)
+      }
+    }
+    // Broker status update (broker-updates.ts): opt-in per customer, once per
+    // (load, stage), never on cancel. Same contract as the driver push above —
+    // the status change has already committed and nothing here can undo it.
+    // Loaded lazily so the mailer and its dependencies stay out of this
+    // module's import graph for every caller that never reaches these stages.
+    if (fromStatus !== toStatus && BROKER_UPDATE_STAGES.has(toStatus)) {
+      try {
+        const { sendBrokerUpdate } = await import("./broker-updates")
+        await sendBrokerUpdate(carrierId, id, toStatus as "at_pickup" | "in_transit" | "delivered", {
+          actorId: actor.id ?? null,
+        })
+      } catch (err) {
+        console.error("broker update failed:", err)
       }
     }
     return load

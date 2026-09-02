@@ -1,6 +1,7 @@
 "use server"
 
 import { revalidatePath } from "next/cache"
+import { appPublicOrigin } from "@/lib/app-origin"
 import { requirePermission, requirePortalUser } from "@/lib/hub/session"
 import { acceptInvitation, createPortalInvitation, createQuoteRequest } from "@/lib/hub/portal"
 import { getCarrier } from "@/lib/hub/settings"
@@ -35,8 +36,7 @@ export async function invitePortalUserAction(input: {
     const { token } = await createPortalInvitation(
       user.carrierId, input.customerId, input.email, input.role, user.name
     )
-    const baseUrl = process.env.NEXTAUTH_URL ?? "http://localhost:3000"
-    const acceptUrl = `${baseUrl}/hub/portal/accept/${token}`
+    const acceptUrl = `${appPublicOrigin()}/hub/portal/accept/${token}`
     const carrier = await getCarrier(user.carrierId)
     try {
       const { createMailTransport, mailFrom } = await import("@/lib/mailer")

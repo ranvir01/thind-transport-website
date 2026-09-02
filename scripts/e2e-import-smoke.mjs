@@ -15,7 +15,7 @@
 import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs"
 import path from "node:path"
 import os from "node:os"
-import { BASE, failures, check, waitForText, waitForPath, login, makeShot, reseed, launchBrowser, realConsoleErrors } from "./e2e-lib.mjs"
+import { ANCHORS, BASE, failures, check, waitForText, waitForPath, login, makeShot, reseed, launchBrowser, realConsoleErrors } from "./e2e-lib.mjs"
 
 const OUT = process.argv[2] ?? "e2e-shots-import"
 mkdirSync(OUT, { recursive: true })
@@ -84,7 +84,7 @@ async function main() {
 
   console.log("4. Verify the truck landed on Fleet")
   await page.goto(`${BASE}/hub/fleet`, { waitUntil: "networkidle2" })
-  await waitForText(page, "Trucks, trailers, and their paperwork.")
+  await waitForText(page, ANCHORS.fleet)
   await waitForText(page, IMPORTED_UNIT)
   await shot(page, "04-fleet-shows-imported-truck")
 
@@ -94,7 +94,7 @@ async function main() {
   await otherPage.setViewport({ width: 1440, height: 900 })
   await login(otherPage, "owner@cascademo.example")
   await otherPage.goto(`${BASE}/hub/fleet`, { waitUntil: "networkidle2" })
-  await waitForText(otherPage, "Trucks, trailers, and their paperwork.")
+  await waitForText(otherPage, ANCHORS.fleet)
   const otherFleetText = await otherPage.evaluate(() => document.body.innerText)
   check(!otherFleetText.includes(IMPORTED_UNIT), "other tenant's Fleet screen never shows the imported unit")
   await shot(otherPage, "05-other-tenant-fleet")

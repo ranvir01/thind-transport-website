@@ -18,6 +18,9 @@ vi.mock("@/lib/hub/intake-drafts", () => ({
   getIntakeDraft: vi.fn(),
   resolveIntakeDraft: vi.fn(async () => true),
 }))
+// The load id is checked against the carrier before the draft is resolved
+// (action-guards-audit.test.ts covers the refusal); here it passes.
+vi.mock("@/lib/hub/tenancy", () => ({ assertCarrierRefs: vi.fn(async () => undefined) }))
 
 import { requirePermission } from "@/lib/hub/session"
 import { logAudit } from "@/lib/hub/audit"

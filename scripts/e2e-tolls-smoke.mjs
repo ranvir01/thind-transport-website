@@ -14,7 +14,7 @@
  * Usage: node scripts/e2e-tolls-smoke.mjs [outputDir]
  */
 import { mkdirSync } from "node:fs"
-import { launchBrowser, BASE, failures, check, waitForText, textGone, login, makeShot, clickByText, reseed, realConsoleErrors } from "./e2e-lib.mjs"
+import { ANCHORS, launchBrowser, BASE, failures, check, waitForText, textGone, login, makeShot, clickByText, reseed, realConsoleErrors } from "./e2e-lib.mjs"
 
 const OUT = process.argv[2] ?? "e2e-shots-tolls"
 mkdirSync(OUT, { recursive: true })
@@ -43,7 +43,7 @@ async function main() {
   console.log("1. Login as owner, open the fuel screen, follow the new Tolls link")
   await login(page, "owner@demo.thind")
   await page.goto(`${BASE}/hub/fuel`, { waitUntil: "networkidle2" })
-  await waitForText(page, "Last 92 days across every card program.")
+  await waitForText(page, ANCHORS.fuel)
   await clickByText(page, "Tolls", { tag: "a" })
   // Title "Tolls" is not a nav label, but the KPI "Toll spend" still
   // streams in with the body — wait for the page subtitle.

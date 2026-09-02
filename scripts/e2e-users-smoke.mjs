@@ -16,7 +16,7 @@
  * Usage: node scripts/e2e-users-smoke.mjs [outputDir]
  */
 import { mkdirSync } from "node:fs"
-import { BASE, failures, check, waitForText, waitForPath, login, makeShot, reseed, realConsoleErrors, launchBrowser } from "./e2e-lib.mjs"
+import { ANCHORS, BASE, failures, check, waitForText, waitForPath, login, makeShot, reseed, realConsoleErrors, launchBrowser } from "./e2e-lib.mjs"
 
 const OUT = process.argv[2] ?? "e2e-shots-users"
 mkdirSync(OUT, { recursive: true })
@@ -49,7 +49,7 @@ async function userRow(page, email) {
 /** Attempt a login that is EXPECTED to fail: stays on /hub/login with the toast. */
 async function loginRefused(page, email, password) {
   await page.goto(`${BASE}/hub/login`, { waitUntil: "networkidle2" })
-  await waitForText(page, "One login for dispatch, drivers, and partners.")
+  await waitForText(page, ANCHORS.login)
   await page.type("#email", email)
   await page.type("#password", password)
   await page.click('button[type="submit"]')

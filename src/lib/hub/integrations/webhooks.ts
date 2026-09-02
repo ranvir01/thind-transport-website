@@ -9,9 +9,19 @@
  * ingestion is idempotent on (carrier, provider, external id).
  */
 import { createHmac, timingSafeEqual, createHash } from "crypto"
+import { appPublicOrigin } from "@/lib/app-origin"
 
 export const SIGNATURE_HEADER = "x-loadoff-signature"
 export const EVENT_ID_HEADER = "x-loadoff-event-id"
+
+/**
+ * Copy-paste inbound URL shown on Settings → Integrations. Prefers
+ * NEXT_PUBLIC_APP_HOST so a vendor posts to the app origin once that env
+ * is set; until then NEXTAUTH_URL, same as today's cards.
+ */
+export function integrationWebhookUrl(providerId: string, carrierId: string): string {
+  return `${appPublicOrigin()}/api/hub/webhooks/${providerId}?carrier=${carrierId}`
+}
 
 export function signWebhookBody(rawBody: string, secret: string): string {
   return createHmac("sha256", secret).update(rawBody, "utf8").digest("hex")

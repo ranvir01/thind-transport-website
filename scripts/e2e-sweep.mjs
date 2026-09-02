@@ -21,7 +21,7 @@
 import pg from "pg"
 import { mkdirSync } from "node:fs"
 import path from "node:path"
-import { launchBrowser, BASE, login, waitForStableText, waitForText } from "./e2e-lib.mjs"
+import { ANCHORS, launchBrowser, BASE, login, waitForStableText, waitForText } from "./e2e-lib.mjs"
 
 const OUT = process.argv[2] ?? "e2e-sweep"
 mkdirSync(OUT, { recursive: true })
@@ -40,9 +40,9 @@ const OFFICE_PAGES = [
   ["tasks", "/hub/tasks", "minus the sticky notes"],
   ["facilities", "/hub/facilities", "dwell history and driver tips"],
   ["recruiting", "/hub/recruiting", "drag between stages"],
-  ["safety", "/hub/safety", "flow to the register automatically"],
+  ["safety", "/hub/safety", ANCHORS.moneyRegister],
   ["fuel", "/hub/fuel", "last 92 days across every card program"],
-  ["money", "/hub/money", "receivables, invoices, and driver pay"],
+  ["money", "/hub/money", ANCHORS.money],
   // Subtitle, not the red tile label: below sm: the tiles render shortLabel
   // ("Expired"), so "expired / overdue" disappears at 390px.
   ["compliance", "/hub/compliance", "one wall, color-coded"],

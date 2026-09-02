@@ -4,11 +4,12 @@
 import { useState, useTransition } from "react"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
-import { Check, FileQuestion, Loader2, Mail, X } from "lucide-react"
+import { Check, FileQuestion, Loader2, Mail, QrCode as QrCodeIcon, X } from "lucide-react"
+import { QrCode } from "@/components/hub/QrCode"
 import {
   cancelDocumentRequestAction, decideTimeOffAction, requestDocumentAction,
 } from "@/app/hub/_actions/comms"
-import { resendDriverInviteAction } from "@/app/hub/_actions/people"
+import { driverInviteLinkAction, resendDriverInviteAction } from "@/app/hub/_actions/people"
 import { fieldCls, Panel } from "@/components/hub/ui"
 import { formatHubDateShort } from "@/lib/hub/format-dates"
 import { TIME_OFF_KIND_LABELS, type DocumentRequest, type TimeOffRequest } from "@/lib/hub/types"
@@ -213,6 +214,7 @@ export function DriverAppAccessPanel({
 }) {
   const router = useRouter()
   const [pending, startTransition] = useTransition()
+  const [inviteUrl, setInviteUrl] = useState<string | null>(null)
 
   if (hasAccess) return null
 
@@ -225,28 +227,65 @@ export function DriverAppAccessPanel({
       } else toast.error(result.error ?? "Could not send invite")
     })
 
+  // The in-person path: the driver is standing right here, so skip the email
+  // and let their phone scan the invite off this screen.
+  const showQr = () =>
+    startTransition(async () => {
+      const result = await driverInviteLinkAction(driverId)
+      if (result.ok && result.url) setInviteUrl(result.url)
+      else toast.error(result.error ?? "Could not create invite link")
+    })
+
   return (
     <Panel className="p-4 md:p-5">
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="min-w-0">
           <h2 className="flex items-center gap-2 text-[13.5px] font-semibold text-fg">
             <Mail className="h-4 w-4 text-accent-text" /> Driver app access
           </h2>
           <p className="mt-0.5 text-body-xs text-fg-3">
             {email
-              ? "No app account yet — send a set-password link (valid 7 days)."
+              ? "No app account yet — email a set-password link, or have them scan one here (valid 7 days)."
               : "Add an email address above to send an app invite."}
           </p>
         </div>
-        <button
-          onClick={send}
-          disabled={pending || !email}
-          className="flex min-h-[36px] shrink-0 items-center gap-1.5 rounded-control border border-border-strong px-3 text-sm font-bold text-fg-2 hover:bg-hover disabled:opacity-60"
-        >
-          {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Mail className="h-4 w-4" />}
-          Send invite
-        </button>
+        <div className="flex shrink-0 items-center gap-2">
+          <button
+            onClick={showQr}
+            disabled={pending || !email || Boolean(inviteUrl)}
+            className="flex min-h-[36px] items-center gap-1.5 rounded-control border border-border-strong px-3 text-sm font-bold text-fg-2 hover:bg-hover disabled:opacity-60"
+          >
+            <QrCodeIcon className="h-4 w-4" />
+            Show QR
+          </button>
+          <button
+            onClick={send}
+            disabled={pending || !email}
+            className="flex min-h-[36px] items-center gap-1.5 rounded-control border border-border-strong px-3 text-sm font-bold text-fg-2 hover:bg-hover disabled:opacity-60"
+          >
+            {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Mail className="h-4 w-4" />}
+            Send invite
+          </button>
+        </div>
       </div>
+      {inviteUrl ? (
+        <div className="mt-4 flex flex-col items-center gap-3 rounded-control border border-border bg-surface-2 p-4 sm:flex-row sm:items-start">
+          <QrCode value={inviteUrl} label="Driver app invite" className="h-44 w-44 shrink-0 rounded-md" />
+          <div className="min-w-0 text-body-xs text-fg-2">
+            <p className="font-semibold text-fg">Have {email}&apos;s phone scan this</p>
+            <p className="mt-1">
+              It opens the set-password page for their account — same link the email would carry,
+              valid 7 days. Once they&apos;re in, the app installs from their More tab.
+            </p>
+            <button
+              onClick={() => setInviteUrl(null)}
+              className="mt-3 inline-flex min-h-[32px] items-center rounded-control px-2.5 text-xs font-semibold text-fg-3 hover:bg-hover"
+            >
+              Hide
+            </button>
+          </div>
+        </div>
+      ) : null}
     </Panel>
   )
 }

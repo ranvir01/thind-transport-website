@@ -35,7 +35,17 @@ export function stopTimingLine(stop: TimelineStop): string {
  * departed) breathes with an opacity-only pulse so the eye lands on it;
  * reduced-motion users get the static accent badge.
  */
-export function StopTimeline({ stops, className }: { stops: TimelineStop[]; className?: string }) {
+export function StopTimeline({
+  stops,
+  className,
+  pickupVerified = false,
+}: {
+  stops: TimelineStop[]
+  className?: string
+  /** Positive pickup verification (sharelinks.ts) — tags the first pickup stop. */
+  pickupVerified?: boolean
+}) {
+  const firstPickupId = stops.find((s) => s.type === "pickup")?.id
   return (
     <ol className={className ? `space-y-4 ${className}` : "space-y-4"}>
       {stops.map((stop, i) => {
@@ -67,7 +77,17 @@ export function StopTimeline({ stops, className }: { stops: TimelineStop[]; clas
             </div>
             <div className="min-w-0 flex-1 pb-1">
               <p className="text-[11px] font-bold uppercase tracking-wider text-steel-300">{stop.type}</p>
-              <p className="font-semibold text-white">{stop.city}, {stop.state}</p>
+              <p className="font-semibold text-white">
+                {stop.city}, {stop.state}
+                {pickupVerified && stop.id === firstPickupId ? (
+                  <span
+                    data-testid="pickup-verified"
+                    className="ml-2 inline-flex items-center rounded-pill border border-emerald-400/40 bg-emerald-500/15 px-2 py-0.5 align-middle text-[11px] font-bold uppercase tracking-wider text-emerald-300"
+                  >
+                    Pickup verified
+                  </span>
+                ) : null}
+              </p>
               <p className="text-[13px] text-steel-300">{stopTimingLine(stop)}</p>
             </div>
           </li>

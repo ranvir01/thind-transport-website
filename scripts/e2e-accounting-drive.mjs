@@ -16,7 +16,7 @@
  * Run: node scripts/e2e-accounting-drive.mjs [outputDir]
  */
 import { mkdirSync } from "node:fs"
-import {
+import { ANCHORS,
   BASE, check, clickByText, failures, launchBrowser, login, makeShot, reseed,
   sleep, waitForText, realConsoleErrors,
 } from "./e2e-lib.mjs"
@@ -57,7 +57,7 @@ async function main() {
 
   console.log("2. Invoice the POD-received load")
   await page.goto(`${BASE}/hub/loads?status=pod_received`, { waitUntil: "networkidle2" })
-  await waitForText(page, "Search, filter, and manage every load.")
+  await waitForText(page, ANCHORS.loads)
   const hrefs = await page.evaluate(() =>
     [...new Set(
       [...document.querySelectorAll('a[href^="/hub/loads/"]')]
@@ -82,13 +82,13 @@ async function main() {
     break
   }
   check(invoiced, "accountant can one-click invoice (money:write)")
-  await waitForText(page, "Open balance")
+  await waitForText(page, ANCHORS.openBalance)
   const invoiceUrl = await page.evaluate(() => location.pathname)
   await shot(page, "02-invoice-draft")
 
   console.log("3. Record full payment → paid, $0.00 open")
   await page.waitForSelector("#pay_amount", { timeout: 10000 })
-  const openCents = parseCents(await summaryValue(page, "Open balance"))
+  const openCents = parseCents(await summaryValue(page, ANCHORS.openBalance))
   check(openCents > 0, `open balance positive before payment (${openCents})`)
   // Clear the prefilled amount first — typing into the prefilled number input
   // concatenates digits (Chrome drops the second decimal point), which is how
@@ -113,7 +113,7 @@ async function main() {
 
   console.log("4. Draft weekly settlements, approve one, mark it paid")
   await page.goto(`${BASE}/hub/money/settlements`, { waitUntil: "networkidle2" })
-  await waitForText(page, "Weekly driver pay")
+  await waitForText(page, ANCHORS.settlements)
   await clickByText(page, "Draft this week", { tag: "button" })
   await waitForText(page, "settlement draft(s) created")
   // Completion signal is the draft button re-enabling after router.refresh.
@@ -131,16 +131,16 @@ async function main() {
   )
   check(draftLinks.length >= 1, `settlement drafts created (${draftLinks.length})`)
   await page.goto(`${BASE}${draftLinks[0]}`, { waitUntil: "networkidle2" })
-  await waitForText(page, "Net pay")
+  await waitForText(page, ANCHORS.netPay)
   const gross = parseCents(await summaryValue(page, "Gross"))
   const deductions = parseCents(await summaryValue(page, "Deductions"))
-  const net = parseCents(await summaryValue(page, "Net pay"))
+  const net = parseCents(await summaryValue(page, ANCHORS.netPay))
   check(
     gross !== null && deductions !== null && net === gross - deductions,
     `net pay = gross − deductions to the cent (${gross} − ${deductions} = ${net})`
   )
   await clickByText(page, "Approve", { tag: "button" })
-  await waitForText(page, "Status: approved", 20000)
+  await waitForText(page, ANCHORS.statusApproved, 20000)
   check(true, "accountant can approve a settlement (money:approve)")
   await clickByText(page, "Mark paid", { tag: "button" })
   await waitForText(page, "Status: paid", 20000)
@@ -154,7 +154,7 @@ async function main() {
   // (Pending driver-request decisions are covered end-to-end by
   // e2e-advances-smoke.mjs — the base seed carries no pending requests.)
   await page.goto(`${BASE}/hub/money/advances`, { waitUntil: "networkidle2" })
-  await waitForText(page, "Cash and EFS-code advances")
+  await waitForText(page, ANCHORS.advances)
   check(
     await page.evaluate(() => /outstanding/i.test(document.body.innerText)),
     "outstanding advance exposure visible"
@@ -169,7 +169,7 @@ async function main() {
 
   console.log("6. Fuel screen readable, transactions render")
   await page.goto(`${BASE}/hub/fuel`, { waitUntil: "networkidle2" })
-  await waitForText(page, "Last 92 days across every card program.")
+  await waitForText(page, ANCHORS.fuel)
   check(
     await page.evaluate(() => /gallons|transactions/i.test(document.body.innerText)),
     "fuel transactions render for accountant"

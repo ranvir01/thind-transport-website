@@ -1,6 +1,9 @@
 import { randomBytes } from "crypto"
 import { query, queryOne } from "./db"
 import { assertCarrierRefs } from "./tenancy"
+import { loadEta } from "./eta-load"
+import { latestPickupVerification } from "./pickup-verifications"
+import { formatEta } from "./eta"
 import type { Load, Stop } from "./types"
 
 export interface ShareLink {
@@ -27,7 +30,8 @@ export async function listShareLinks(carrierId: string, loadId: string): Promise
 export async function createShareLink(
   carrierId: string,
   loadId: string,
-  createdBy: string
+  /** Null for links the system mints itself (broker status emails). */
+  createdBy: string | null
 ): Promise<ShareLink> {
   await assertCarrierRefs(carrierId, { load_id: loadId })
   // 32 hex chars = 128 bits of entropy
@@ -70,6 +74,19 @@ export interface TrackedLoad {
   carrierName: string
   stops: TrackedStop[]
   latestPosition: { lat: number; lng: number; ts: string } | null
+  /**
+   * Arrival estimate at the next stop, or null when we genuinely do not know
+   * (no ping, a ping too old to trust, an ungeocoded stop). Label only —
+   * miles and drive time stay internal, and the time is rounded to 5 minutes
+   * so it reads as an estimate, never a promise.
+   */
+  eta: { at: string; label: string; stopType: "pickup" | "delivery"; late: boolean } | null
+  /**
+   * True only on a POSITIVE verification (driver, location and photo all
+   * matched). Never "unverified": an offline driver or a denied GPS prompt is
+   * the usual case, and a public page must not read it as an accusation.
+   */
+  pickupVerified: boolean
 }
 
 /** Public lookup by token — exposes status + stops + city-level position only. */
@@ -111,10 +128,27 @@ export async function getTrackedLoad(token: string): Promise<TrackedLoad | null>
     }
   }
 
+  // Only while the position is being shared: loadEta itself refuses
+  // non-rolling statuses, but keying it to the same gate keeps the public
+  // page's two live facts (position, ETA) appearing and disappearing together.
+  const [arrival, verification] = await Promise.all([
+    latestPosition ? loadEta(link.carrier_id, link.load_id).catch(() => null) : Promise.resolve(null),
+    latestPickupVerification(link.carrier_id, link.load_id).catch(() => null),
+  ])
+
   return {
     load: { id: load.id, reference: load.reference, status: load.status, equipment: load.equipment, truck_id: load.truck_id },
     carrierName: load.carrier_name,
     stops,
     latestPosition,
+    eta: arrival
+      ? {
+          at: arrival.eta.at.toISOString(),
+          label: formatEta(arrival.eta),
+          stopType: arrival.target.type,
+          late: arrival.eta.lateMinutes > 60,
+        }
+      : null,
+    pickupVerified: verification?.result === "verified",
   }
 }

@@ -6,7 +6,7 @@
  * Usage: node scripts/e2e-dvir-smoke.mjs [outputDir]
  */
 import { mkdirSync } from "node:fs"
-import { launchBrowser, BASE, clickByText, waitForText, textAppears, waitForPath, login, makeShot } from "./e2e-lib.mjs"
+import { ANCHORS, launchBrowser, BASE, clickByText, waitForText, textAppears, waitForPath, login, makeShot } from "./e2e-lib.mjs"
 
 const OUT = process.argv[2] ?? "e2e-shots-dvir"
 mkdirSync(OUT, { recursive: true })
@@ -92,7 +92,7 @@ async function main() {
   console.log("2. Office certifies the repair")
   await login(office, "dispatch@demo.thind")
   await office.goto(`${BASE}/hub/fleet`, { waitUntil: "networkidle2" })
-  await waitForText(office, "Trucks, trailers, and their paperwork.")
+  await waitForText(office, ANCHORS.fleet)
   const truckHref = await office.evaluate(() => {
     const link = [...document.querySelectorAll("a")].find((a) => a.getAttribute("href")?.includes("/hub/fleet/trucks/") && a.textContent?.includes("101"))
     return link?.getAttribute("href")

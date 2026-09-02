@@ -187,11 +187,19 @@ export function StopTimestampButton({
   const label = field === "arrived_at" ? "Mark arrived" : "Mark departed"
   const record = () =>
     startTransition(async () => {
-      const result = await stopTimestampAction(stopId, loadId, field)
-      if (result.ok) {
-        const detention = result.detentionAppliedCents
-          ? ` — detention billed: $${(result.detentionAppliedCents / 100).toFixed(2)}`
-          : ""
+      // Capture the tap-time here: if this queues offline, the replay must
+      // record when the truck actually arrived, not when signal returned.
+      const at = new Date().toISOString()
+      const result = await runOrQueue(
+        { kind: "stop-timestamp", payload: { stopId, loadId, field, at } },
+        () => stopTimestampAction(stopId, loadId, field, at)
+      )
+      if ("queued" in result) toast.success("No signal — time saved, sends automatically")
+      else if (result.ok) {
+        const detention =
+          "detentionAppliedCents" in result && result.detentionAppliedCents
+            ? ` — detention billed: $${(result.detentionAppliedCents / 100).toFixed(2)}`
+            : ""
         toast.success((field === "arrived_at" ? "Arrival recorded" : "Departure recorded") + detention)
       } else toast.error(result.error ?? "Could not record time")
     })

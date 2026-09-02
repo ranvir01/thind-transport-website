@@ -5,7 +5,7 @@
  * Usage: node scripts/e2e-onboarding-smoke.mjs [outputDir]
  */
 import { mkdirSync } from "node:fs"
-import { launchBrowser, BASE, waitForText, login, makeShot, clickSelector } from "./e2e-lib.mjs"
+import { ANCHORS, launchBrowser, BASE, waitForText, login, makeShot, clickSelector } from "./e2e-lib.mjs"
 
 const OUT = process.argv[2] ?? "e2e-shots-onboarding"
 mkdirSync(OUT, { recursive: true })

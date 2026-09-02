@@ -39,6 +39,8 @@ export interface CustomerInput {
   billing_email?: string | null
   billing_address?: string | null
   phone?: string | null
+  /** Broker status updates go here. NULL = off; never falls back to billing_email. */
+  status_updates_email?: string | null
   payment_terms_days: number
   credit_limit_cents?: number | null
   factored: boolean
@@ -59,14 +61,14 @@ export async function createCustomer(carrierId: string, input: CustomerInput): P
   const rows = await query<Customer>(
     `INSERT INTO hub.customers (
        carrier_id, name, type, mc_number, dot_number, billing_email, billing_address, phone,
-       payment_terms_days, credit_limit_cents, factored, status, notes
-     ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
+       payment_terms_days, credit_limit_cents, factored, status, notes, status_updates_email
+     ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
      RETURNING *`,
     [
       carrierId, input.name, input.type, normalizeMcNumber(input.mc_number), input.dot_number ?? null,
       input.billing_email ?? null, input.billing_address ?? null, input.phone ?? null,
       input.payment_terms_days, input.credit_limit_cents ?? null, input.factored, input.status,
-      input.notes ?? null,
+      input.notes ?? null, input.status_updates_email ?? null,
     ]
   )
   return rows[0]
@@ -77,14 +79,14 @@ export async function updateCustomer(carrierId: string, id: string, input: Custo
     `UPDATE hub.customers SET
        name=$3, type=$4, mc_number=$5, dot_number=$6, billing_email=$7, billing_address=$8,
        phone=$9, payment_terms_days=$10, credit_limit_cents=$11, factored=$12, status=$13, notes=$14,
-       updated_at=NOW()
+       status_updates_email=$15, updated_at=NOW()
      WHERE carrier_id=$1 AND id=$2 AND deleted_at IS NULL
      RETURNING *`,
     [
       carrierId, id, input.name, input.type, normalizeMcNumber(input.mc_number), input.dot_number ?? null,
       input.billing_email ?? null, input.billing_address ?? null, input.phone ?? null,
       input.payment_terms_days, input.credit_limit_cents ?? null, input.factored, input.status,
-      input.notes ?? null,
+      input.notes ?? null, input.status_updates_email ?? null,
     ]
   )
   return rows[0] ?? null

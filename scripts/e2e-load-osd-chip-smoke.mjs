@@ -14,7 +14,7 @@
  */
 import { mkdirSync, writeFileSync } from "node:fs"
 import path from "node:path"
-import {
+import { ANCHORS,
   launchBrowser, BASE, failures, check, waitForText, textAppears, textGone,
   login, makeShot, clickByText, reseed, realConsoleErrors,
 } from "./e2e-lib.mjs"
@@ -27,33 +27,33 @@ const shot = makeShot(OUT, { fullPage: true })
 async function advanceDriverLoadToDelivered(page) {
   await waitForText(page, "THD-")
   await clickByText(page, "confirm this dispatch")
-  await waitForText(page, "Dispatch confirmed")
+  await waitForText(page, ANCHORS.toastDispatchConfirmed)
   check(await textGone(page, "confirm this dispatch"), "dispatch ack committed (confirm button gone)")
 
   await clickByText(page, "I'm heading to the pickup")
-  await waitForText(page, "Status updated")
+  await waitForText(page, ANCHORS.toastStatusUpdated)
   check(await textAppears(page, "Loaded — rolling now"), "status advanced to at_pickup (next advance offered)")
 
   await clickByText(page, "I'm here")
   await waitForText(page, "Arrival recorded")
-  check(await textAppears(page, "Leaving now"), "pickup arrival committed (Leaving now offered)")
-  await clickByText(page, "Leaving now")
-  await waitForText(page, "Departure recorded")
-  check(await textGone(page, "Leaving now"), "pickup departure committed (stop closed out)")
+  check(await textAppears(page, ANCHORS.leavingNow), "pickup arrival committed (Leaving now offered)")
+  await clickByText(page, ANCHORS.leavingNow)
+  await waitForText(page, ANCHORS.toastDepartureRecorded)
+  check(await textGone(page, ANCHORS.leavingNow), "pickup departure committed (stop closed out)")
 
   await clickByText(page, "Loaded — rolling now")
-  await waitForText(page, "Status updated")
+  await waitForText(page, ANCHORS.toastStatusUpdated)
   check(await textGone(page, "Loaded — rolling now"), "status advanced to in_transit")
 
   await clickByText(page, "I'm here")
   await waitForText(page, "Arrival recorded")
-  check(await textAppears(page, "Leaving now"), "delivery arrival committed (Leaving now offered)")
-  await clickByText(page, "Leaving now")
-  await waitForText(page, "Departure recorded")
-  check(await textGone(page, "Leaving now"), "delivery departure committed (stop closed out)")
+  check(await textAppears(page, ANCHORS.leavingNow), "delivery arrival committed (Leaving now offered)")
+  await clickByText(page, ANCHORS.leavingNow)
+  await waitForText(page, ANCHORS.toastDepartureRecorded)
+  check(await textGone(page, ANCHORS.leavingNow), "delivery departure committed (stop closed out)")
 
   await clickByText(page, "Delivered", { timeout: 20000 })
-  await waitForText(page, "Status updated")
+  await waitForText(page, ANCHORS.toastStatusUpdated)
   check(await textAppears(page, "delivered — send the pod"), "load is delivered and awaiting POD")
 }
 
@@ -93,7 +93,7 @@ async function main() {
   console.log("1. A load with no OS&D exception shows no chip on its detail page")
   await login(ownerPage, "owner@demo.thind")
   await ownerPage.goto(`${BASE}/hub/loads`, { waitUntil: "networkidle2" })
-  await waitForText(ownerPage, "Search, filter, and manage every load.")
+  await waitForText(ownerPage, ANCHORS.loads)
   const cleanLoadHref = await ownerPage.evaluate(() =>
     [...document.querySelectorAll("a")]
       .map((a) => a.getAttribute("href") ?? "")

@@ -31,7 +31,7 @@
 import pg from "pg"
 import { mkdirSync, writeFileSync } from "node:fs"
 import path from "node:path"
-import {
+import { ANCHORS,
   launchBrowser, BASE, failures, check, waitForText, textGone, login, makeShot,
   clickByText, reseed, trackPageErrors,
 } from "./e2e-lib.mjs"
@@ -146,7 +146,7 @@ async function main() {
     console.log("1. Owner bills the POD-received load")
     await login(office, "owner@demo.thind")
     await office.goto(`${BASE}/hub/loads?status=pod_received`, { waitUntil: "networkidle2" })
-    await waitForText(office, "Search, filter, and manage every load.")
+    await waitForText(office, ANCHORS.loads)
     const hrefs = await office.evaluate(() => [
       ...new Set(
         [...document.querySelectorAll('a[href^="/hub/loads/"]')]
@@ -170,7 +170,7 @@ async function main() {
       () => /\/hub\/money\/invoices\/[0-9a-f-]{36}$/.test(location.pathname),
       { timeout: 20000 }
     )
-    await waitForText(office, "Open balance")
+    await waitForText(office, ANCHORS.openBalance)
     const invoiceUrl = await office.evaluate(() => location.pathname)
     check(parseCents(await dtValue(office, "Amount")) === INVOICE_TOTAL_CENTS,
       `invoice totals linehaul+FSC+tarp to the cent (${await dtValue(office, "Amount")})`)
@@ -203,7 +203,7 @@ async function main() {
 
     console.log("3. Owner settles the week — statement PDF, advance applied")
     await office.goto(`${BASE}/hub/money/settlements`, { waitUntil: "networkidle2" })
-    await waitForText(office, "Weekly driver pay")
+    await waitForText(office, ANCHORS.settlements)
     await clickByText(office, "Draft this week", { tag: "button" })
     await waitForText(office, "settlement draft(s) created")
     check(await draftButtonSettled(office), "draft button re-enabled after router.refresh")
@@ -212,17 +212,17 @@ async function main() {
     if (!harpreet.length) throw new Error("no draft to approve")
 
     await office.goto(`${BASE}${harpreet[0]}`, { waitUntil: "networkidle2" })
-    await waitForText(office, "Net pay")
-    check(parseCents(await dtValue(office, "Net pay")) === HARPREET_NET_CENTS,
-      `net pay unchanged by the billing run (${await dtValue(office, "Net pay")})`)
+    await waitForText(office, ANCHORS.netPay)
+    check(parseCents(await dtValue(office, ANCHORS.netPay)) === HARPREET_NET_CENTS,
+      `net pay unchanged by the billing run (${await dtValue(office, ANCHORS.netPay)})`)
     await clickByText(office, "Approve", { tag: "button" })
-    await waitForText(office, "Status: approved", 20000)
+    await waitForText(office, ANCHORS.statusApproved, 20000)
     check(pdfServed(await fetchPdf(office, "Statement PDF")),
       `statement PDF stored and served (${JSON.stringify(await fetchPdf(office, "Statement PDF"))})`)
     await shot(office, "03-settlement-approved")
 
     await office.goto(`${BASE}/hub/money/advances`, { waitUntil: "networkidle2" })
-    await waitForText(office, "Cash and EFS-code advances")
+    await waitForText(office, ANCHORS.advances)
     const advanceRow = await office.evaluate(() => {
       const el = [...document.querySelectorAll("p")].find((n) => n.textContent.includes("EFS code 4417"))
       return el?.closest("div.flex")?.textContent ?? null
@@ -234,9 +234,9 @@ async function main() {
     // The composition assertion: phase 3 moved driver money, so phase 2's
     // customer money must be exactly where it was left.
     await office.goto(`${BASE}${invoiceUrl}`, { waitUntil: "networkidle2" })
-    await waitForText(office, "Open balance")
+    await waitForText(office, ANCHORS.openBalance)
     check((await dtValue(office, "Status"))?.toLowerCase() === "paid", "invoice still paid after the settlement run")
-    check(parseCents(await dtValue(office, "Open balance")) === 0, "open balance still $0.00")
+    check(parseCents(await dtValue(office, ANCHORS.openBalance)) === 0, "open balance still $0.00")
     check(parseCents(await dtValue(office, "Paid")) === INVOICE_TOTAL_CENTS,
       `collected amount unchanged to the cent (${await dtValue(office, "Paid")})`)
 
@@ -251,7 +251,7 @@ async function main() {
     await shot(cab, "04-driver-home")
 
     await clickByText(cab, "confirm this dispatch")
-    await waitForText(cab, "Dispatch confirmed")
+    await waitForText(cab, ANCHORS.toastDispatchConfirmed)
     check(await textGone(cab, "confirm this dispatch"), "confirm-dispatch button cleared after refresh")
 
     const podPath = path.join(OUT, "pod-photo.png")
@@ -286,7 +286,7 @@ async function main() {
 
     console.log("6. A second settlement run still pays nobody twice")
     await office.goto(`${BASE}/hub/money/settlements`, { waitUntil: "networkidle2" })
-    await waitForText(office, "Weekly driver pay")
+    await waitForText(office, ANCHORS.settlements)
     await clickByText(office, "Draft this week", { tag: "button" })
     await waitForText(office, "0 settlement draft(s) created")
     check(await draftButtonSettled(office), "draft button re-enabled after the rerun")

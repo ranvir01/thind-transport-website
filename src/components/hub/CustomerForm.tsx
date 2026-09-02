@@ -15,6 +15,7 @@ export interface CustomerFormState {
   billing_email: string
   billing_address: string
   phone: string
+  status_updates_email: string
   payment_terms_days: string
   credit_limit: string
   factored: boolean
@@ -98,6 +99,16 @@ export function CustomerForm({
             <label className={labelCls} htmlFor="billing_address">Billing address</label>
             <input id="billing_address" className={fieldCls} value={form.billing_address}
               onChange={(e) => set({ billing_address: e.target.value })} />
+          </div>
+          <div className="sm:col-span-2">
+            <label className={labelCls} htmlFor="status_updates_email">Status update emails</label>
+            <input id="status_updates_email" type="email" className={fieldCls} value={form.status_updates_email}
+              placeholder="Leave blank to send nothing"
+              onChange={(e) => set({ status_updates_email: e.target.value })} />
+            <p className="mt-1.5 text-[12px] text-fg-3">
+              Arrived at pickup, picked up with an ETA, and delivered — one line each, with the tracking link.
+              Nothing goes to the billing email.
+            </p>
           </div>
           <div>
             <label className={labelCls} htmlFor="terms">Payment terms (days)</label>

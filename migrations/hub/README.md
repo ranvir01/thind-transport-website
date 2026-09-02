@@ -12,5 +12,5 @@
   `hub.schema_migrations` re-run it under the new name on some databases and skip history
   on others. Leave them.
 - **Picking the next number:** take `max(existing prefix) + 1` — as of this note the next
-  free number is `027`. If two sessions race to the same number, the later one renames
+  free number is `032`. If two sessions race to the same number, the later one renames
   BEFORE pushing (the collision above predates this rule).

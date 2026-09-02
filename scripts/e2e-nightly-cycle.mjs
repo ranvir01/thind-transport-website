@@ -10,7 +10,7 @@
 import pg from "pg"
 import { writeFileSync, mkdirSync } from "node:fs"
 import path from "node:path"
-import {
+import { ANCHORS,
   launchBrowser, BASE, failures, check, waitForText, textGone, login, makeShot,
   clickByText, reseed, trackPageErrors,
 } from "./e2e-lib.mjs"
@@ -92,7 +92,7 @@ async function main() {
     await login(page, "owner@demo.thind")
 
     await page.goto(`${BASE}/hub/loads?status=pod_received`, { waitUntil: "networkidle2" })
-    await waitForText(page, "Search, filter, and manage every load.")
+    await waitForText(page, ANCHORS.loads)
     const podHrefs = await page.evaluate(() =>
       [...new Set(
         [...document.querySelectorAll('a[href^="/hub/loads/"]')]
@@ -135,7 +135,7 @@ async function main() {
     await page.waitForSelector("#pay_amount", { timeout: 20000 })
 
     const amount = parseCents(await summaryValue(page, "Amount"))
-    const open = parseCents(await summaryValue(page, "Open balance"))
+    const open = parseCents(await summaryValue(page, ANCHORS.openBalance))
     check(amount !== null && amount > 0, `invoice amount parses (${amount} cents)`)
     check(open === amount, `open balance equals amount (${open} vs ${amount})`)
 
@@ -157,7 +157,7 @@ async function main() {
       const dt = [...document.querySelectorAll("dt")].find((n) => n.textContent.trim() === "Open balance")
       return /\$0\.00/.test(dt?.parentElement?.querySelector("dd")?.textContent ?? "")
     }, { timeout: 20000 }).catch(() => {})
-    const afterOpen = parseCents(await summaryValue(page, "Open balance"))
+    const afterOpen = parseCents(await summaryValue(page, ANCHORS.openBalance))
     check(afterOpen === 0, `open balance is $0.00 after full payment (${afterOpen})`)
     const invText = await page.evaluate(() => document.body.innerText)
     check(/paid/i.test(invText), "invoice reads paid")
@@ -170,7 +170,7 @@ async function main() {
     // ---------------- PHASE 2: cash out ----------------
     console.log("\n=== PHASE 2: owner drafts settlements and approves one ===")
     await page.goto(`${BASE}/hub/money/settlements`, { waitUntil: "networkidle2" })
-    await waitForText(page, "Weekly driver pay")
+    await waitForText(page, ANCHORS.settlements)
     await shot(page, "04-settlements-before")
 
     await clickByText(page, "Draft this week", { tag: "button" })
@@ -203,17 +203,17 @@ async function main() {
     console.log(`   approving: ${chosenDriver} — ${chosen}`)
 
     await page.goto(`${BASE}${chosen}`, { waitUntil: "networkidle2" })
-    await waitForText(page, "Net pay")
+    await waitForText(page, ANCHORS.netPay)
     const gross = parseCents(await totalsValue(page, "Gross"))
     const deductions = parseCents(await totalsValue(page, "Deductions"))
-    const net = parseCents(await totalsValue(page, "Net pay"))
+    const net = parseCents(await totalsValue(page, ANCHORS.netPay))
     check(gross !== null && net !== null, `settlement totals parse (gross ${gross}, ded ${deductions}, net ${net})`)
     check(net === gross - Math.abs(deductions ?? 0),
       `net pay = gross − deductions to the cent (${net} vs ${gross} − ${Math.abs(deductions ?? 0)})`)
     await shot(page, "06-settlement-draft")
 
     await clickByText(page, "Approve", { tag: "button" })
-    await waitForText(page, "Status: approved", 30000)
+    await waitForText(page, ANCHORS.statusApproved, 30000)
     const stmtPdf = await fetchLinkBytes(page, "Statement PDF")
     check(stmtPdf.found && stmtPdf.status === 200 && /pdf/.test(stmtPdf.type ?? "") &&
       stmtPdf.magic === "%PDF-" && stmtPdf.bytes > 1000,
@@ -232,7 +232,7 @@ async function main() {
 
     // and the office UI agrees with the database
     await page.goto(`${BASE}/hub/money/advances`, { waitUntil: "networkidle2" })
-    await waitForText(page, "Cash and EFS-code advances")
+    await waitForText(page, ANCHORS.advances)
     const advUi = await page.evaluate((ref) => {
       const el = [...document.querySelectorAll("p")].find((n) => n.textContent.includes(ref))
       return el?.closest("div.flex")?.textContent ?? null
@@ -248,7 +248,7 @@ async function main() {
     const { errors: driverErrors } = trackPageErrors(dpage)
 
     await dpage.goto(`${BASE}/hub/login`, { waitUntil: "networkidle2" })
-    await waitForText(dpage, "One login for dispatch, drivers, and partners.")
+    await waitForText(dpage, ANCHORS.login)
     await dpage.type("#email", "driver@demo.thind")
     await dpage.type("#password", "ThindDemo1!")
     await Promise.all([
@@ -260,7 +260,7 @@ async function main() {
     await shot(dpage, "09-driver-home-390")
 
     await clickByText(dpage, "confirm this dispatch")
-    await waitForText(dpage, "Dispatch confirmed", 20000)
+    await waitForText(dpage, ANCHORS.toastDispatchConfirmed, 20000)
     check(await textGone(dpage, "confirm this dispatch"), "confirm-dispatch button cleared after refresh")
     await shot(dpage, "10-driver-confirmed")
 

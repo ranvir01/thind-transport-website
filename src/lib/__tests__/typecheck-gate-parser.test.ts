@@ -17,7 +17,7 @@
 import { describe, expect, it } from "vitest"
 // Resolvable without a @ts-expect-error: the script now exports a plain
 // JSDoc-typed function, so tsc infers it.
-import { parseDiagnostics } from "../../../scripts/typecheck-gate.mjs"
+import { parseDiagnostics, tscExitedWithoutDiagnostics } from "../../../scripts/typecheck-gate.mjs"
 
 interface Diag {
   file: string
@@ -81,5 +81,26 @@ describe("typecheck-gate diagnostic parser", () => {
 
   it("does not match a path outside src/", () => {
     expect(parse("node_modules/foo/index.d.ts(1,1): error TS2304: nope.")).toHaveLength(0)
+  })
+})
+
+describe("typecheck-gate does not mistake a tsc that failed to run for a clean one", () => {
+  // The gate used to parse zero src/ diagnostics out of a crashed or
+  // misconfigured tsc (bad tsconfig, OOM, a missing type package, an error
+  // outside src/) and print a green tick — the one failure a typecheck gate
+  // must never have.
+  it("a non-zero exit with nothing parsed is a failure", () => {
+    const out = "error TS5023: Unknown compiler option 'nope'."
+    expect(tscExitedWithoutDiagnostics(1, parse(out))).toBe(true)
+    expect(tscExitedWithoutDiagnostics(2, parse(""))).toBe(true)
+  })
+
+  it("a clean exit is a pass", () => {
+    expect(tscExitedWithoutDiagnostics(0, parse(""))).toBe(false)
+  })
+
+  it("a non-zero exit WITH parsed diagnostics is the ordinary path, not this one", () => {
+    const out = "src/lib/hub/db.ts(1,1): error TS2304: Cannot find name 'x'."
+    expect(tscExitedWithoutDiagnostics(2, parse(out))).toBe(false)
   })
 })

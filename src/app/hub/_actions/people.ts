@@ -8,10 +8,11 @@ import { createDriver, updateDriver, getDriver } from "@/lib/hub/drivers"
 import { createCustomer, updateCustomer, createContact, deleteContact, addCrmActivity } from "@/lib/hub/customers"
 import { createHubUser, setHubUserActive } from "@/lib/hub/users"
 import { getCarrier } from "@/lib/hub/settings"
-import { hasDriverAppAccount, sendDriverInviteEmail } from "@/lib/hub/driver-invite"
+import { createDriverInviteToken, hasDriverAppAccount, sendDriverInviteEmail } from "@/lib/hub/driver-invite"
 import { logAudit } from "@/lib/hub/audit"
-import { dollarsToCents } from "@/lib/hub/types"
+import { OFFICE_INVITE_ROLES, dollarsToCents } from "@/lib/hub/types"
 import { actionError } from "@/lib/hub/action-error"
+import { appPublicOrigin } from "@/lib/app-origin"
 import type { ActionResult } from "./fleet"
 
 function firstError(error: { issues: { path: PropertyKey[]; message: string }[] }): string {
@@ -85,6 +86,43 @@ export async function resendDriverInviteAction(driverId: string): Promise<Action
     return { ok: true }
   } catch (err) {
     return actionError(err, "Failed to send invite")
+  }
+}
+
+/**
+ * The invite as a URL for an in-person handoff: the office shows it as a QR
+ * on the driver page and the driver's phone scans it — no email round-trip
+ * for a driver standing at the counter. Same gate, same preconditions, same
+ * audit as the emailed invite; the token IS the invitation, so this hands
+ * the office user exactly what the email would have.
+ */
+export async function driverInviteLinkAction(
+  driverId: string
+): Promise<ActionResult & { url?: string; email?: string }> {
+  let user
+  try {
+    user = await requirePermission("drivers:write")
+  } catch (err) {
+    return actionError(err, "Forbidden")
+  }
+  try {
+    const driver = await getDriver(user.carrierId, driverId)
+    if (!driver) return { ok: false, error: "Driver not found" }
+    if (!driver.email) return { ok: false, error: "Add an email address before creating an app invite" }
+    if (await hasDriverAppAccount(user.carrierId, driverId)) {
+      return { ok: false, error: "This driver already has app access" }
+    }
+    const token = createDriverInviteToken({ carrierId: user.carrierId, driverId, email: driver.email })
+    if (!token) return { ok: false, error: "Invites need an auth secret configured" }
+    const baseUrl = appPublicOrigin()
+    await logAudit({
+      carrierId: user.carrierId, actorId: user.id, actorName: user.name,
+      entityType: "driver", entityId: driverId,
+      action: "show_app_invite_qr", newValue: { email: driver.email },
+    })
+    return { ok: true, url: `${baseUrl}/hub/driver-invite/${token}`, email: driver.email }
+  } catch (err) {
+    return actionError(err, "Failed to create invite link")
   }
 }
 
@@ -197,6 +235,15 @@ export async function createHubUserAction(values: Record<string, unknown>): Prom
   const parsed = hubUserSchema.safeParse(values)
   if (!parsed.success) return { ok: false, error: firstError(parsed.error) }
   if (parsed.data.role === "platform_admin") return { ok: false, error: "platform_admin is reserved" }
+  // The Users screen offers dispatcher and accountant, and that is the whole
+  // allowlist here too — the schema accepts every HubRole, so without this an
+  // owner could mint a second owner, or a driver/broker/shipper login with no
+  // driver or customer behind it, which requireDriverUser / requirePortalUser
+  // then refuse. Those accounts come from the driver-invite and portal
+  // invitation flows, which create the link the role needs.
+  if (!(OFFICE_INVITE_ROLES as readonly string[]).includes(parsed.data.role)) {
+    return { ok: false, error: "Office staff are dispatcher or accountant" }
+  }
 
   try {
     const passwordHash = await bcrypt.hash(parsed.data.password, 10)

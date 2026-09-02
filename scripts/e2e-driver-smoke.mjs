@@ -13,9 +13,9 @@
  * Requires: npm run dev (or start) on localhost:3000.
  */
 import { mkdirSync } from "node:fs"
-import {
+import { ANCHORS,
   launchBrowser, BASE, clickByText, waitForText, waitForPathAndText,
-  textAppears, textGone, makeShot, reseed,
+  textAppears, textGone, makeShot, reseed, sendComposer,
 } from "./e2e-lib.mjs"
 
 const OUT = process.argv[2] ?? "e2e-shots"
@@ -31,7 +31,7 @@ async function main() {
   try {
     console.log("1. Login as demo driver")
     await page.goto(`${BASE}/hub/login`, { waitUntil: "networkidle2" })
-    await waitForText(page, "One login for dispatch, drivers, and partners.")
+    await waitForText(page, ANCHORS.login)
     await page.type("#email", "driver@demo.thind")
     await page.type("#password", "ThindDemo1!")
     await shot(page, "01-login")
@@ -45,20 +45,20 @@ async function main() {
 
     console.log("2. Confirm dispatch (acknowledge)")
     await clickByText(page, "confirm this dispatch")
-    await waitForText(page, "Dispatch confirmed")
+    await waitForText(page, ANCHORS.toastDispatchConfirmed)
     if (!(await textGone(page, "confirm this dispatch"))) throw new Error("confirm banner did not clear after acknowledge")
     await shot(page, "03-acknowledged")
 
     console.log("3. Arrive at the pickup")
     await clickByText(page, "I'm here")
     await waitForText(page, "Arrival recorded")
-    if (!(await textAppears(page, "Leaving now"))) throw new Error("pickup stop did not offer Leaving now after arrival")
+    if (!(await textAppears(page, ANCHORS.leavingNow))) throw new Error("pickup stop did not offer Leaving now after arrival")
     await shot(page, "04-arrived")
 
     console.log("4. Depart the pickup")
-    await clickByText(page, "Leaving now")
-    await waitForText(page, "Departure recorded")
-    if (!(await textGone(page, "Leaving now"))) throw new Error("pickup stop did not settle to its done row after departure")
+    await clickByText(page, ANCHORS.leavingNow)
+    await waitForText(page, ANCHORS.toastDepartureRecorded)
+    if (!(await textGone(page, ANCHORS.leavingNow))) throw new Error("pickup stop did not settle to its done row after departure")
     await shot(page, "05-departed")
 
     console.log("5. Leave a facility tip (two taps)")
@@ -76,13 +76,7 @@ async function main() {
     await waitForText(page, "no phone numbers needed")
     await shot(page, "07-messages-list")
     await clickByText(page, "Dispatch / office", { tag: "a" })
-    await page.waitForSelector("textarea", { timeout: 10000 })
-    await page.type("textarea", "Made the pickup, rolling to Boise. ETA tomorrow 14:00.")
-    await clickByText(page, "", { tag: 'button[aria-label="Send"]' })
-    await waitForText(page, "Made the pickup")
-    await page
-      .waitForFunction(() => document.querySelector("textarea")?.value === "", { timeout: 20000 })
-      .catch(() => { throw new Error("composer did not clear after send") })
+    await sendComposer(page, "Made the pickup, rolling to Boise. ETA tomorrow 14:00.")
     await shot(page, "08-chat")
 
     console.log("7. Pay screen — expand a settlement to see its lines")

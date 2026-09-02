@@ -10,6 +10,7 @@ import type { OfficeQueuedIntent } from "../offline-queue"
 vi.mock("@/app/hub/_actions/loads", () => ({
   advanceLoadStatusAction: vi.fn(async () => ({ ok: true })),
   logCheckCallAction: vi.fn(async () => ({ ok: true })),
+  stopTimestampAction: vi.fn(async () => ({ ok: true })),
 }))
 vi.mock("@/app/hub/_actions/tasks", () => ({
   completeTaskAction: vi.fn(async () => ({ ok: true })),
@@ -43,6 +44,16 @@ describe("executeOfficeIntent", () => {
   it("dispatches task-checklist with id, index, done positionally", async () => {
     await executeOfficeIntent(intent({ kind: "task-checklist", payload: { taskId: "T2", index: 3, done: true } }))
     expect(tasks.toggleChecklistAction).toHaveBeenCalledWith("T2", 3, true)
+  })
+
+  it("dispatches stop-timestamp WITH the queued tap-time — never server time", async () => {
+    await executeOfficeIntent(
+      intent({
+        kind: "stop-timestamp",
+        payload: { stopId: "S1", loadId: "L4", field: "arrived_at", at: "2026-09-01T08:30:00.000Z" },
+      })
+    )
+    expect(loads.stopTimestampAction).toHaveBeenCalledWith("S1", "L4", "arrived_at", "2026-09-01T08:30:00.000Z")
   })
 
   it("drops unknown kinds as ok so a future build's rows can't jam the queue", async () => {

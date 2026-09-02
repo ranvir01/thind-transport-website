@@ -21,7 +21,7 @@
  * Usage: node scripts/e2e-detention-alerts-smoke.mjs [outputDir]
  */
 import { mkdirSync } from "node:fs"
-import { launchBrowser, BASE, failures, check, waitForText, textGone, login, makeShot, reseed, realConsoleErrors } from "./e2e-lib.mjs"
+import { ANCHORS, launchBrowser, BASE, failures, check, waitForText, textGone, login, makeShot, reseed, realConsoleErrors } from "./e2e-lib.mjs"
 
 const OUT = process.argv[2] ?? "e2e-shots-detention-alerts"
 mkdirSync(OUT, { recursive: true })
@@ -41,7 +41,7 @@ async function main() {
   console.log("1. Login as owner, dispatch board badges the dwelling load")
   await login(page, "owner@demo.thind")
   await page.goto(`${BASE}/hub/dispatch`, { waitUntil: "networkidle2" })
-  await waitForText(page, "Every active load, booking to POD.")
+  await waitForText(page, ANCHORS.dispatch)
   await waitForText(page, "Dispatch Board")
   const badge = await page.evaluate(() => {
     const el = [...document.querySelectorAll("a")].find((a) => a.textContent.includes("Dwelling"))
@@ -88,7 +88,7 @@ async function main() {
     const btn = [...document.querySelectorAll("button")].find((b) => b.textContent.includes("Mark departed"))
     btn.click()
   })
-  await waitForText(page, "Departure recorded")
+  await waitForText(page, ANCHORS.toastDepartureRecorded)
   const toastText = await page.evaluate(() => {
     const text = document.body.innerText
     const start = text.indexOf("Departure recorded")
@@ -111,7 +111,7 @@ async function main() {
 
   console.log("5. Dispatch board no longer badges the now-closed stop")
   await page.goto(`${BASE}/hub/dispatch`, { waitUntil: "networkidle2" })
-  await waitForText(page, "Every active load, booking to POD.")
+  await waitForText(page, ANCHORS.dispatch)
   const stillDwelling = await page.evaluate(() =>
     [...document.querySelectorAll("a")].some((a) => a.textContent.includes("Dwelling"))
   )

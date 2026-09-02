@@ -614,7 +614,8 @@ export function ShiftCard({ seat, dark = false }: { seat: string; dark?: boolean
                 came back to nothing" read as a freeze rather than the design. */}
             <span>
               The company only moves while this tab is open. Close it and time stops; come back
-              and it catches up.
+              and it catches up. Brokers keep office hours — 6am to 8pm Pacific — so overnight
+              the quoted board goes quiet on purpose while trucks and paperwork keep moving.
             </span>
           </p>
 

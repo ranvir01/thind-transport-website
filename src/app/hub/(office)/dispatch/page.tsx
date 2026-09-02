@@ -1,11 +1,13 @@
 import Link from "next/link"
-import { Plus, CloudLightning, ClipboardPaste, AlertTriangle, Clock } from "lucide-react"
+import { ShieldCheck, ShieldAlert, Plus, CloudLightning, ClipboardPaste, AlertTriangle, Clock } from "lucide-react"
 import { listLoads, getLoadStops } from "@/lib/hub/loads"
 import { listDrivers, dispatchLegality } from "@/lib/hub/drivers"
 import { listTrucks } from "@/lib/hub/fleet"
 import { getCarrierSettings } from "@/lib/hub/settings"
 import { getActiveAlerts, type WeatherAlert } from "@/lib/hub/weather"
 import { getDwellingStops } from "@/lib/hub/detention"
+import { latestPickupVerificationsByLoad } from "@/lib/hub/pickup-verifications"
+import { pickupPillLabel } from "@/lib/hub/pickup-verification"
 import { requireOfficeUser } from "@/lib/hub/session"
 import {
   BOARD_STATUSES, STATUS_LABELS, fmtCents, loadTotalCents, type Load,
@@ -52,6 +54,11 @@ export default async function DispatchBoardPage() {
   const driverById = new Map(drivers.map((d) => [d.id, d]))
   const truckById = new Map(trucks.map((t) => [t.id, t]))
   const dwellingByLoad = new Map(dwelling.map((d) => [d.loadId, d]))
+  // Pickup verification chips: verified/mismatch only. "unverified" is the
+  // normal offline case and would put a shrug on every card.
+  const pickupByLoad = await latestPickupVerificationsByLoad(user.carrierId, loads.map((l) => l.id)).catch(
+    () => new Map<string, never>()
+  )
 
   const byStatus = new Map<string, Load[]>()
   for (const status of BOARD_STATUSES) byStatus.set(status, [])
@@ -153,6 +160,23 @@ export default async function DispatchBoardPage() {
                             <CloudLightning className="h-3.5 w-3.5 shrink-0" /> {alert.event} on route
                           </p>
                         ) : null}
+                        {(() => {
+                          const pv = pickupByLoad.get(load.id)
+                          const label = pv ? pickupPillLabel(pv.result, pv.distance_miles == null ? null : Number(pv.distance_miles)) : null
+                          if (!label) return null
+                          const ok = pv!.result === "verified"
+                          return (
+                            <Link
+                              href={`/hub/loads/${load.id}`}
+                              className={`mt-2 flex items-center gap-1.5 rounded-lg border px-2 py-1 text-[11px] font-semibold hover:bg-hover ${
+                                ok ? "bg-ok-soft border-ok-soft text-ok" : "bg-bad-soft border-bad-soft text-bad"
+                              }`}
+                            >
+                              {ok ? <ShieldCheck className="h-3.5 w-3.5 shrink-0" /> : <ShieldAlert className="h-3.5 w-3.5 shrink-0" />}
+                              {label}
+                            </Link>
+                          )
+                        })()}
                         {dwell ? (
                           <Link
                             href={`/hub/loads/${load.id}`}

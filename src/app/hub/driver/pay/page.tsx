@@ -17,7 +17,7 @@ const LINE_KIND_CLS: Record<string, string> = {
 
 export default async function DriverPayPage() {
   const user = await requireDriverUser()
-  const [settlements, advances] = await Promise.all([
+  const [settlements, advances, escrow] = await Promise.all([
     driverSettlements(user.carrierId, user.driverId),
     query<{ id: string; amount_cents: number; status: string; issued_on: string; note: string | null }>(
       `SELECT id, amount_cents, status, issued_on, note FROM hub.advances
@@ -25,7 +25,17 @@ export default async function DriverPayPage() {
        ORDER BY created_at DESC LIMIT 5`,
       [user.carrierId, user.driverId]
     ),
+    // The running escrow balance — the same ledger approveSettlement appends
+    // to. Only drivers with an escrow program have rows; everyone else sees
+    // nothing rather than a $0.00 that reads as "you have no escrow" when
+    // the truth is "this carrier does not hold one for you".
+    query<{ balance_cents: number }>(
+      `SELECT balance_cents FROM hub.escrow_ledger
+        WHERE carrier_id = $1 AND driver_id = $2 ORDER BY id DESC LIMIT 1`,
+      [user.carrierId, user.driverId]
+    ),
   ])
+  const escrowBalance = escrow[0]?.balance_cents ?? null
   const linesBySettlement = new Map(
     await Promise.all(
       settlements.map(async (s) => [s.id, await driverSettlementLines(user.carrierId, user.driverId, s.id)] as const)
@@ -40,6 +50,12 @@ export default async function DriverPayPage() {
       </p>
 
       <div className="mb-4 space-y-2">
+        {escrowBalance !== null ? (
+          <p className="driver-card flex items-center justify-between px-3 py-2.5 text-sm">
+            <span className="text-steel-100">Escrow on deposit</span>
+            <span className="font-display font-extrabold text-[color:var(--driver-accent)]">{fmtCentsExact(escrowBalance)}</span>
+          </p>
+        ) : null}
         <AdvanceRequestForm />
         {advances.map((advance) => (
           <p key={advance.id} className="driver-card flex min-h-[56px] items-center justify-between gap-3 p-4 text-sm">

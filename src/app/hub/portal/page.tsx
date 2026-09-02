@@ -3,9 +3,13 @@ import { FileText, Package, Truck } from "lucide-react"
 import { requirePortalUser } from "@/lib/hub/session"
 import { portalInvoices, portalLoads, portalPacketDocuments } from "@/lib/hub/portal"
 import { getCarrier } from "@/lib/hub/settings"
-import { fmtCents, STATUS_LABELS, type LoadStatus } from "@/lib/hub/types"
+import { fmtCents, type LoadStatus } from "@/lib/hub/types"
 import { PortalQuoteForm } from "@/components/hub/PortalQuoteForm"
-import { LoadProgressBar } from "@/components/hub/LoadProgressBar"
+// publicStatus, not STATUS_LABELS: "POD received", "Invoiced", "Paid" and
+// "Settled" are the carrier's back-office states, and a customer reading
+// "Settled" on their shipment is being told when the driver got paid.
+// Outside the office a delivered load is "Delivered" and nothing more.
+import { LoadProgressBar, publicStatus } from "@/components/hub/LoadProgressBar"
 import { EmptyStateDark } from "@/components/hub/driver/EmptyStateDark"
 import { cn } from "@/lib/utils"
 
@@ -94,7 +98,7 @@ export default async function PortalHomePage() {
                       {load.customer_reference ? <span className="text-steel-300 font-normal"> · your ref {load.customer_reference}</span> : null}
                     </p>
                     <span className={cn("shrink-0 rounded-pill border px-2.5 py-0.5 text-[11px] font-bold", movingPillCls(load.status))}>
-                      {STATUS_LABELS[load.status as LoadStatus] ?? load.status}
+                      {publicStatus(load.status as LoadStatus).label}
                     </span>
                   </div>
                   <p className="mt-0.5 text-body-sm text-steel-200">
@@ -177,7 +181,7 @@ export default async function PortalHomePage() {
                     <span className="flex items-center justify-between gap-3">
                       <span className="min-w-0 truncate font-mono text-sm font-semibold tabular-nums text-white">{load.reference}</span>
                       <span className="shrink-0 flex items-center gap-1.5 text-[11px] font-bold text-steel-300">
-                        <Package className="h-3.5 w-3.5" /> {STATUS_LABELS[load.status as LoadStatus] ?? load.status}
+                        <Package className="h-3.5 w-3.5" /> {publicStatus(load.status as LoadStatus).label}
                       </span>
                     </span>
                     <span className="mt-0.5 flex items-center justify-between gap-3 text-[13px] text-steel-300">

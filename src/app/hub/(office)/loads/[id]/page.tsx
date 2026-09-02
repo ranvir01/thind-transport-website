@@ -1,7 +1,7 @@
 import { CustomDetailsPanel } from "@/components/hub/CustomDetailsPanel"
 import Link from "next/link"
 import { notFound } from "next/navigation"
-import { Pencil, FileText, MapPin, MessageSquare, CloudLightning, Camera, StickyNote, AlertTriangle } from "lucide-react"
+import { ShieldCheck, ShieldAlert, Clock, Pencil, FileText, MapPin, MessageSquare, CloudLightning, Camera, StickyNote, AlertTriangle } from "lucide-react"
 import { getLoad, getLoadStops, getLoadEvents } from "@/lib/hub/loads"
 import { getOsdClaimForLoad } from "@/lib/hub/claims"
 import { fuelForLoad } from "@/lib/hub/fuel"
@@ -24,6 +24,10 @@ import { getRecurringRule } from "@/lib/hub/recurring"
 import { DetentionButton } from "@/components/hub/DetentionButton"
 import { detentionCents } from "@/lib/hub/money"
 import { getCarrierSettings } from "@/lib/hub/settings"
+import { loadEta } from "@/lib/hub/eta-load"
+import { latestPickupVerification } from "@/lib/hub/pickup-verifications"
+import { pickupPillLabel } from "@/lib/hub/pickup-verification"
+import { formatEta } from "@/lib/hub/eta"
 import { CreateInvoiceButton } from "@/components/hub/MoneyActions"
 import { LoadFuelPanel } from "@/components/hub/LoadFuelPanel"
 import { SuggestMilesButton } from "@/components/hub/SuggestMilesButton"
@@ -59,8 +63,17 @@ function eventText(event: LoadEvent): string {
       return `${String(p.kind ?? "document").replace("_", " ")} uploaded (${p.file ?? ""})`
     case "geo":
       return `${p.field === "arrived_at" ? "Arrived" : "Departed"} ${p.city ?? ""}, ${p.state ?? ""}`
-    case "check_call":
+    case "check_call": {
+      // Pickup verification rides the check_call kind (no constraint change);
+      // read as the fact it is, not an empty "Check call:".
+      if (p.type === "pickup_verification") {
+        const dist = p.distance_miles == null ? "" : ` · ${p.distance_miles} mi from dock`
+        if (p.result === "verified") return `Pickup verified${dist}`
+        if (p.result === "mismatch") return `Pickup mismatch${dist}`
+        return "Pickup photo sent — no location on the phone, so not verified"
+      }
       return `Check call: ${p.note ?? ""}`
+    }
     case "note":
       return String(p.note ?? "Note")
     case "weather_alert":
@@ -79,7 +92,7 @@ export default async function LoadDetailPage({ params }: { params: Promise<{ id:
   if (!load) notFound()
 
   const settings = await getCarrierSettings(user.carrierId)
-  const [stops, events, documents, shareLinks, invoice, loadFuel, recurringRule, osdClaim] = await Promise.all([
+  const [stops, events, documents, shareLinks, invoice, loadFuel, recurringRule, osdClaim, arrival, pickupCheck] = await Promise.all([
     getLoadStops(user.carrierId, id),
     getLoadEvents(user.carrierId, id),
     listDocuments(user.carrierId, "load", id),
@@ -88,7 +101,14 @@ export default async function LoadDetailPage({ params }: { params: Promise<{ id:
     fuelForLoad(user.carrierId, id),
     getRecurringRule(user.carrierId, id),
     getOsdClaimForLoad(user.carrierId, id),
+    // Null when there is nothing trustworthy to say (no ping, stale ping,
+    // ungeocoded stop) — the chip simply does not render.
+    loadEta(user.carrierId, id).catch(() => null),
+    latestPickupVerification(user.carrierId, id).catch(() => null),
   ])
+  const pickupPill = pickupCheck
+    ? pickupPillLabel(pickupCheck.result, pickupCheck.distance_miles == null ? null : Number(pickupCheck.distance_miles))
+    : null
 
   const totalCents = loadTotalCents(load)
   const rpmCents = load.loaded_miles ? totalCents / load.loaded_miles : null
@@ -141,6 +161,35 @@ export default async function LoadDetailPage({ params }: { params: Promise<{ id:
       <Panel className="p-4 md:p-5 mb-4">
         <div className="flex flex-wrap items-center gap-3">
           <StatusBadge status={load.status} className="text-sm px-3 py-1" />
+          {arrival ? (
+            <span
+              data-testid="load-eta"
+              className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[11px] font-bold uppercase tracking-wider ${
+                arrival.eta.lateMinutes > 60
+                  ? "border-bad-soft bg-bad-soft text-bad"
+                  : "border-info-soft bg-info-soft text-info"
+              }`}
+              title={`${arrival.eta.miles} mi to ${arrival.target.city}, ${arrival.target.state}${arrival.eta.stale ? " · position is getting old" : ""}`}
+            >
+              <Clock className="h-3.5 w-3.5" />
+              {arrival.target.type === "pickup" ? "At pickup" : "Delivery"} {formatEta(arrival.eta)}
+              {arrival.eta.lateMinutes > 60 ? ` · ${Math.round(arrival.eta.lateMinutes / 60)}h late` : ""}
+            </span>
+          ) : null}
+          {pickupPill ? (
+            <span
+              data-testid="pickup-pill"
+              title={pickupCheck!.checks.map((c) => `${c.ok === true ? "✓" : c.ok === false ? "✗" : "?"} ${c.label} — ${c.detail}`).join("\n")}
+              className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[11px] font-bold uppercase tracking-wider ${
+                pickupCheck!.result === "verified"
+                  ? "border-ok-soft bg-ok-soft text-ok"
+                  : "border-bad-soft bg-bad-soft text-bad"
+              }`}
+            >
+              {pickupCheck!.result === "verified" ? <ShieldCheck className="h-3.5 w-3.5" /> : <ShieldAlert className="h-3.5 w-3.5" />}
+              {pickupPill}
+            </span>
+          ) : null}
           {invoice ? (
             <Link href={`/hub/money/invoices/${invoice.id}`} className="inline-flex items-center gap-1.5 rounded-full border border-cyan-400/30 bg-cyan-500/10 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-cyan-300 hover:bg-cyan-500/20">
               <FileText className="h-3.5 w-3.5" /> {invoice.number} · {invoice.status}

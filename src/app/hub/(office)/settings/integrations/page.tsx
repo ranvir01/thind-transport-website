@@ -5,6 +5,7 @@ import { aiParserConfigured } from "@/lib/hub/doc-intake/analyze-enhanced"
 import { PROVIDERS } from "@/lib/hub/integrations/registry"
 import { qboTokenExpiryNotice } from "@/lib/hub/integrations/qbo"
 import { EVENT_RETRY_PROVIDERS } from "@/lib/hub/integrations/event-processors"
+import { integrationWebhookUrl } from "@/lib/hub/integrations/webhooks"
 import { query } from "@/lib/hub/db"
 import { PageHeader, Panel } from "@/components/hub/ui"
 import { IntegrationCard, type ProviderCard } from "@/components/hub/IntegrationsPanel"
@@ -35,7 +36,6 @@ export default async function IntegrationsPage() {
 
   // Every card comes from the provider registry — adding a provider there is
   // the whole job; this page never hardcodes a list again.
-  const baseUrl = process.env.NEXTAUTH_URL || "https://thindtransport.com"
   const cards: ProviderCard[] = PROVIDERS.map((spec, i) => ({
     provider: spec.id as IntegrationProvider,
     title: spec.label,
@@ -54,7 +54,7 @@ export default async function IntegrationsPage() {
     // registry is the marker — e.g. EFS's daily CSV forward).
     webhookUrl:
       spec.sync === "webhook" || spec.fields.some((f) => f.key === "webhookSecret")
-        ? `${baseUrl}/api/hub/webhooks/${spec.id}?carrier=${user.carrierId}`
+        ? integrationWebhookUrl(spec.id, user.carrierId)
         : undefined,
     // Providers with a webhook event processor get a "retry unprocessed"
     // surface — the set derives from EVENT_PROCESSORS (event-processors.ts).

@@ -13,7 +13,7 @@
  * Usage: node scripts/e2e-loads-smoke.mjs [outputDir]
  */
 import { mkdirSync } from "node:fs"
-import { launchBrowser, BASE, failures, check, waitForText, textGone, login, makeShot, clickByText, reseed, realConsoleErrors, waitForLoadDetail} from "./e2e-lib.mjs"
+import { ANCHORS, launchBrowser, BASE, failures, check, waitForText, textGone, login, makeShot, clickByText, reseed, realConsoleErrors, waitForLoadDetail} from "./e2e-lib.mjs"
 
 const OUT = process.argv[2] ?? "e2e-shots-loads"
 mkdirSync(OUT, { recursive: true })
@@ -124,7 +124,7 @@ async function main() {
 
   console.log("4. New load shows on the loads list")
   await page.goto(`${BASE}/hub/loads`, { waitUntil: "networkidle2" })
-  await waitForText(page, "Search, filter, and manage every load.")
+  await waitForText(page, ANCHORS.loads)
   await waitForText(page, detail.reference ?? "THD-")
   const list = await page.evaluate(
     ({ reference, brokerRef }) => {

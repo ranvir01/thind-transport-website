@@ -19,7 +19,7 @@
  */
 import pg from "pg"
 import { mkdirSync } from "node:fs"
-import { launchBrowser, BASE, failures, check, waitForText, login, makeShot, reseed, realConsoleErrors } from "./e2e-lib.mjs"
+import { ANCHORS, launchBrowser, BASE, failures, check, waitForText, login, makeShot, reseed, realConsoleErrors } from "./e2e-lib.mjs"
 
 // Fail fast on a fresh rig: the connect step needs CREDENTIALS_KEY in the
 // SERVER env (encrypt-at-rest for hub.api_credentials). Against a localhost
@@ -137,7 +137,7 @@ async function main() {
     await clickInCard(page, "Disconnect")
     await cardShows(page, "Disconnect it")
     await clickInCard(page, "Disconnect it")
-    await waitForText(page, "the CSV import path keeps working")
+    await waitForText(page, ANCHORS.importFallback)
     await cardShows(page, "not connected")
     await page.reload({ waitUntil: "networkidle2" })
     await waitForText(page, "Docs mailbox")
@@ -202,7 +202,7 @@ async function main() {
   const confirmText = await cardText(page)
   check(confirmShown && /Keep/.test(confirmText), "disconnect asks for confirmation first")
   await clickInCard(page, "Disconnect it")
-  await waitForText(page, "the CSV import path keeps working")
+  await waitForText(page, ANCHORS.importFallback)
   check(await cardShows(page, "not connected"), "card back to not connected after disconnect")
   await shot(page, "05-disconnected")
 
@@ -246,7 +246,7 @@ async function main() {
   await clickInCard(page, "Disconnect")
   await cardShows(page, "Disconnect it")
   await clickInCard(page, "Disconnect it")
-  await waitForText(page, "the CSV import path keeps working")
+  await waitForText(page, ANCHORS.importFallback)
   check(await cardShows(page, "not connected"), "card back to not connected after disconnect")
   await shot(page, "08-disconnected")
 

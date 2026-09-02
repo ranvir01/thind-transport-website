@@ -63,6 +63,28 @@ describe("invitePortalUserAction role allowlist", () => {
     expect(result.ok).toBe(true)
     expect(inviteMock).toHaveBeenCalledWith("carrier-1", "cust-1", "bree@broker.test", "broker", "Dana")
   })
+
+  it("uses NEXTAUTH_URL for the accept link until an app host is configured", async () => {
+    vi.stubEnv("NEXT_PUBLIC_APP_HOST", "")
+    vi.stubEnv("NEXTAUTH_URL", "https://thindtransport.com")
+    const result = await invitePortalUserAction({
+      customerId: "cust-1", email: "bree@broker.test", role: "broker",
+    })
+    expect(result.ok).toBe(true)
+    expect(result.acceptUrl).toBe("https://thindtransport.com/hub/portal/accept/tok")
+    vi.unstubAllEnvs()
+  })
+
+  it("prefers NEXT_PUBLIC_APP_HOST for the accept link once the app origin is configured", async () => {
+    vi.stubEnv("NEXT_PUBLIC_APP_HOST", "app.loadoff.com")
+    vi.stubEnv("NEXTAUTH_URL", "https://thindtransport.com")
+    const result = await invitePortalUserAction({
+      customerId: "cust-1", email: "bree@broker.test", role: "broker",
+    })
+    expect(result.ok).toBe(true)
+    expect(result.acceptUrl).toBe("https://app.loadoff.com/hub/portal/accept/tok")
+    vi.unstubAllEnvs()
+  })
 })
 
 describe("portalQuoteRequestAction equipment allowlist", () => {

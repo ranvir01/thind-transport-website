@@ -13,7 +13,7 @@
  * Usage: node scripts/e2e-settlements-smoke.mjs [outputDir]
  */
 import { mkdirSync } from "node:fs"
-import { launchBrowser, BASE, failures, check, waitForText, login, makeShot, clickByText, reseed, trackPageErrors } from "./e2e-lib.mjs"
+import { ANCHORS, launchBrowser, BASE, failures, check, waitForText, login, makeShot, clickByText, reseed, trackPageErrors } from "./e2e-lib.mjs"
 
 const OUT = process.argv[2] ?? "e2e-shots-settlements"
 mkdirSync(OUT, { recursive: true })
@@ -89,7 +89,7 @@ async function main() {
   console.log("1. Login as owner, open settlements")
   await login(page, "owner@demo.thind")
   await page.goto(`${BASE}/hub/money/settlements`, { waitUntil: "networkidle2" })
-  await waitForText(page, "Weekly driver pay")
+  await waitForText(page, ANCHORS.settlements)
   const seededPaid = await settlementLinks(page, ["paid"])
   check(seededPaid.length >= 2, `seeded paid settlements listed (${seededPaid.length})`)
   await waitForText(page, "Escrow balances")
@@ -118,14 +118,14 @@ async function main() {
 
   console.log("4. Harpreet's draft itemizes to the cent")
   await page.goto(`${BASE}${harpreetDrafts[0]}`, { waitUntil: "networkidle2" })
-  await waitForText(page, "Net pay")
+  await waitForText(page, ANCHORS.netPay)
   check((await page.evaluate(() => document.body.innerText)).includes("Status: draft"), "status is draft")
   check(parseCents(await totalsValue(page, "Gross")) === HARPREET.grossCents,
     `gross is loads+reimbursement to the cent (${await totalsValue(page, "Gross")})`)
   check(parseCents(await totalsValue(page, "Deductions")) === HARPREET.deductionsCents,
     `deductions are advance+insurance to the cent (${await totalsValue(page, "Deductions")})`)
-  check(parseCents(await totalsValue(page, "Net pay")) === HARPREET.netCents,
-    `net pay is gross − deductions (${await totalsValue(page, "Net pay")})`)
+  check(parseCents(await totalsValue(page, ANCHORS.netPay)) === HARPREET.netCents,
+    `net pay is gross − deductions (${await totalsValue(page, ANCHORS.netPay)})`)
   const detailText = await page.evaluate(() => document.body.innerText)
   for (const amount of HARPREET.lineAmounts) {
     check(detailText.includes(amount), `line amount ${amount} itemized`)
@@ -139,7 +139,7 @@ async function main() {
 
   console.log("5. Approve — statement PDF stored, advance applied")
   await clickByText(page, "Approve", { tag: "button" })
-  await waitForText(page, "Status: approved", 20000)
+  await waitForText(page, ANCHORS.statusApproved, 20000)
   const pdfOk = await page.evaluate(async () => {
     const a = [...document.querySelectorAll("a")].find((n) => n.textContent.includes("Statement PDF"))
     if (!a) return { found: false }

@@ -13,7 +13,7 @@
  * Usage: node scripts/e2e-invoices-smoke.mjs [outputDir]
  */
 import { mkdirSync } from "node:fs"
-import { launchBrowser, BASE, failures, check, waitForText, login, makeShot, clickByText, reseed, trackPageErrors } from "./e2e-lib.mjs"
+import { ANCHORS, launchBrowser, BASE, failures, check, waitForText, login, makeShot, clickByText, reseed, trackPageErrors } from "./e2e-lib.mjs"
 
 const OUT = process.argv[2] ?? "e2e-shots-invoices"
 mkdirSync(OUT, { recursive: true })
@@ -53,7 +53,7 @@ async function recordPayment(page, dollars, expectedOpenCents) {
   await clickByText(page, "Record payment", { tag: "button" })
   await waitForText(page, "Payment recorded")
   // The Summary block only reflects the new balance after the server action
-  // resolves and router.refresh() re-renders — poll the "Open balance" dd
+  // resolves and router.refresh() re-renders — poll the ANCHORS.openBalance dd
   // for the expected cents instead of sleeping a fixed 1500ms.
   await page
     .waitForFunction(
@@ -98,7 +98,7 @@ async function main() {
 
   console.log("3. Find the POD-received steel-beams load")
   await page.goto(`${BASE}/hub/loads?status=pod_received`, { waitUntil: "networkidle2" })
-  await waitForText(page, "Search, filter, and manage every load.")
+  await waitForText(page, ANCHORS.loads)
   const hrefs = await page.evaluate(() =>
     [...new Set(
       [...document.querySelectorAll('a[href^="/hub/loads/"]')]
@@ -126,7 +126,7 @@ async function main() {
     () => /\/hub\/money\/invoices\/[0-9a-f-]{36}$/.test(location.pathname),
     { timeout: 20000 }
   )
-  await waitForText(page, "Open balance")
+  await waitForText(page, ANCHORS.openBalance)
   const invoiceUrl = await page.evaluate(() => location.pathname)
   const number = await page.evaluate(() => document.body.innerText.match(/THD-INV-\d+/)?.[0] ?? null)
   check(!!number, `invoice numbered from tenant settings (${number})`)
@@ -134,7 +134,7 @@ async function main() {
   const amount = parseCents(await summaryValue(page, "Amount"))
   check(amount === EXPECTED_TOTAL_CENTS,
     `amount is linehaul+FSC+tarp to the cent (${amount} vs ${EXPECTED_TOTAL_CENTS})`)
-  const open0 = parseCents(await summaryValue(page, "Open balance"))
+  const open0 = parseCents(await summaryValue(page, ANCHORS.openBalance))
   check(open0 === EXPECTED_TOTAL_CENTS, `open balance equals amount (${open0})`)
   // innerText reflects CSS text-transform (the label renders "REMIT TO") — compare lowercased.
   check(

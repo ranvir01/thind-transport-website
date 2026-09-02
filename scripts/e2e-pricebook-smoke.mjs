@@ -12,7 +12,7 @@
  * Usage: node scripts/e2e-pricebook-smoke.mjs [outputDir]
  */
 import { mkdirSync } from "node:fs"
-import {
+import { ANCHORS,
   BASE, login, check, failures, waitForText, waitForPath, makeShot, clickByText, reseed, launchBrowser
 } from "./e2e-lib.mjs"
 
@@ -103,7 +103,7 @@ try {
   await waitForPath(page2, "/hub")
   // Pathname flips before the Today screen streams in — wait for a body
   // tile, not the always-present "Today" nav label.
-  await waitForText(page2, "Unconfirmed drivers")
+  await waitForText(page2, ANCHORS.today)
   const url2 = page2.url()
   const body2 = await page2.evaluate(() => document.body.innerText)
   check(!url2.includes("/settings/pricebook") && !body2.includes("Accessorial Price Book"),
