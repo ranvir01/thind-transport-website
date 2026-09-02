@@ -53,15 +53,15 @@ export default function CreateFillablePDFPage() {
       <header className="fixed top-0 left-0 right-0 z-50 bg-[#1e3a5f] shadow-lg">
         <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
           <h1 className="text-xl font-bold text-white">Create Fillable PDF</h1>
-          <Link href="/driver/dashboard" className="text-white/80 hover:text-white text-sm">
+          <Link href="/driver/dashboard" className="inline-flex min-h-[44px] items-center text-white/80 hover:text-white text-sm">
             ← Back to Dashboard
           </Link>
         </div>
       </header>
 
       <div className="max-w-2xl mx-auto px-4 py-12">
-        <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
-          <div className="bg-gradient-to-r from-green-600 to-green-700 p-6 text-white">
+        <div className="bg-white rounded-fleet-lg shadow-xl overflow-hidden">
+          <div className="bg-navy p-6 text-white">
             <div className="flex items-center gap-3">
               <FileText className="h-10 w-10" />
               <div>
@@ -95,7 +95,7 @@ export default function CreateFillablePDFPage() {
                   <li><strong>Internal Process Record</strong> - Hiring decision documentation</li>
                 </ul>
 
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <div className="bg-blue-50 border border-blue-200 rounded-fleet p-4">
                   <p className="text-blue-800 text-sm">
                     <strong>How it works:</strong> The PDF is generated entirely in your browser using pdf-lib. 
                     All form fields are properly positioned and sized. Drivers can open it in any PDF viewer 
@@ -104,7 +104,7 @@ export default function CreateFillablePDFPage() {
                 </div>
 
                 {error && (
-                  <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                  <div className="bg-red-50 border border-red-200 rounded-fleet p-4">
                     <p className="text-red-700">{error}</p>
                   </div>
                 )}
@@ -113,7 +113,8 @@ export default function CreateFillablePDFPage() {
                   <Button
                     onClick={createFillablePDF}
                     disabled={isProcessing}
-                    className="bg-green-600 hover:bg-green-700 text-white px-8 py-4 text-lg"
+                    size="lg"
+                    className="bg-orange-600 hover:bg-orange-500 text-white"
                   >
                     {isProcessing ? (
                       <>
@@ -139,16 +140,16 @@ export default function CreateFillablePDFPage() {
                   Your 25-page DOT application PDF has been downloaded. Open it in any PDF viewer to fill out the form fields.
                 </p>
                 <div className="flex gap-4 justify-center flex-wrap">
-                  <Button onClick={downloadAgain} variant="outline" className="gap-2">
+                  <Button onClick={downloadAgain} variant="outline" className="gap-2 bg-white border-gray-300 text-gray-700 hover:bg-gray-50 hover:text-gray-900">
                     <Download className="h-4 w-4" />
                     Download Again
                   </Button>
-                  <Button onClick={() => { setIsComplete(false); setPdfBlob(null) }} variant="outline" className="gap-2">
+                  <Button onClick={() => { setIsComplete(false); setPdfBlob(null) }} variant="outline" className="gap-2 bg-white border-gray-300 text-gray-700 hover:bg-gray-50 hover:text-gray-900">
                     <RefreshCw className="h-4 w-4" />
                     Generate New
                   </Button>
                   <Link href="/driver/dashboard">
-                    <Button className="bg-[#1e3a5f] hover:bg-[#2a4a6f]">
+                    <Button className="bg-orange-600 hover:bg-orange-500 text-white">
                       Back to Dashboard
                     </Button>
                   </Link>
@@ -158,7 +159,7 @@ export default function CreateFillablePDFPage() {
           </div>
         </div>
 
-        <div className="mt-8 bg-white rounded-xl shadow-lg p-6">
+        <div className="mt-8 bg-white rounded-fleet-lg shadow-lg p-6">
           <h3 className="font-bold text-gray-800 mb-4">Instructions for Drivers</h3>
           <ol className="list-decimal list-inside text-gray-600 space-y-2">
             <li>Download the fillable PDF using the button above</li>
@@ -171,7 +172,7 @@ export default function CreateFillablePDFPage() {
           </ol>
         </div>
 
-        <div className="mt-6 text-center text-sm text-gray-500">
+        <div className="mt-6 text-center text-sm text-gray-600">
           <p>This application complies with FMCSR 391.21 requirements.</p>
         </div>
       </div>

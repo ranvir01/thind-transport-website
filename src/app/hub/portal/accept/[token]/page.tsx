@@ -23,12 +23,12 @@ export default async function AcceptInvitationPage({ params }: { params: Promise
   return (
     <div className="mx-auto max-w-md">
       <div
-        className="rounded-2xl border border-white/10 bg-navy-800/80 p-6"
+        className="driver-card p-6"
         style={{ "--portal-accent": accent.text } as React.CSSProperties}
       >
         <span className="brand-wordmark text-xl font-semibold text-white tracking-[0.14em]">{PRODUCT.wordmark}</span>
         {/* Always-on card kicker — unique vs layout chrome; do not move into a state branch. */}
-        <p className="mt-2 text-body-xs font-semibold uppercase tracking-[0.18em] text-steel-400">
+        <p className="mt-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-steel-300">
           Portal invitation
         </p>
         {!invitation ? (
@@ -51,7 +51,7 @@ export default async function AcceptInvitationPage({ params }: { params: Promise
               <span className="font-semibold text-white">{invitation.customer_name}</span>: live tracking,
               PODs, invoices, payment status — no more checking calls.
             </p>
-            <p className="mt-1 text-body-xs text-steel-400">Account email: {invitation.email}</p>
+            <p className="mt-1 text-[13px] text-steel-300">Account email: {invitation.email}</p>
             <div className="mt-4">
               <AcceptInvitationForm token={token} email={invitation.email} />
             </div>

@@ -140,7 +140,7 @@ export default function DriverDashboardPage() {
             <CardContent>
               {submitted ? (
                 <div className="space-y-4">
-                  <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+                  <div className="p-4 bg-green-50 border border-green-200 rounded-fleet">
                     <p className="text-green-900 font-semibold flex items-center gap-2">
                       <CheckCircle2 className="h-4 w-4" />
                       {statusInfo?.label || "Submitted — In Review Queue"}
@@ -168,7 +168,7 @@ export default function DriverDashboardPage() {
                   </div>
                   <p className="text-sm text-gray-600">
                     Questions about your application? Call us at{" "}
-                    <a href={`tel:${COMPANY_INFO.phoneFormatted}`} className="text-orange font-semibold hover:underline">
+                    <a href={`tel:${COMPANY_INFO.phoneFormatted}`} className="text-orange-600 font-semibold hover:underline">
                       {COMPANY_INFO.phone}
                     </a>{" "}
                     — a real person answers.
@@ -176,7 +176,7 @@ export default function DriverDashboardPage() {
                 </div>
               ) : (
                 <div className="space-y-4">
-                  <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                  <div className="p-4 bg-amber-50 border border-amber-200 rounded-fleet">
                     <p className="text-amber-900 font-semibold">Application Not Started</p>
                     <p className="text-sm text-amber-800 mt-1">
                       Complete your official DOT driver application online. It auto-saves as you go,
@@ -214,7 +214,7 @@ export default function DriverDashboardPage() {
                             ? "bg-green-100 text-green-600"
                             : step.active
                               ? "bg-orange-100 text-orange-600"
-                              : "bg-gray-100 text-gray-400"
+                              : "bg-gray-100 text-gray-600"
                         }`}
                       >
                         <Icon className="h-4 w-4" />
@@ -222,7 +222,7 @@ export default function DriverDashboardPage() {
                       <div className="pt-1">
                         <p
                           className={`text-sm font-medium ${
-                            step.done ? "text-gray-900" : step.active ? "text-gray-900" : "text-gray-400"
+                            step.done ? "text-gray-900" : step.active ? "text-gray-900" : "text-gray-600"
                           }`}
                         >
                           {step.label}
@@ -278,9 +278,8 @@ export default function DriverDashboardPage() {
                   : "Fill it out online — your progress saves automatically."}
               </p>
               <Button
-                variant={submitted ? "outline" : "default"}
-                className={`w-full ${submitted ? "bg-white border-gray-300 text-gray-700 hover:bg-gray-50 hover:text-gray-900" : "bg-orange-600 hover:bg-orange-500 text-white"}`}
-                size="sm"
+                variant="outline"
+                className="w-full bg-white border-gray-300 text-gray-700 hover:bg-gray-50 hover:text-gray-900"
                 onClick={() => router.push("/driver/application")}
               >
                 <FileText className="mr-2 h-4 w-4" />
@@ -298,13 +297,13 @@ export default function DriverDashboardPage() {
                 Dispatch and recruiting answer the phone — days, nights, and weekends.
               </p>
               <div className="space-y-2">
-                <Button variant="outline" className="w-full bg-white border-gray-300 text-gray-700 hover:bg-gray-50 hover:text-gray-900" size="sm" asChild>
+                <Button variant="outline" className="w-full bg-white border-gray-300 text-gray-700 hover:bg-gray-50 hover:text-gray-900" asChild>
                   <a href={`tel:${COMPANY_INFO.phoneFormatted}`}>
                     <Phone className="mr-2 h-4 w-4" />
                     Call {COMPANY_INFO.phone}
                   </a>
                 </Button>
-                <Button variant="outline" className="w-full bg-white border-gray-300 text-gray-700 hover:bg-gray-50 hover:text-gray-900" size="sm" asChild>
+                <Button variant="outline" className="w-full bg-white border-gray-300 text-gray-700 hover:bg-gray-50 hover:text-gray-900" asChild>
                   <a href={`mailto:${COMPANY_INFO.email}`}>
                     <Mail className="mr-2 h-4 w-4" />
                     Email Us
@@ -325,7 +324,7 @@ export default function DriverDashboardPage() {
               </p>
               <p className="mt-2">
                 Questions? Email us at{" "}
-                <Link href={`mailto:${COMPANY_INFO.email}`} className="text-orange hover:underline">
+                <Link href={`mailto:${COMPANY_INFO.email}`} className="text-orange-600 hover:underline">
                   {COMPANY_INFO.email}
                 </Link>
               </p>

@@ -1,22 +1,25 @@
 /**
- * Home `/` route cards must quote PAY_RATES, never literals.
+ * Home `/` lane cards must quote PAY_RATES, never literals.
  *
  * The local and regional cards already showed the published company
- * ranges, but the OTR card mixed company + owner-operator into invented
+ * ranges, but the old OTR card mixed company + owner-operator into invented
  * figures ($65K-$280K, $0.55-$0.60 CPM, $2.25-$3.25/mile, $180K-$280K).
  * There is no company CPM floor in constants.ts — do not invent $0.60/mi.
  *
  * A wrong number still renders, so E2E cannot catch this. Assert the
- * source the way company-facts-from-constants.test.ts does.
+ * source the way company-facts-from-constants.test.ts does. Retargeted from
+ * RoutesSection to HomeTimeLanes when the homepage was restructured; the
+ * alias names (LOCAL / REGIONAL / OTR / OO) carried over so the assertions
+ * stay readable.
  */
 import { readFileSync } from "node:fs"
 import path from "node:path"
 import { describe, expect, it } from "vitest"
 import { PAY_RATES } from "@/lib/constants"
 
-const src = readFileSync(path.resolve(__dirname, "./RoutesSection.tsx"), "utf8")
+const src = readFileSync(path.resolve(__dirname, "./HomeTimeLanes.tsx"), "utf8")
 
-describe("RoutesSection sources pay from PAY_RATES", () => {
+describe("HomeTimeLanes sources pay from PAY_RATES", () => {
   it("reads local, regional, OTR, and owner-operator from constants", () => {
     expect(src).toContain("PAY_RATES.companyDriver.local")
     expect(src).toContain("PAY_RATES.companyDriver.regional")
@@ -39,6 +42,14 @@ describe("RoutesSection sources pay from PAY_RATES", () => {
     expect(src).not.toContain("$2.25-$3.25")
     expect(src).not.toContain("$180K-$280K")
     expect(src).not.toContain("$0.60")
+  })
+
+  it("derives the same-rate copy from the constants instead of asserting it", () => {
+    // "Same $0.63/mile" is only true while every company lane pays the same;
+    // the component must compute that, never type the claim.
+    expect(src).toContain("SAME_RATE")
+    expect(src).not.toMatch(/Same \$0\.\d\d/)
+    expect(src).not.toContain("/refer")
   })
 
   it("published OTR and O/O constants are the figures the cards interpolate", () => {

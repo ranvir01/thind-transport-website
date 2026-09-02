@@ -10,7 +10,7 @@ export default async function DriverIncidentPage() {
 
   return (
     <div>
-      <h1 className="font-display text-xl font-extrabold uppercase tracking-wide text-white mb-1">
+      <h1 className="mb-1 text-[22px] font-semibold text-white">
         Report an incident
       </h1>
       <p className="text-body-sm text-steel-300 mb-4">

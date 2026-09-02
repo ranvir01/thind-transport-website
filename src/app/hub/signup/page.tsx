@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic"
 
 export default function SignupPage() {
   return (
-    <div className="min-h-screen flex items-center justify-center p-4">
+    <div className="hauldesk-auth flex min-h-screen items-center justify-center p-4">
       <Panel className="w-full max-w-md p-6 md:p-8">
         <div className="text-center mb-6">
           <LoadOffMark size={52} className="mb-3" />

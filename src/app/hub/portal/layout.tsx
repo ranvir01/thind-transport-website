@@ -34,12 +34,15 @@ export default async function PortalLayout({ children }: { children: React.React
     // --portal-accent lets page-level headers (text-[color:var(--portal-accent)])
     // follow the carrier's brand without each page re-reading settings.
     <div className="min-h-screen bg-navy" style={{ "--portal-accent": accent.text } as React.CSSProperties}>
+      {/* Same geometry as the driver header: 56px plus the notch inset the bar
+          pads itself by, so the carrier name never sits under the status bar
+          on an installed iPhone. */}
       <header
-        className="fixed top-0 inset-x-0 z-40 flex h-14 items-center justify-between gap-3 border-b bg-navy-900/95 px-4 backdrop-blur-sm"
+        className="fixed top-0 inset-x-0 z-40 flex h-[calc(3.5rem+env(safe-area-inset-top,0px))] items-center justify-between gap-3 border-b bg-driver-surface px-4 pt-[env(safe-area-inset-top,0px)]"
         style={{ borderBottomColor: accent.rule }}
       >
         {carrier?.name ? (
-          <span className="min-w-0 truncate font-display text-sm font-extrabold uppercase tracking-wider text-white">
+          <span className="min-w-0 truncate text-[15px] font-semibold text-white">
             {carrier.name}
           </span>
         ) : (
@@ -47,11 +50,11 @@ export default async function PortalLayout({ children }: { children: React.React
             {PRODUCT.wordmark}
           </span>
         )}
-        <span className="shrink-0 text-[10px] font-bold uppercase tracking-[0.25em] text-[color:var(--portal-accent)]">
+        <span className="shrink-0 text-[11px] font-bold uppercase tracking-[0.25em] text-[color:var(--portal-accent)]">
           Customer portal
         </span>
       </header>
-      <main className="pt-20 pb-12 px-4 mx-auto w-full max-w-3xl">
+      <main className="mx-auto w-full max-w-3xl overscroll-y-contain px-4 pb-12 pt-[calc(4.5rem+env(safe-area-inset-top,0px))]">
         {user && isSandboxCarrier(user.carrierId) ? (
           <SandboxBanner
             dark

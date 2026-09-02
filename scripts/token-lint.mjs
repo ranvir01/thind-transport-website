@@ -45,6 +45,9 @@ import { join } from "node:path"
 
 const SCOPE = [
   "src/components/home/AudienceSelector.tsx",
+  "src/components/home/HomeTimeLanes.tsx",
+  "src/components/home/OperationSection.tsx",
+  "src/components/home/ThindPromise.tsx",
   "src/components/ui/Reveal.tsx",
   "src/components/features/GetTheApp.tsx",
   "src/components/features/WhySwitch.tsx",
@@ -86,11 +89,16 @@ function* files(path) {
   }
 }
 
-/** Strip comments the way the marketing rule always has: prose is not code. */
+/** Strip comments the way the marketing rule always has: prose is not code.
+ *  A next/image `sizes="(max-width: 768px) 100vw, 45vw"` hint is a browser
+ *  media-query string, not a design value — it goes too. */
 function codeOf(line) {
   const trimmed = line.trimStart()
   if (trimmed.startsWith("*") || trimmed.startsWith("/*")) return null
-  return line.replace(/\/\/.*$/, "").replace(/\/\*.*?\*\//g, "")
+  return line
+    .replace(/\/\/.*$/, "")
+    .replace(/\/\*.*?\*\//g, "")
+    .replace(/\bsizes=(["'])[^"']*\1/g, "sizes=…")
 }
 
 /**

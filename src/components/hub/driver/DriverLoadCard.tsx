@@ -19,7 +19,11 @@ import {
   driverStopTimestamp, driverUploadDocument, driverVerifyPickup,
 } from "@/app/hub/_actions/driver"
 import { openThread } from "@/app/hub/_actions/messages"
+import { BottomSheet } from "@/components/hub/BottomSheet"
 import { runOrQueue, type PendingIntent } from "@/components/hub/driver/offline-queue"
+import {
+  btnDriverPrimaryCls, btnDriverSecondaryCls, fieldDarkCls, fieldDarkTextareaCls,
+} from "@/components/hub/ui"
 import { FACILITY_NOTE_TAGS, fmtCentsExact, type Stop } from "@/lib/hub/types"
 
 interface LoadForDriver {
@@ -51,6 +55,16 @@ const STATUS_BANNER: Record<string, string> = {
   in_transit: "On the road",
   delivered: "Delivered — send the POD",
 }
+
+/**
+ * Outline action tinted with the carrier's accent (acknowledge, camera).
+ * Inline color-mix on purpose: Tailwind drops `bg-<var>/NN` on CSS-var colours
+ * (AGENTS.md), and the class-level `--driver-accent` fill is the PRIMARY rung.
+ */
+const ACCENT_OUTLINE_STYLE = {
+  borderColor: "color-mix(in srgb, var(--driver-accent) 50%, transparent)",
+  backgroundColor: "color-mix(in srgb, var(--driver-accent) 12%, transparent)",
+} as const
 
 function fmtAppt(start: string | null, end: string | null, fcfs: boolean): string {
   if (fcfs) return "First come, first served"
@@ -197,23 +211,23 @@ export function DriverLoadCard({
   const hasPod = (load.doc_kinds ?? []).includes("pod")
 
   return (
-    <section className="rounded-2xl border border-white/10 bg-navy-800/80 overflow-hidden">
-      {/* Banner */}
-      <div className="flex items-center justify-between gap-2 border-b border-white/10 bg-white/[0.03] px-4 py-3">
-        <div>
-          <p className="text-[11px] font-bold uppercase tracking-wider text-[color:var(--driver-accent)]">{STATUS_BANNER[load.status] ?? load.status}</p>
-          <p className="font-semibold text-lg text-white">{load.reference}</p>
+    <section className="driver-card overflow-hidden">
+      {/* Banner — the glance tier: what state the run is in, then which run. */}
+      <div className="flex items-center justify-between gap-3 border-b border-driver-border px-4 py-3">
+        <div className="min-w-0">
+          <p className="text-[20px] font-semibold leading-tight text-white">{STATUS_BANNER[load.status] ?? load.status}</p>
+          <p className="mt-0.5 font-mono text-[13px] tabular-nums text-steel-300">{load.reference}</p>
         </div>
         <button
           onClick={message}
           aria-label="Message dispatch about this load"
-          className="flex h-11 w-11 items-center justify-center rounded-xl border border-white/15 text-steel-200 hover:bg-white/5"
+          className="flex h-12 w-12 shrink-0 items-center justify-center rounded-control border border-white/15 text-steel-200 hover:bg-white/10"
         >
           <MessageSquarePlus className="h-5 w-5" />
         </button>
       </div>
 
-      <div className="p-4 space-y-4">
+      <div className="space-y-4 p-4">
         {/* What you're hauling */}
         <p className="text-body-sm text-steel-200">
           {load.commodity ?? "Freight"} · {load.equipment.replace("_", " ")}
@@ -225,18 +239,18 @@ export function DriverLoadCard({
             number the office would actually pay — and it is the DRIVER's pay,
             never the rate the load billed for. */}
         {pay ? (
-          <p className="flex flex-wrap items-baseline gap-x-2 rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-steel-400">
+          <p className="driver-card driver-card--well flex flex-wrap items-baseline gap-x-2 px-3 py-2">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-steel-300">
               This run pays you
             </span>
-            <span className="font-display text-lg font-extrabold text-[color:var(--driver-accent)]">
+            <span className="font-mono text-xl font-semibold tabular-nums text-[color:var(--driver-accent)]">
               {fmtCentsExact(pay.cents)}
             </span>
-            {pay.label ? <span className="text-body-xs text-steel-400">{pay.label}</span> : null}
+            {pay.label ? <span className="text-[13px] text-steel-300">{pay.label}</span> : null}
           </p>
         ) : null}
         {load.notes ? (
-          <p className="rounded-xl bg-white/[0.04] border border-white/10 px-3 py-2 text-body-sm text-steel-200">
+          <p className="driver-card driver-card--well px-3 py-2 text-body-sm text-steel-200">
             Dispatch notes: {load.notes}
           </p>
         ) : null}
@@ -246,11 +260,8 @@ export function DriverLoadCard({
           <button
             onClick={() => run({ kind: "ack", payload: { loadId: load.id } }, () => driverAcknowledgeDispatch(load.id), "Dispatch confirmed — drive safe")}
             disabled={pending}
-            className="flex w-full min-h-[52px] items-center justify-center gap-2 rounded-xl border font-display text-sm font-bold uppercase tracking-[0.08em] text-[color:var(--driver-accent)] hover:bg-white/5 disabled:opacity-60"
-            style={{
-              borderColor: "color-mix(in srgb, var(--driver-accent) 50%, transparent)",
-              backgroundColor: "color-mix(in srgb, var(--driver-accent) 15%, transparent)",
-            }}
+            className={cn(btnDriverSecondaryCls, "text-[color:var(--driver-accent)]")}
+            style={ACCENT_OUTLINE_STYLE}
           >
             <Check className="h-5 w-5" /> Got it — confirm this dispatch
           </button>
@@ -267,35 +278,35 @@ export function DriverLoadCard({
               [stop.address, stop.city, stop.state, stop.zip].filter(Boolean).join(", ")
             )}`
             return (
-              <li key={stop.id} className={cn("rounded-xl border p-3", done ? "border-white/10 bg-white/[0.02] opacity-70" : "border-white/10 bg-white/[0.04]")}>
-                <div className="flex items-start justify-between gap-2">
+              <li key={stop.id} className={cn("driver-card driver-card--well p-3", done && "opacity-70")}>
+                <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <p className="text-[11px] font-bold uppercase tracking-wider text-steel-400">
+                    <p className="text-[11px] font-bold uppercase tracking-wider text-steel-300">
                       {stop.type === "pickup" ? "Pick up" : "Deliver"}
                     </p>
-                    <p className="font-semibold text-white">
+                    <p className="text-xl font-semibold leading-snug text-white">
                       {stop.facility || `${stop.city}, ${stop.state}`}
                     </p>
-                    <p className="text-body-xs text-steel-400">
+                    <p className="text-[13px] text-steel-300">
                       {stop.city}, {stop.state}
-                      {stop.pickup_number ? ` · PU# ${stop.pickup_number}` : ""}
-                      {stop.po_number ? ` · PO# ${stop.po_number}` : ""}
+                      {stop.pickup_number ? <> · PU# <span className="font-mono tabular-nums">{stop.pickup_number}</span></> : null}
+                      {stop.po_number ? <> · PO# <span className="font-mono tabular-nums">{stop.po_number}</span></> : null}
                     </p>
-                    <p className="mt-1 flex items-center gap-1 text-body-xs text-steel-200">
-                      <Clock className="h-3.5 w-3.5 text-[color:var(--driver-accent)]" /> {fmtAppt(stop.appt_start, stop.appt_end, stop.fcfs)}
+                    <p className="mt-1 flex items-center gap-1.5 text-[17px] text-steel-200">
+                      <Clock className="h-4 w-4 shrink-0 text-[color:var(--driver-accent)]" /> {fmtAppt(stop.appt_start, stop.appt_end, stop.fcfs)}
                     </p>
                     {slow ? (
-                      <p className="mt-1 inline-flex items-center gap-1 rounded-full border border-orange-300/50 bg-orange/10 px-2 py-0.5 text-[11px] font-bold text-orange-300">
+                      <p className="mt-1.5 inline-flex items-center gap-1 rounded-full border border-orange-300/50 bg-orange/10 px-2.5 py-1 text-[13px] font-semibold text-orange-300">
                         Heads up: usually slow here (~{Math.round((stop.facility_avg_dwell ?? 0) / 60 * 10) / 10}h at the dock)
                       </p>
                     ) : null}
-                    {stop.notes ? <p className="mt-1 text-body-xs text-steel-400">{stop.notes}</p> : null}
+                    {stop.notes ? <p className="mt-1 text-[13px] text-steel-300">{stop.notes}</p> : null}
                     {(stop.facility_notes ?? []).length > 0 ? (
-                      <div className="mt-1.5 space-y-1 rounded-lg border border-white/10 bg-white/[0.03] p-2">
-                        <p className="text-[10px] font-bold uppercase tracking-wider text-[color:var(--driver-accent)]">Driver tips</p>
+                      <div className="mt-2 space-y-1 rounded-control border border-white/10 bg-white/[0.03] p-2.5">
+                        <p className="text-[11px] font-bold uppercase tracking-wider text-[color:var(--driver-accent)]">Driver tips</p>
                         {(stop.facility_notes ?? []).map((note, i) => (
-                          <p key={i} className="text-body-xs text-steel-200">
-                            “{note.body}”{note.author ? <span className="text-steel-400"> — {note.author}</span> : null}
+                          <p key={i} className="text-[13px] text-steel-200">
+                            “{note.body}”{note.author ? <span className="text-steel-300"> — {note.author}</span> : null}
                           </p>
                         ))}
                       </div>
@@ -306,14 +317,14 @@ export function DriverLoadCard({
                     target="_blank"
                     rel="noreferrer"
                     aria-label="Navigate"
-                    className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-white/15 text-steel-200 hover:bg-white/5"
+                    className="flex h-12 w-12 shrink-0 items-center justify-center rounded-control border border-white/15 text-steel-200 hover:bg-white/10"
                   >
                     <Navigation className="h-5 w-5" />
                   </a>
                 </div>
 
                 {/* Arrive / depart taps */}
-                <div className="mt-2 flex gap-2">
+                <div className="mt-3 flex gap-3">
                   {canArrive ? (
                     <button
                       onClick={() => {
@@ -325,9 +336,9 @@ export function DriverLoadCard({
                         )
                       }}
                       disabled={pending}
-                      className="flex flex-1 min-h-[48px] items-center justify-center gap-2 rounded-control bg-accent font-display text-sm font-bold uppercase tracking-[0.06em] text-accent-fg hover:bg-accent-hover disabled:opacity-60"
+                      className={cn(btnDriverPrimaryCls, "flex-1")}
                     >
-                      <MapPin className="h-4 w-4" /> I&apos;m here
+                      <MapPin className="h-5 w-5" /> I&apos;m here
                     </button>
                   ) : null}
                   {canDepart ? (
@@ -341,14 +352,14 @@ export function DriverLoadCard({
                         )
                       }}
                       disabled={pending}
-                      className="flex flex-1 min-h-[48px] items-center justify-center gap-2 rounded-control bg-accent font-display text-sm font-bold uppercase tracking-[0.06em] text-accent-fg hover:bg-accent-hover disabled:opacity-60"
+                      className={cn(btnDriverPrimaryCls, "flex-1")}
                     >
-                      <ChevronRight className="h-4 w-4" /> Leaving now
+                      <ChevronRight className="h-5 w-5" /> Leaving now
                     </button>
                   ) : null}
                   {done ? (
-                    <p className="flex items-center gap-1.5 text-body-xs text-steel-400">
-                      <Check className="h-3.5 w-3.5 text-[color:var(--driver-accent)]" />
+                    <p className="flex min-h-[44px] items-center gap-1.5 text-[13px] text-steel-300">
+                      <Check className="h-4 w-4 text-[color:var(--driver-accent)]" />
                       In {new Date(stop.arrived_at!).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })},
                       out {new Date(stop.departed_at!).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}
                     </p>
@@ -359,8 +370,8 @@ export function DriverLoadCard({
                     the truck at the dock proves it is the truck that was dispatched. */}
                 {stop.type === "pickup" && stop.arrived_at && !stop.departed_at &&
                  load.pickup_verification !== "verified" && verifiedHere !== stop.id ? (
-                  <div className="mt-2 rounded-xl border border-white/10 bg-white/[0.03] p-3" data-testid="verify-pickup">
-                    <p className="text-[11px] font-bold uppercase tracking-wider text-steel-400">Verify this pickup</p>
+                  <div className="driver-card driver-card--well mt-2 rounded-control p-3" data-testid="verify-pickup">
+                    <p className="text-[11px] font-bold uppercase tracking-wider text-steel-300">Verify this pickup</p>
                     <p className="mt-0.5 text-body-xs text-steel-300">
                       Snap the truck at the dock. Proves to the shipper and the broker it was us.
                     </p>
@@ -372,11 +383,8 @@ export function DriverLoadCard({
                       }}
                       disabled={pending}
                       data-testid="verify-pickup-button"
-                      className="mt-2 flex w-full min-h-[48px] items-center justify-center gap-2 rounded-xl border font-display text-sm font-bold uppercase tracking-[0.06em] text-[color:var(--driver-accent)] hover:bg-white/5 disabled:opacity-60"
-                      style={{
-                        borderColor: "color-mix(in srgb, var(--driver-accent) 50%, transparent)",
-                        backgroundColor: "color-mix(in srgb, var(--driver-accent) 10%, transparent)",
-                      }}
+                      className={cn(btnDriverSecondaryCls, "mt-2 text-[color:var(--driver-accent)]")}
+                      style={ACCENT_OUTLINE_STYLE}
                     >
                       <ShieldCheck className="h-5 w-5 shrink-0" /> Snap the truck
                     </button>
@@ -392,9 +400,9 @@ export function DriverLoadCard({
                 {done && stop.facility_id ? (
                   <button
                     onClick={() => setNotingStop(stop)}
-                    className="mt-2 flex items-center gap-1.5 text-body-xs font-semibold text-[color:var(--driver-accent)] hover:opacity-80 min-h-[44px]"
+                    className="mt-1 flex min-h-[44px] items-center gap-1.5 text-[13px] font-semibold text-[color:var(--driver-accent)] hover:opacity-80"
                   >
-                    <MessageSquarePlus className="h-3.5 w-3.5" />
+                    <MessageSquarePlus className="h-4 w-4" />
                     Leave a tip about this place for other drivers
                   </button>
                 ) : null}
@@ -408,22 +416,23 @@ export function DriverLoadCard({
           <button
             onClick={() => run({ kind: "status", payload: { loadId: load.id } }, () => driverAdvanceStatus(load.id), "Status updated — dispatch can see it")}
             disabled={pending}
-            className="flex w-full min-h-[56px] items-center justify-center gap-2 rounded-control bg-accent font-display text-base font-bold uppercase tracking-[0.08em] text-accent-fg hover:bg-accent-hover disabled:opacity-60"
+            className={cn(btnDriverPrimaryCls, "min-h-[64px] text-lg")}
           >
             {pending ? <Loader2 className="h-5 w-5 animate-spin" /> : <ChevronRight className="h-5 w-5" />}
             {advance}
           </button>
         ) : null}
 
-        {/* Camera upload */}
-        <div className="rounded-xl border border-white/10 bg-white/[0.03] p-3">
-          <p className="text-[11px] font-bold uppercase tracking-wider text-steel-400 mb-2">
+        {/* Camera upload. The OS&D label stays a direct child of this div: the
+            POD smokes walk from that label to its parent to find the file input. */}
+        <div className="driver-card driver-card--well p-3">
+          <p className="mb-2 text-[11px] font-bold uppercase tracking-wider text-steel-300">
             Send paperwork {load.status === "delivered" && !hasPod ? "— the office needs the POD to bill this load" : ""}
           </p>
-          <div className="flex gap-2">
+          <div className="flex flex-col gap-3">
             <select
               aria-label="What is the photo"
-              className="min-h-[48px] w-[132px] shrink-0 truncate rounded-xl border border-white/15 bg-navy-600 px-3 text-sm font-semibold text-white"
+              className={cn(fieldDarkCls, "h-12 md:h-12 font-semibold")}
               value={uploadKind}
               onChange={(e) => setUploadKind(e.target.value as "pod" | "receipt" | "bol")}
             >
@@ -434,11 +443,8 @@ export function DriverLoadCard({
             <button
               onClick={() => fileRef.current?.click()}
               disabled={pending}
-              className="flex flex-1 min-w-0 min-h-[48px] items-center justify-center gap-2 whitespace-nowrap rounded-xl border font-display text-sm font-bold uppercase tracking-[0.06em] text-[color:var(--driver-accent)] hover:bg-white/5 disabled:opacity-60"
-              style={{
-                borderColor: "color-mix(in srgb, var(--driver-accent) 50%, transparent)",
-                backgroundColor: "color-mix(in srgb, var(--driver-accent) 10%, transparent)",
-              }}
+              className={cn(btnDriverSecondaryCls, "text-[color:var(--driver-accent)]")}
+              style={ACCENT_OUTLINE_STYLE}
             >
               <Camera className="h-5 w-5 shrink-0" /> Snap & send
             </button>
@@ -463,16 +469,16 @@ export function DriverLoadCard({
             />
           </div>
           {uploadKind === "pod" ? (
-            <label className="mt-2 flex items-start gap-2.5 cursor-pointer min-h-[44px]">
+            <label className="mt-3 flex min-h-[44px] cursor-pointer items-start gap-3">
               <input
                 type="checkbox"
                 checked={osdFlag}
                 onChange={(e) => setOsdFlag(e.target.checked)}
-                className="mt-0.5 h-5 w-5 rounded border-white/15 accent-orange"
+                className="mt-0.5 h-5 w-5 shrink-0 accent-orange"
               />
               <span>
                 <span className="block text-sm font-semibold text-white">Exceptions noted on the POD (OS&D)</span>
-                <span className="block text-body-xs text-steel-400">
+                <span className="block text-[13px] text-steel-300">
                   Shortages, damage, overages — checking this starts the claim file right now.
                 </span>
               </span>
@@ -483,7 +489,7 @@ export function DriverLoadCard({
               aria-label="Receipt amount"
               placeholder="Amount on the receipt ($) — makes it a reimbursement"
               inputMode="decimal"
-              className="mt-2 w-full min-h-[48px] rounded-xl border border-white/15 bg-white/5 px-3 text-sm text-white placeholder:text-steel-400"
+              className={cn(fieldDarkCls, "mt-3 h-12 md:h-12")}
               value={receiptAmount}
               onChange={(e) => setReceiptAmount(e.target.value)}
             />
@@ -538,60 +544,58 @@ function FacilityNoteSheet({
     setTags((current) => (current.includes(tag) ? current.filter((t) => t !== tag) : [...current, tag]))
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60" onClick={onClose}>
-      <div
-        className="w-full max-w-lg rounded-t-2xl border-t border-white/10 bg-navy-600 p-4 pb-[max(16px,env(safe-area-inset-bottom))]"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <p className="text-[13.5px] font-semibold text-white">
-          How was {stop.facility || `${stop.city}, ${stop.state}`}?
-        </p>
-        <p className="text-body-xs text-steel-400 mb-3">Tap what applies — that&apos;s all it takes.</p>
-        <div className="flex flex-wrap gap-2 mb-3">
-          {FACILITY_NOTE_TAGS.map((tag) => (
-            <button
-              key={tag}
-              onClick={() => toggle(tag)}
-              className={cn(
-                "rounded-full border px-3 py-2 text-sm font-semibold capitalize min-h-[44px]",
-                tags.includes(tag) ? "text-[color:var(--driver-accent)]" : "border-white/15 bg-white/5 text-steel-200"
-              )}
-              style={
-                tags.includes(tag)
-                  ? {
-                      borderColor: "color-mix(in srgb, var(--driver-accent) 60%, transparent)",
-                      backgroundColor: "color-mix(in srgb, var(--driver-accent) 20%, transparent)",
-                    }
-                  : undefined
-              }
-            >
-              {tag}
-            </button>
-          ))}
-        </div>
-        <textarea
-          rows={2}
-          placeholder="Anything else? (optional)"
-          className="w-full rounded-xl border border-white/15 bg-white/5 px-3 py-2.5 text-sm text-white placeholder:text-steel-400"
-          value={body}
-          onChange={(e) => setBody(e.target.value)}
-        />
-        <div className="mt-3 flex gap-2">
+    <BottomSheet
+      open
+      onOpenChange={(next) => {
+        if (!next) onClose()
+      }}
+      title={`How was ${stop.facility || `${stop.city}, ${stop.state}`}?`}
+      description="Tap what applies — that's all it takes."
+      variant="dark"
+    >
+      <div className="mb-4 flex flex-wrap gap-3">
+        {FACILITY_NOTE_TAGS.map((tag) => (
           <button
-            onClick={onClose}
-            className="flex-1 min-h-[48px] rounded-xl border border-white/15 font-display text-sm font-bold uppercase tracking-[0.06em] text-steel-200 hover:bg-white/5"
+            key={tag}
+            type="button"
+            onClick={() => toggle(tag)}
+            aria-pressed={tags.includes(tag)}
+            className={cn(
+              "min-h-[44px] rounded-full border px-4 text-sm font-semibold capitalize",
+              tags.includes(tag) ? "text-[color:var(--driver-accent)]" : "border-white/15 bg-white/5 text-steel-200"
+            )}
+            style={
+              tags.includes(tag)
+                ? {
+                    borderColor: "color-mix(in srgb, var(--driver-accent) 60%, transparent)",
+                    backgroundColor: "color-mix(in srgb, var(--driver-accent) 20%, transparent)",
+                  }
+                : undefined
+            }
           >
-            Skip
+            {tag}
           </button>
-          <button
-            onClick={() => onSave(body, tags)}
-            disabled={pending || (tags.length === 0 && !body.trim())}
-            className="flex-1 min-h-[48px] rounded-control bg-accent font-display text-sm font-bold uppercase tracking-[0.06em] text-accent-fg hover:bg-accent-hover disabled:opacity-50"
-          >
-            Save tip
-          </button>
-        </div>
+        ))}
       </div>
-    </div>
+      <textarea
+        placeholder="Anything else? (optional)"
+        className={fieldDarkTextareaCls}
+        value={body}
+        onChange={(e) => setBody(e.target.value)}
+      />
+      <div className="mt-4 flex gap-3">
+        <button type="button" onClick={onClose} className={cn(btnDriverSecondaryCls, "flex-1")}>
+          Skip
+        </button>
+        <button
+          type="button"
+          onClick={() => onSave(body, tags)}
+          disabled={pending || (tags.length === 0 && !body.trim())}
+          className={cn(btnDriverPrimaryCls, "flex-1")}
+        >
+          Save tip
+        </button>
+      </div>
+    </BottomSheet>
   )
 }

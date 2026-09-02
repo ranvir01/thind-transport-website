@@ -54,8 +54,8 @@ const AUDIENCES: Audience[] = [
 
 export function AudienceSelector() {
   return (
-    <section aria-labelledby="audience-heading" className="bg-paper py-12 md:py-16">
-      <div className="container px-4">
+    <section aria-labelledby="audience-heading" className="bg-paper py-section-tight md:py-section">
+      <div className="container">
         <Reveal className="text-center">
           <h2
             id="audience-heading"
@@ -68,53 +68,59 @@ export function AudienceSelector() {
           </p>
         </Reveal>
 
-        <ul className="mx-auto mt-8 grid max-w-5xl list-none gap-4 md:grid-cols-3">
+        <ul className="mx-auto mt-6 grid max-w-5xl list-none gap-3 md:grid-cols-3 md:gap-4">
           {AUDIENCES.map((a, i) => (
             <Reveal as="li" key={a.href} index={i}>
               <Link
                 href={a.href}
                 className={[
-                  // min-h keeps every card a comfortable target and stops the
-                  // three from jittering in height as copy wraps.
-                  "group flex h-full min-h-[44px] flex-col rounded-m-3 border p-6",
+                  // Phone width: one row per door (icon · title + promise ·
+                  // arrow) so all three stay on one screen; cards from md up.
+                  "group flex h-full min-h-[44px] items-center gap-4 rounded-m-3 border p-4 md:flex-col md:items-stretch md:p-5",
                   "transition-[transform,box-shadow,border-color] duration-base ease-entrance",
                   "hover:-translate-y-0.5 hover:shadow-m-e3",
-                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-signal focus-visible:ring-offset-2 focus-visible:ring-offset-paper",
                   // Border-led surfaces (DIRECTION.md §10). Never bg-white here:
                   // .brand-page-shell force-darkens it to navy on this page.
-                  // Tailwind silently drops an /NN alpha modifier on a var-backed
-                  // color token (AGENTS.md standing rule) — signal/ink are plain
-                  // var(--m-x) values, so opacity is spelled out as an arbitrary
-                  // rgba() using the same hex the token resolves to.
+                  // signal/ink are rgb(var(--m-*-rgb) / <alpha-value>) tokens, so
+                  // the /NN alpha modifier is real here (AGENTS.md) — no hand-typed
+                  // rgba() that drifts the day the hex changes.
                   a.primary
-                    ? "border-[rgba(196,40,32,0.4)] bg-[rgba(196,40,32,0.04)] hover:border-signal"
-                    : "border-[rgba(20,22,24,0.2)] bg-paper hover:border-[rgba(20,22,24,0.4)]",
+                    ? "border-signal/40 bg-signal/[0.04] hover:border-signal"
+                    : "border-ink/20 bg-paper hover:border-ink/40",
                 ].join(" ")}
               >
                 <a.icon
-                  className={`h-6 w-6 ${a.primary ? "text-signal" : "text-ink-3"}`}
+                  className={`h-6 w-6 shrink-0 ${a.primary ? "text-signal" : "text-ink-3"}`}
                   aria-hidden
                 />
-                <span className="mt-4 font-display text-m-h4 font-bold text-ink">
-                  {a.who}
+                <span className="flex min-w-0 flex-1 flex-col md:mt-4">
+                  <span className="font-display text-m-lede font-bold text-ink md:text-m-h4">
+                    {a.who}
+                  </span>
+                  {/* ink-2, not ink-3: ink-3 is tuned to clear AA against paper
+                      with almost no margin (4.66:1), and the primary card's red
+                      wash darkens the ground just enough to drop the label to
+                      4.39:1. The eyebrow is already distinguished by case,
+                      weight and tracking, so it loses nothing by being darker. */}
+                  <span className="mt-0.5 font-display text-m-micro font-bold uppercase tracking-[0.15em] text-ink-2 md:mt-1">
+                    {a.label}
+                  </span>
+                  <span className="mt-1 text-m-body text-ink-2 md:mt-3 md:flex-1">{a.promise}</span>
+                  <span
+                    className={`mt-4 hidden items-center gap-1.5 text-m-body font-semibold md:inline-flex ${
+                      a.primary ? "text-signal" : "text-ink"
+                    }`}
+                  >
+                    Continue
+                    <ArrowRight className="h-4 w-4 transition-transform duration-base ease-entrance group-hover:translate-x-1" />
+                  </span>
                 </span>
-                {/* ink-2, not ink-3: ink-3 is tuned to clear AA against paper
-                    with almost no margin (4.66:1), and the primary card's red
-                    wash darkens the ground just enough to drop the label to
-                    4.39:1. The eyebrow is already distinguished by case,
-                    weight and tracking, so it loses nothing by being darker. */}
-                <span className="mt-1 font-display text-m-micro font-bold uppercase tracking-[0.15em] text-ink-2">
-                  {a.label}
-                </span>
-                <span className="mt-3 flex-1 text-m-body text-ink-2">{a.promise}</span>
-                <span
-                  className={`mt-4 inline-flex items-center gap-1.5 text-m-body font-semibold ${
-                    a.primary ? "text-signal" : "text-ink"
+                <ArrowRight
+                  className={`h-5 w-5 shrink-0 transition-transform duration-base ease-entrance group-hover:translate-x-1 md:hidden ${
+                    a.primary ? "text-signal" : "text-ink-3"
                   }`}
-                >
-                  Continue
-                  <ArrowRight className="h-4 w-4 transition-transform duration-base ease-entrance group-hover:translate-x-1" />
-                </span>
+                  aria-hidden
+                />
               </Link>
             </Reveal>
           ))}

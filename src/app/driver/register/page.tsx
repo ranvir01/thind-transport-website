@@ -151,7 +151,7 @@ function RegisterForm() {
               />
               <p className="text-xs text-steel-400">
                 Haven&apos;t applied yet?{" "}
-                <Link href="/apply" className="text-orange hover:underline">
+                <Link href="/apply" className="text-orange-400 hover:text-orange-300 hover:underline">
                   Apply first
                 </Link>{" "}
                 — a couple of fields.
@@ -199,14 +199,14 @@ function RegisterForm() {
             </Button>
           </form>
 
-          <div className="mt-4 text-center text-sm">
+          <div className="mt-2 text-center text-sm">
             Already have an account?{" "}
-            <Link href="/driver/login" className="text-orange hover:underline">
+            <Link href="/driver/login" className="inline-block py-3 text-orange-400 hover:text-orange-300 hover:underline">
               Sign in
             </Link>
           </div>
 
-          <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+          <div className="mt-4 p-4 bg-blue-50 rounded-fleet border border-blue-200">
             <div className="flex gap-2">
               <AlertCircle className="h-5 w-5 text-blue-600 flex-shrink-0" />
               <div className="text-xs text-blue-900">

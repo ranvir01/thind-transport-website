@@ -6,8 +6,9 @@
  * as a pale mint/amber/red chip floating on a dark screen instead of the
  * fixed dark palette every other driver surface uses (AGENTS.md: no
  * mode-dependent tokens on forced-dark surfaces). Same day-math, same three
- * tones, fixed colors: green like DvirForm's OK toggle, orange like
- * OfflineSync's offline banner, red for an actually expired doc.
+ * tones, fixed colors: green like DvirForm's OK toggle, orange-300 like
+ * OfflineSync's offline strip (the brand red itself is ~3.7:1 on these
+ * surfaces and fails AA as text), red for an actually expired doc.
  */
 import { cn } from "@/lib/utils"
 
@@ -25,24 +26,23 @@ export function expiryTone(date: string, now: number): { days: number; tone: Exp
   return { days, tone }
 }
 
+const PILL_CLS = "inline-flex items-center whitespace-nowrap rounded-pill px-2.5 py-[3px] text-[11.5px] font-semibold"
+
 const TONE_CLS: Record<ExpiryTone, string> = {
   bad: "bg-red-500/20 text-red-300",
-  warn: "border border-orange/40 bg-orange/15 text-orange",
+  warn: "border border-orange-500/40 bg-orange-500/15 text-orange-300",
   ok: "bg-green-500/25 text-green-300",
 }
 
 export function DriverExpiryPill({ date }: { date: string | null | undefined }) {
-  if (!date) return <span className="text-sm text-steel-400">—</span>
+  // A real pill, not a bare "—" (DESIGN.md): the office has not recorded a
+  // date, which is itself something the driver may want to chase.
+  if (!date) return <span className={cn(PILL_CLS, "bg-white/[0.06] text-steel-300")}>No date</span>
   // eslint-disable-next-line react-hooks/purity -- server component; per-request "now" is intended
   const { days, tone } = expiryTone(date, Date.now())
   const label = new Date(date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
   return (
-    <span
-      className={cn(
-        "inline-flex items-center whitespace-nowrap rounded-pill px-2.5 py-[3px] text-[11.5px] font-semibold",
-        TONE_CLS[tone]
-      )}
-    >
+    <span className={cn(PILL_CLS, TONE_CLS[tone])}>
       {label}
       {tone === "bad" ? " · expired" : tone === "warn" ? ` · ${days}d` : ""}
     </span>

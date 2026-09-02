@@ -6,7 +6,7 @@ import { toast } from "sonner"
 import { CalendarPlus, Loader2 } from "lucide-react"
 import { driverCancelTimeOff, driverRequestTimeOff } from "@/app/hub/_actions/driver"
 import { isOfflineError, runOrQueue } from "@/components/hub/driver/offline-queue"
-import { fieldDarkCls, labelDarkCls } from "@/components/hub/ui"
+import { btnDriverPrimaryCls, fieldDarkCls, labelDarkCls } from "@/components/hub/ui"
 import { TIME_OFF_KINDS, TIME_OFF_KIND_LABELS } from "@/lib/hub/types"
 
 export function TimeOffForm() {
@@ -35,7 +35,7 @@ export function TimeOffForm() {
   }
 
   return (
-    <form onSubmit={submit} className="rounded-2xl border border-white/10 bg-navy-800/80 p-4 space-y-3">
+    <form onSubmit={submit} className="driver-card space-y-3 p-4">
       <div className="grid grid-cols-2 gap-3">
         <div>
           <label htmlFor="to-start" className={labelDarkCls}>First day off</label>
@@ -75,9 +75,9 @@ export function TimeOffForm() {
       </div>
       <button
         type="submit" disabled={pending}
-        className="flex w-full min-h-[52px] items-center justify-center gap-2 rounded-control bg-accent font-semibold text-sm text-accent-fg hover:bg-accent-hover disabled:opacity-60"
+        className={btnDriverPrimaryCls}
       >
-        {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <CalendarPlus className="h-4 w-4" />}
+        {pending ? <Loader2 className="h-5 w-5 animate-spin" /> : <CalendarPlus className="h-5 w-5" />}
         Ask for these days
       </button>
     </form>
@@ -109,7 +109,7 @@ export function CancelTimeOffButton({ id }: { id: string }) {
         })
       }
       disabled={pending}
-      className="mt-2 text-body-xs font-semibold text-steel-400 hover:text-white min-h-[44px]"
+      className="mt-2 min-h-[44px] text-[13px] font-semibold text-steel-300 hover:text-white"
     >
       Cancel this request
     </button>

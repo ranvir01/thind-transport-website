@@ -5,8 +5,10 @@ import { useRef, useTransition } from "react"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { Camera, FileQuestion, Loader2 } from "lucide-react"
+import { cn } from "@/lib/utils"
 import { driverUploadDocument } from "@/app/hub/_actions/driver"
 import { runOrQueue } from "@/components/hub/driver/offline-queue"
+import { btnDriverPrimaryCls } from "@/components/hub/ui"
 import { DOCUMENT_KIND_LABELS, type DocumentKind } from "@/lib/hub/types"
 
 export function DocRequestCard({
@@ -58,11 +60,13 @@ export function DocRequestCard({
   }
 
   return (
-    <section className="rounded-2xl border border-orange/30 bg-orange/[0.06] p-4">
+    // Needs-attention tint: a plain ladder radius rather than .driver-card, whose
+    // own border/background would out-specify the orange utilities.
+    <section className="rounded-card border border-orange/30 bg-orange/[0.06] p-4">
       <p className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-orange-300">
         <FileQuestion className="h-4 w-4" /> The office needs something
       </p>
-      <p className="mt-1 font-semibold text-white">
+      <p className="mt-1 text-[17px] font-semibold text-white">
         {kindLabel}
         {request.load_reference ? ` for ${request.load_reference}` : ""}
       </p>
@@ -72,9 +76,9 @@ export function DocRequestCard({
           <button
             onClick={() => fileRef.current?.click()}
             disabled={pending}
-            className="mt-3 flex w-full min-h-[48px] items-center justify-center gap-2 rounded-control bg-accent font-display text-sm font-bold uppercase tracking-[0.06em] text-accent-fg hover:bg-accent-hover disabled:opacity-60"
+            className={cn(btnDriverPrimaryCls, "mt-3")}
           >
-            {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4" />}
+            {pending ? <Loader2 className="h-5 w-5 animate-spin" /> : <Camera className="h-5 w-5" />}
             Snap & send it
           </button>
           <input
@@ -87,7 +91,7 @@ export function DocRequestCard({
           />
         </>
       ) : (
-        <p className="mt-2 text-body-xs text-steel-400">
+        <p className="mt-2 text-[13px] text-steel-300">
           Bring this to the office or send it in your messages.
         </p>
       )}

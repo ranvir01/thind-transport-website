@@ -55,7 +55,7 @@ export default function FreightClassCalculatorPage() {
       <PageBreadcrumb pageName="Freight Class Calculator" category="Company" />
 
       {/* Hero */}
-      <div className="bg-[#060607] text-white">
+      <div className="bg-navy-950 text-white">
         <div className="container px-4 py-14 md:py-20">
           <div className="max-w-3xl">
             <span className="fleet-badge fleet-badge-gold mb-5">Free tool · No signup</span>
@@ -124,7 +124,7 @@ export default function FreightClassCalculatorPage() {
       </div>
 
       {/* CTA */}
-      <div className="border-t border-gray-200 bg-[#060607] text-white">
+      <div className="border-t border-gray-200 bg-navy-950 text-white">
         <div className="container px-4 py-14 text-center">
           <h2 className="text-2xl md:text-3xl font-black mb-3">Got the class. Need the truck?</h2>
           <p className="text-white/80 max-w-2xl mx-auto mb-7">

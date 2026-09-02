@@ -70,6 +70,18 @@
     --m-asphalt: oklch(23.74% 0.0073 248.1);
     --m-cedar: #1e6b4f;
     --m-cedar: oklch(47.35% 0.0872 164.6);
+    /* Channel triples for Tailwind's <alpha-value> plumbing (tailwind.config.ts):
+       one declaration each — a custom property has no "fallback" second line. */
+    --m-paper-rgb: 246 247 247;
+    --m-ink-rgb: 20 22 24;
+    --m-ink-2-rgb: 78 82 87;
+    --m-ink-3-rgb: 107 112 117;
+    --m-signal-rgb: 196 40 32;
+    --m-signal-up-rgb: 236 90 80;
+    --m-asphalt-rgb: 28 31 34;
+    --m-cedar-rgb: 30 107 79;
+    /* The deepest black, named (was a raw #060607 in 12 files). */
+    --brand-bg-deep: #060607;
   }
 
   .dark {
@@ -93,6 +105,9 @@
     scroll-behavior: smooth;
     font-size: 16px;
     scroll-padding-bottom: 120px;
+    /* Opening the drawer locks body scroll; without a reserved gutter the whole
+       page shifts ~15px on desktop every time. */
+    scrollbar-gutter: stable;
   }
   
   body {
@@ -103,13 +118,19 @@
     background-attachment: fixed;
     color: var(--brand-copy-strong);
     font-family: var(--font-sans), system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    /* Source Sans 3 loads with display:optional, so the system fallback is
+       common; scale it to the web font's x-height so 68ch measures and 44px
+       targets computed against the web font hold. */
+    font-size-adjust: from-font;
     font-size: 1rem;
     line-height: 1.65;
     font-weight: 400;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     letter-spacing: 0;
-    overflow-x: hidden;
+    /* No overflow-x: hidden here any more: it hid real horizontal-overflow
+       bugs from `npm run design-qa` instead of fixing them. The gate now
+       measures the true document width. */
     min-height: 100vh;
   }
 
@@ -117,60 +138,58 @@
     /* cursor: none; - Removed for professional feel */
   }
   
-  /* Typography Hierarchy - Enhanced Heading Styles */
+  /* Headings: weight and colour hierarchy, sentence case. The old base layer
+     force-uppercased h1–h3 in the condensed face with hardcoded near-white
+     colours; every sentence-cased heading in the newer paper sections rendered
+     as CAPS, and light sections only worked because their headings happened to
+     sit in dark boxes. Caps are opt-in now (`font-display uppercase` at the
+     call site, or .brand-wordmark), colour follows the surrounding text, and
+     the fluid m-* scale (tailwind.config.ts) sets the size. */
   h1 {
     font-size: clamp(2.25rem, 5vw, 3.25rem);
     font-weight: 800;
-    color: #f4f6f8;
     font-family: var(--font-display), sans-serif;
     line-height: 1.05;
-    letter-spacing: 0.02em;
+    letter-spacing: -0.01em;
     text-wrap: balance;
-    text-transform: uppercase;
   }
-  
+
   h2 {
     font-size: clamp(1.75rem, 4vw, 2.5rem);
     font-weight: 700;
-    color: #eef2f6;
     font-family: var(--font-display), sans-serif;
     line-height: 1.15;
-    letter-spacing: 0.02em;
+    letter-spacing: -0.005em;
     text-wrap: balance;
-    text-transform: uppercase;
   }
-  
+
   h3 {
     font-size: clamp(1.375rem, 3vw, 1.75rem);
     font-weight: 700;
-    color: #e4e9ef;
     font-family: var(--font-display), sans-serif;
     line-height: 1.25;
-    letter-spacing: 0.015em;
-    text-transform: uppercase;
+    text-wrap: balance;
   }
-  
+
   h4 {
     font-size: clamp(1.125rem, 2.5vw, 1.375rem);
     font-weight: 600;
-    color: #d6dde6;
     font-family: var(--font-display), sans-serif;
     line-height: 1.35;
-    letter-spacing: 0.01em;
+    text-wrap: balance;
   }
-  
+
   h5 {
     font-size: 1.0625rem;
     font-weight: 600;
-    color: #d6dde6;
     font-family: var(--font-display), sans-serif;
     line-height: 1.4;
+    text-wrap: balance;
   }
-  
+
   h6 {
     font-size: 1rem;
     font-weight: 600;
-    color: #cdd5df;
     font-family: var(--font-sans), sans-serif;
     line-height: 1.45;
   }
@@ -203,6 +222,7 @@
     color: var(--brand-copy);
     line-height: 1.75;
     letter-spacing: 0.01em;
+    text-wrap: pretty;
   }
 
   /* Enhanced List Styles */
@@ -214,6 +234,7 @@
 
   li {
     margin-bottom: 0.75rem;
+    text-wrap: pretty;
   }
 
   /* Strong stays bold and INHERITS its context's color. A fixed light color
@@ -236,10 +257,7 @@
 }
 
 @layer components {
-  .container {
-    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
-  }
-  
+
   
   
   
@@ -337,12 +355,11 @@
   }
 
   /* Soft floating accent orbs for section backgrounds */
+  /* Retired: six 70px-blur blobs cost paint on throttled phones and read as
+     decoration. Kept as a no-op so the class can be removed from call sites
+     without a flag day. */
   .accent-orb {
-    position: absolute;
-    border-radius: 9999px;
-    filter: blur(70px);
-    pointer-events: none;
-    opacity: 0.5;
+    display: none;
   }
 
   .brand-page-shell .bg-white,
@@ -424,7 +441,10 @@
      /benefits and /resources rather than staying theoretical. */
   .brand-page-shell .text-orange-500,
   .brand-page-shell .text-orange-600,
-  .brand-page-shell .text-orange-700 {
+  .brand-page-shell .text-orange-700,
+  /* The bare `text-orange` (93 uses) was never in this list: #E0392F on the
+     #17181b panels is 4.10:1, below AA at the 12px eyebrows it labels. */
+  .brand-page-shell .text-orange {
     color: var(--brand-accent-strong) !important;
   }
 
@@ -934,6 +954,7 @@
 .hero-stagger > *:nth-child(4) { animation-delay: 0.21s; }
 .hero-stagger > *:nth-child(5) { animation-delay: 0.28s; }
 .hero-stagger > *:nth-child(6) { animation-delay: 0.35s; }
+.hero-stagger > *:nth-child(7) { animation-delay: 0.42s; }
 
 /* ---- HaulDesk planner (E1) ---- */
 /* Empty days are visually loud: a soft diagonal hatch begging for a load. */

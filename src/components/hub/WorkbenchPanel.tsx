@@ -47,9 +47,6 @@ function previewFor(r: WorkbenchResource): LinkPreview {
   )
 }
 
-const focusRing =
-  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)]"
-
 export function WorkbenchPanel() {
   const [framed, setFramed] = useState<WorkbenchResource | null>(null)
 
@@ -100,7 +97,7 @@ export function WorkbenchPanel() {
                     type="button"
                     onClick={() => openResource(r)}
                     title="Opens inside LoadOff"
-                    className={cn("block w-full rounded-control text-left", focusRing)}
+                    className={cn("block w-full rounded-control text-left")}
                   >
                     <LinkPreviewBody preview={previewFor(r)} density="row" />
                   </button>
@@ -115,7 +112,7 @@ export function WorkbenchPanel() {
                     type="button"
                     onClick={() => openResource(r)}
                     title="Opens on top of LoadOff"
-                    className={cn("block min-h-[44px] rounded-card text-left", focusRing)}
+                    className={cn("block min-h-[44px] rounded-card text-left")}
                   >
                     <LinkPreviewBody preview={previewFor(r)} density="card" className="h-full" />
                   </button>

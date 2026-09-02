@@ -2,6 +2,8 @@ import { formatHubDateShort } from "@/lib/hub/format-dates"
 import { requireDriverUser } from "@/lib/hub/session"
 import { listTimeOff } from "@/lib/hub/timeoff"
 import { TimeOffForm, CancelTimeOffButton } from "@/components/hub/driver/TimeOffForm"
+import { EmptyStateDark } from "@/components/hub/driver/EmptyStateDark"
+import { btnDriverSecondaryCls } from "@/components/hub/ui"
 import { TIME_OFF_KIND_LABELS } from "@/lib/hub/types"
 import { cn } from "@/lib/utils"
 
@@ -26,34 +28,42 @@ export default async function DriverTimeOffPage() {
 
   return (
     <div>
-      <h1 className="font-display text-xl font-extrabold uppercase tracking-wide text-white mb-1">Time off</h1>
+      <h1 className="mb-1 text-[22px] font-semibold text-white">Time off</h1>
       <p className="text-body-sm text-steel-300 mb-4">
         Ask for home time here — once it&apos;s approved, dispatch can&apos;t book you over it.
       </p>
 
       <TimeOffForm />
 
-      <h2 className="mt-6 mb-2 font-display text-base font-bold uppercase tracking-wide text-white">My requests</h2>
+      <h2 className="mt-6 mb-2 text-base font-semibold text-white">My requests</h2>
       {requests.length === 0 ? (
-        <p className="text-body-sm text-steel-300">Nothing yet.</p>
+        <EmptyStateDark
+          title="Nothing yet."
+          hint="Requests you send show up here with their status."
+          action={
+            <a href="#to-start" className={cn(btnDriverSecondaryCls, "w-auto px-6")}>
+              Ask for home time
+            </a>
+          }
+        />
       ) : (
-        <ul className="space-y-2">
+        <ul className="hub-stagger space-y-2">
           {requests.map((r) => {
             const status = STATUS_COPY[r.status]
             return (
-              <li key={r.id} className="rounded-2xl border border-white/10 bg-navy-800/80 p-4">
-                <div className="flex items-center justify-between gap-2">
+              <li key={r.id} className="driver-card p-4">
+                <div className="flex items-center justify-between gap-3">
                   <p className="font-semibold text-white">
                     {formatHubDateShort(r.start_date)} – {formatHubDateShort(r.end_date)}
                   </p>
                   <span
-                    className={cn("rounded-full border px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wider", status.cls)}
+                    className={cn("shrink-0 rounded-pill border px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide", status.cls)}
                     style={status.accent ? ACCENT_PILL_STYLE : undefined}
                   >
                     {status.label}
                   </span>
                 </div>
-                <p className="mt-0.5 text-body-xs text-steel-300">
+                <p className="mt-0.5 text-[13px] text-steel-300">
                   {TIME_OFF_KIND_LABELS[r.kind]}
                   {r.reason ? ` · ${r.reason}` : ""}
                 </p>

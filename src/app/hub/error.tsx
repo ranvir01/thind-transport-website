@@ -4,7 +4,13 @@ import { useEffect } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { RefreshCw } from "lucide-react"
-import { btnPrimaryCls, btnSecondaryCls, Panel } from "@/components/hub/ui"
+import {
+  btnDriverPrimaryCls,
+  btnDriverSecondaryCls,
+  btnPrimaryCls,
+  btnSecondaryCls,
+  Panel,
+} from "@/components/hub/ui"
 import { PRODUCT } from "@/lib/hub/product"
 
 type Surface = "office" | "driver" | "portal" | "login"
@@ -50,35 +56,32 @@ export default function HubError({
 
   if (isDark) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-navy px-4 py-12">
-        <div className="w-full max-w-md rounded-2xl border border-white/10 bg-navy-900/80 p-6 text-center">
-          <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-steel-400">
+      // This boundary sits ABOVE the driver/portal layouts, so neither has set
+      // the carrier's --driver-accent by the time it renders: give the primary
+      // button the unbranded app's gold so it is never a transparent fill.
+      <div
+        className="flex min-h-screen items-center justify-center bg-navy px-4 py-12"
+        style={{ "--driver-accent": "#F2A900" } as React.CSSProperties}
+      >
+        <section className="driver-card w-full max-w-md p-6 text-center">
+          <p className="text-[11px] font-bold uppercase tracking-[0.25em] text-steel-400">
             {PRODUCT.shortName}
           </p>
-          <h1 className="mt-2 font-display text-lg font-bold uppercase tracking-[0.06em] text-white">
-            Something went wrong
-          </h1>
+          <h1 className="mt-2 text-xl font-semibold text-white">Something went wrong</h1>
           <p className="mt-3 text-sm text-steel-300">{copy}</p>
           {error.digest ? (
-            <p className="mt-2 font-mono text-[10px] text-steel-500">Ref: {error.digest}</p>
+            <p className="mt-2 font-mono text-[12px] tabular-nums text-steel-300">Ref: {error.digest}</p>
           ) : null}
-          <div className="mt-6 flex flex-col gap-2">
-            <button
-              type="button"
-              onClick={() => reset()}
-              className="inline-flex min-h-[48px] items-center justify-center gap-2 rounded-xl border border-gold/50 bg-gold/10 px-4 font-display text-sm font-bold uppercase tracking-[0.06em] text-gold hover:bg-gold/20"
-            >
-              <RefreshCw className="h-4 w-4" />
+          <div className="mt-6 flex flex-col gap-3">
+            <button type="button" onClick={() => reset()} className={btnDriverPrimaryCls}>
+              <RefreshCw className="h-5 w-5" />
               Try again
             </button>
-            <Link
-              href={home.href}
-              className="inline-flex min-h-[48px] items-center justify-center rounded-xl border border-white/15 px-4 text-sm font-semibold text-steel-100 hover:bg-white/5"
-            >
+            <Link href={home.href} className={btnDriverSecondaryCls}>
               {home.label}
             </Link>
           </div>
-        </div>
+        </section>
       </div>
     )
   }
