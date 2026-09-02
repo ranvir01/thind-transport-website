@@ -133,12 +133,16 @@ interface FAQAccordionProps {
   items?: { question: string; answer: string }[];
   darkBackground?: boolean;
   gradientColor?: string;
+  /** Show only the first N questions (the homepage shows eight of the 25 —
+   *  2.4k px of collapsed rows at phone width was the page's tallest block). */
+  limit?: number;
 }
 
-export function FAQAccordion({ items = defaultFaqs, darkBackground = true }: FAQAccordionProps) {
+export function FAQAccordion({ items: allItems = defaultFaqs, darkBackground = true, limit }: FAQAccordionProps) {
   // Rendered on the server too — questions, answers, and FAQPage schema all
   // appear in the initial HTML so crawlers and AI assistants can read them.
   const id = useId()
+  const items = limit ? allItems.slice(0, limit) : allItems
 
   return (
     <div className="w-full space-y-2">

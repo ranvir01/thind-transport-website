@@ -96,7 +96,9 @@ export function RelatedLinks({
                     <span
                       className={cn(
                         "rounded-full px-2.5 py-1 text-m-micro font-bold uppercase tracking-[0.12em]",
-                        dark ? "bg-white/10 text-paper/70" : "bg-ink/5 text-ink-3"
+                        // ink-2, not ink-3: the alpha wash (real since the
+                        // rgb-triple tokens) drops ink-3 to 4.22:1 on paper.
+                        dark ? "bg-white/10 text-paper/70" : "bg-ink/5 text-ink-2"
                       )}
                     >
                       {link.kind}
