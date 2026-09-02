@@ -18,7 +18,7 @@ export default async function HubSuspendedPage() {
     <div className="min-h-screen flex items-center justify-center p-4">
       <Panel className="w-full max-w-md p-6 md:p-8 text-center">
         <span className="brand-wordmark text-2xl font-semibold text-fg tracking-[0.14em]">{PRODUCT.wordmark}</span>
-        <h1 className="mt-6 font-display text-xl font-extrabold uppercase tracking-wide text-fg">
+        <h1 className="mt-6 text-xl font-semibold text-fg">
           Workspace suspended
         </h1>
         <p className="mt-2 text-body-sm text-fg-2">

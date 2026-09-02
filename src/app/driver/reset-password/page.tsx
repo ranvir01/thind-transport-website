@@ -111,7 +111,7 @@ function ResetPasswordForm() {
             </p>
 
             <Link href="/driver/login">
-              <Button className="w-full bg-orange-600 hover:bg-orange/90">
+              <Button className="w-full bg-orange-600 hover:bg-orange-500 text-white">
                 Go to Login
               </Button>
             </Link>
@@ -149,12 +149,12 @@ function ResetPasswordForm() {
                   autoComplete="new-password"
                   value={formData.password}
                   onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                  className="text-gray-900 pr-10"
+                  className="text-gray-900 pr-12"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                  className="absolute right-1 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-fleet text-gray-600 hover:text-gray-900"
                 >
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
@@ -171,12 +171,12 @@ function ResetPasswordForm() {
                   autoComplete="new-password"
                   value={formData.confirmPassword}
                   onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-                  className="text-gray-900 pr-10"
+                  className="text-gray-900 pr-12"
                 />
                 <button
                   type="button"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                  className="absolute right-1 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-fleet text-gray-600 hover:text-gray-900"
                 >
                   {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
@@ -184,7 +184,7 @@ function ResetPasswordForm() {
             </div>
 
             {/* Password requirements */}
-            <div className="p-3 bg-gray-50 rounded-lg">
+            <div className="p-3 bg-gray-50 rounded-fleet">
               <p className="text-xs font-semibold text-gray-700 mb-2">Password must contain:</p>
               <ul className="text-xs text-gray-600 space-y-1">
                 <li className={formData.password.length >= 8 ? "text-green-600" : ""}>
@@ -202,7 +202,7 @@ function ResetPasswordForm() {
               </ul>
             </div>
 
-            <Button type="submit" className="w-full bg-orange-600 hover:bg-orange/90" disabled={loading}>
+            <Button type="submit" className="w-full bg-orange-600 hover:bg-orange-500 text-white" disabled={loading}>
               {loading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -217,8 +217,8 @@ function ResetPasswordForm() {
             </Button>
           </form>
 
-          <div className="mt-6 text-center">
-            <Link href="/driver/login" className="text-sm text-steel-300 hover:text-white flex items-center justify-center gap-2">
+          <div className="mt-3 text-center">
+            <Link href="/driver/login" className="flex min-h-[44px] items-center justify-center gap-2 text-sm text-steel-300 hover:text-white">
               <ArrowLeft className="h-4 w-4" />
               Back to Login
             </Link>

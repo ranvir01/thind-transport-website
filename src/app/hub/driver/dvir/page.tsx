@@ -2,6 +2,7 @@ import { requireDriverUser } from "@/lib/hub/session"
 import { DVIR_CHECKLIST, truckDvirState } from "@/lib/hub/dvir"
 import { queryOne } from "@/lib/hub/db"
 import { DvirForm } from "@/components/hub/driver/DvirForm"
+import { EmptyStateDark } from "@/components/hub/driver/EmptyStateDark"
 
 export const dynamic = "force-dynamic"
 
@@ -29,12 +30,10 @@ export default async function DriverDvirPage({
 
   if (!truck) {
     return (
-      <div className="rounded-2xl border border-white/10 bg-navy-800/80 p-6 text-center">
-        <p className="font-display text-lg font-extrabold text-white">No truck on record</p>
-        <p className="mt-1 text-body-sm text-steel-300">
-          Once dispatch seats you in a truck, your inspections live here.
-        </p>
-      </div>
+      <EmptyStateDark
+        title="No truck on record"
+        hint="Once dispatch seats you in a truck, your inspections live here."
+      />
     )
   }
 
@@ -45,7 +44,7 @@ export default async function DriverDvirPage({
 
   return (
     <div>
-      <h1 className="font-display text-xl font-extrabold uppercase tracking-wide text-white mb-1">
+      <h1 className="mb-1 text-[22px] font-semibold text-white">
         Vehicle inspection
       </h1>
       <p className="text-body-sm text-steel-300 mb-4">

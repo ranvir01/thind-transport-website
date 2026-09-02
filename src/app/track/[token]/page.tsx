@@ -27,8 +27,15 @@ export default async function TrackPage({ params }: { params: Promise<{ token: s
   if (!tracked) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4">
-        <div className="w-full max-w-md rounded-2xl border border-white/10 bg-[linear-gradient(180deg,rgba(20,31,47,0.94),rgba(11,20,34,0.96))] p-8 text-center">
-          <h1 className="font-display text-xl font-extrabold uppercase tracking-wide text-white">
+        <div
+          className="w-full max-w-md rounded-card p-8 text-center"
+          style={{
+            background: "#1c1e23",
+            border: "1px solid rgba(255,255,255,0.06)",
+            boxShadow: "inset 0 1px 0 rgba(255,255,255,0.05), 0 6px 20px rgba(0,0,0,0.3)",
+          }}
+        >
+          <h1 className="font-sans text-[22px] font-semibold normal-case text-white">
             Link expired or revoked
           </h1>
           <p className="mt-2 text-body-sm text-steel-200">
@@ -48,23 +55,32 @@ export default async function TrackPage({ params }: { params: Promise<{ token: s
     <div className="min-h-screen px-4 py-10">
       <TrackRefresher active={live} />
       <div className="mx-auto w-full max-w-lg">
-        {/* accent.rule defaults to the same rgba as the stock border-white/10 hairline,
-            so an unset accent renders this card pixel-identical to before. */}
+        {/* Solid forced-dark card. /track loads without hub-theme.css, so the shared
+            .driver-card class is unavailable and the surface is inlined here (same
+            values as --driver-surface / --driver-shadow). accent.rule keeps the
+            carrier's tint on the card edge; an unset accent is the stock hairline. */}
         <div
-          className="rounded-2xl border bg-[linear-gradient(180deg,rgba(20,31,47,0.94),rgba(11,20,34,0.96))] p-6 md:p-8"
-          style={{ borderColor: accent.rule, "--portal-accent": accent.text } as React.CSSProperties}
+          className="rounded-card p-6 md:p-8"
+          style={
+            {
+              background: "#1c1e23",
+              border: `1px solid ${accent.rule}`,
+              boxShadow: "inset 0 1px 0 rgba(255,255,255,0.05), 0 6px 20px rgba(0,0,0,0.3)",
+              "--portal-accent": accent.text,
+            } as React.CSSProperties
+          }
         >
           <p className="text-[11px] font-bold uppercase tracking-[0.3em]" style={{ color: accent.text }}>
             {carrierName}
           </p>
-          <h1 className="mt-1 font-display text-2xl font-extrabold uppercase tracking-wide text-white">
+          <h1 className="mt-1 font-sans text-[22px] font-semibold normal-case text-white">
             {load.reference}
           </h1>
           <p className="text-body-sm text-steel-200 capitalize">{load.equipment.replace("_", " ")} shipment</p>
 
           {/* Status progress */}
           {cancelled ? (
-            <p className="mt-5 rounded-xl border border-red-400/30 bg-red-500/10 p-3 text-sm font-bold text-red-300">
+            <p className="mt-5 rounded-control border border-red-400/30 bg-red-500/10 p-3 text-sm font-bold text-red-300">
               This load was cancelled.
             </p>
           ) : (

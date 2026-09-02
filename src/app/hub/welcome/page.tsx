@@ -57,10 +57,7 @@ export default async function HubWelcomePage() {
         <span className="block text-[11px] font-bold uppercase tracking-[0.3em] text-accent-text mt-1">
           {carrier?.name ?? PRODUCT.tagline}
         </span>
-        <p className="mt-6 inline-flex rounded-full border border-accent-soft bg-accent-soft px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-accent-text">
-          Coming soon
-        </p>
-        <h1 className="mt-3 font-display text-xl font-extrabold uppercase tracking-wide text-fg">
+        <h1 className="mt-6 text-xl font-semibold text-fg">
           {copy.title}
         </h1>
         <p className="mt-2 text-body-sm text-fg-2">

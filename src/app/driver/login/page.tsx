@@ -106,21 +106,21 @@ export default function LoginPage() {
             </Button>
           </form>
 
-          <div className="mt-4 text-center text-sm">
-            <Link href="/driver/forgot-password" className="text-steel-300 hover:text-white hover:underline">
+          <div className="mt-2 text-center text-sm">
+            <Link href="/driver/forgot-password" className="inline-block py-3 text-steel-300 hover:text-white hover:underline">
               Forgot your password?
             </Link>
           </div>
 
-          <div className="mt-4 text-center text-sm">
+          <div className="text-center text-sm">
             Don't have an account?{" "}
-            <Link href="/driver/register" className="text-orange hover:underline font-semibold">
+            <Link href="/driver/register" className="inline-block py-3 font-semibold text-orange-400 hover:text-orange-300 hover:underline">
               Register here
             </Link>
           </div>
 
-          <div className="mt-6 text-center">
-            <Link href="/apply" className="text-sm text-steel-300 hover:text-white">
+          <div className="mt-2 text-center">
+            <Link href="/apply" className="inline-block py-3 text-sm text-steel-300 hover:text-white">
               ← Back to Application
             </Link>
           </div>

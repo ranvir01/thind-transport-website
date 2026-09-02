@@ -35,15 +35,15 @@ export default async function DriverThreadPage({ params }: { params: Promise<{ i
 
   return (
     <div>
-      <div className="mb-3 flex items-center gap-2">
+      <div className="mb-3 flex items-center gap-3">
         <Link
           href="/hub/driver/messages"
           aria-label="Back to messages"
-          className="flex h-11 w-11 min-h-[44px] min-w-[44px] items-center justify-center rounded-xl border border-white/15 text-steel-100 hover:bg-white/5"
+          className="flex h-12 w-12 shrink-0 items-center justify-center rounded-control border border-white/15 text-steel-100 transition-colors hover:bg-white/5"
         >
           <ChevronLeft className="h-5 w-5" />
         </Link>
-        <h1 className="min-w-0 flex-1 truncate font-display text-lg font-extrabold uppercase tracking-wide text-white">
+        <h1 className="min-w-0 flex-1 truncate text-[22px] font-semibold text-white">
           {thread.kind === "direct" ? "Dispatch / office" : `Load ${thread.load_reference ?? ""}`}
         </h1>
       </div>

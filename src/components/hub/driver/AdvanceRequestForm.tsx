@@ -4,9 +4,10 @@ import { useState, useTransition } from "react"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { HandCoins, Loader2 } from "lucide-react"
+import { cn } from "@/lib/utils"
 import { driverRequestAdvance } from "@/app/hub/_actions/driver"
 import { runOrQueue } from "@/components/hub/driver/offline-queue"
-import { fieldDarkCls } from "@/components/hub/ui"
+import { btnDriverPrimaryCls, btnDriverSecondaryCls, fieldDarkCls } from "@/components/hub/ui"
 import { dollarsToCents } from "@/lib/hub/types"
 
 export function AdvanceRequestForm() {
@@ -45,13 +46,13 @@ export function AdvanceRequestForm() {
     return (
       <button
         onClick={() => setOpen(true)}
-        className="flex w-full min-h-[52px] items-center justify-center gap-2 rounded-xl border font-display text-sm font-bold uppercase tracking-[0.06em] text-[color:var(--driver-accent)] hover:bg-white/5"
+        className={cn(btnDriverSecondaryCls, "text-[color:var(--driver-accent)]")}
         style={{
           borderColor: "color-mix(in srgb, var(--driver-accent) 40%, transparent)",
           backgroundColor: "color-mix(in srgb, var(--driver-accent) 10%, transparent)",
         }}
       >
-        <HandCoins className="h-4 w-4" /> Ask for an advance
+        <HandCoins className="h-5 w-5" /> Ask for an advance
       </button>
     )
   }
@@ -59,13 +60,13 @@ export function AdvanceRequestForm() {
   return (
     <form
       onSubmit={submit}
-      className="rounded-2xl border p-4 space-y-2"
+      className="driver-card space-y-3 p-4"
       style={{
         borderColor: "color-mix(in srgb, var(--driver-accent) 30%, transparent)",
         backgroundColor: "color-mix(in srgb, var(--driver-accent) 5%, transparent)",
       }}
     >
-      <p className="text-body-xs text-steel-200">
+      <p className="text-[13px] text-steel-200">
         Approved advances come off your next settlement — no surprises.
       </p>
       <input
@@ -78,18 +79,18 @@ export function AdvanceRequestForm() {
         className={fieldDarkCls} value={form.note}
         onChange={(e) => setForm({ ...form, note: e.target.value })}
       />
-      <div className="flex gap-2">
+      <div className="flex gap-3">
         <button
           type="button" onClick={() => setOpen(false)}
-          className="flex-1 min-h-[48px] rounded-xl border border-white/15 text-sm font-semibold text-steel-200 hover:bg-white/5"
+          className={cn(btnDriverSecondaryCls, "flex-1")}
         >
           Never mind
         </button>
         <button
           type="submit" disabled={pending || !form.amount}
-          className="flex flex-1 min-h-[48px] items-center justify-center gap-2 rounded-control bg-accent font-display text-sm font-bold uppercase tracking-[0.06em] text-accent-fg hover:bg-accent-hover disabled:opacity-50"
+          className={cn(btnDriverPrimaryCls, "flex-1")}
         >
-          {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : null} Send request
+          {pending ? <Loader2 className="h-5 w-5 animate-spin" /> : null} Send request
         </button>
       </div>
     </form>

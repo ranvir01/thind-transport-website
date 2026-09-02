@@ -270,6 +270,18 @@ export function ShiftCard({ seat, dark = false }: { seat: string; dark?: boolean
   )
   const strong = dark ? "text-white" : "text-fg"
   const soft = dark ? "text-steel-300" : "text-fg-2"
+  // The recap sheet follows the card's surface (variant="dark" on the driver
+  // seat), so sheet-side content reads the same fixed palette as the card —
+  // the office fg/border/hover/accent tokens resolve to LIGHT values on the
+  // forced-dark surfaces (AGENTS.md).
+  const faint = dark ? "text-steel-300" : "text-fg-3"
+  const hairline = dark ? "border-white/10" : "border-border"
+  const okTone = dark ? "text-green-400" : "text-ok"
+  const pulse = dark ? "bg-white/10" : "bg-hover"
+  const primaryBtn = dark
+    ? "bg-[color:var(--driver-accent-fill,var(--driver-accent))] text-[color:var(--driver-accent-fg,#121316)] hover:brightness-110"
+    : "bg-accent text-white hover:bg-accent-hover"
+  const secondaryBtn = dark ? "border-white/20 text-white hover:bg-white/10" : "border-border text-fg hover:bg-hover"
   const press = "touch-manipulation transition-transform duration-fast active:scale-[0.98]"
 
   const objectiveRows = (objectives: ShiftEvaluation["objectives"], onSheet = false) => (
@@ -277,13 +289,13 @@ export function ShiftCard({ seat, dark = false }: { seat: string; dark?: boolean
       {objectives.map((o) => (
         <li
           key={o.key}
-          className={cn("flex items-center gap-2 text-[12.5px]", onSheet ? "text-fg-2" : soft)}
+          className={cn("flex items-center gap-2 text-[12.5px]", soft)}
         >
           {o.done ? (
-            <CheckCircle2 className="h-4 w-4 shrink-0 text-ok" aria-hidden />
+            <CheckCircle2 className={cn("h-4 w-4 shrink-0", okTone)} aria-hidden />
           ) : (
             <Circle
-              className={cn("h-4 w-4 shrink-0", onSheet ? "text-fg-3" : dark ? "text-steel-500" : "text-fg-3")}
+              className={cn("h-4 w-4 shrink-0", faint)}
               aria-hidden
             />
           )}
@@ -306,7 +318,7 @@ export function ShiftCard({ seat, dark = false }: { seat: string; dark?: boolean
    * including the money your AI teammates brought in. All real rows; nothing
    * here is a points system dressed up as dollars.
    */
-  const moneyStrip = (m: ShiftEvaluation["money"], onSheet = false) => {
+  const moneyStrip = (m: ShiftEvaluation["money"]) => {
     const co: [string, number][] = [
       ["delivered", m.deliveredCents],
       ["billed", m.billedCents],
@@ -319,24 +331,21 @@ export function ShiftCard({ seat, dark = false }: { seat: string; dark?: boolean
       <div
         className={cn(
           "mt-2.5 rounded-control border px-2.5 py-2",
-          onSheet
-            ? "border-border bg-canvas"
-            : dark
-              ? "border-white/10 bg-white/[0.03]"
-              : "border-border bg-canvas"
+          hairline,
+          dark ? "bg-white/[0.04]" : "bg-surface-2"
         )}
       >
         {m.personalCents > 0 ? (
           <p className="flex items-baseline gap-1.5">
             <Banknote
-              className={cn("h-4 w-4 shrink-0 self-center text-ok")}
+              className={cn("h-4 w-4 shrink-0 self-center", okTone)}
               aria-hidden
             />
-            <span className={cn("text-[12.5px]", onSheet ? "text-fg-2" : soft)}>{m.personalLabel}</span>
+            <span className={cn("text-[12.5px]", soft)}>{m.personalLabel}</span>
             <span
               className={cn(
-                "ml-auto text-[15px] font-semibold tabular-nums",
-                onSheet ? "text-fg" : strong
+                "ml-auto font-mono text-[15px] font-semibold tabular-nums",
+                strong
               )}
             >
               {money(m.personalCents)}
@@ -348,8 +357,8 @@ export function ShiftCard({ seat, dark = false }: { seat: string; dark?: boolean
             className={cn(
               "text-[11.5px] tabular-nums",
               m.personalCents > 0 && "mt-1.5 border-t pt-1.5",
-              m.personalCents > 0 && (onSheet || !dark ? "border-border" : "border-white/10"),
-              onSheet ? "text-fg-3" : dark ? "text-steel-400" : "text-fg-3"
+              m.personalCents > 0 && hairline,
+              faint
             )}
           >
             {live.length > 0
@@ -364,8 +373,8 @@ export function ShiftCard({ seat, dark = false }: { seat: string; dark?: boolean
           <p
             className={cn(
               "mt-1.5 flex items-start gap-1.5 border-t pt-1.5 text-[11.5px] tabular-nums",
-              onSheet || !dark ? "border-border" : "border-white/10",
-              "text-warn"
+              hairline,
+              dark ? "text-orange-300" : "text-warn"
             )}
           >
             <AlertTriangle className="mt-[1px] h-3.5 w-3.5 shrink-0" aria-hidden />
@@ -381,7 +390,7 @@ export function ShiftCard({ seat, dark = false }: { seat: string; dark?: boolean
           </p>
         ) : null}
         {m.standing && m.personalCents > 0 ? (
-          <p className={cn("mt-1 text-[11px]", onSheet ? "text-fg-3" : dark ? "text-steel-500" : "text-fg-3")}>
+          <p className={cn("mt-1 text-[11px]", faint)}>
             On the road right now because of your work — not just this shift.
           </p>
         ) : null}
@@ -402,7 +411,7 @@ export function ShiftCard({ seat, dark = false }: { seat: string; dark?: boolean
     const now = Date.now()
     return (
       <div className={cn("mt-2.5 border-t pt-2", dark ? "border-white/10" : "border-border")}>
-        <p className={cn("text-[11px] font-semibold uppercase tracking-wide", dark ? "text-steel-400" : "text-fg-3")}>
+        <p className={cn("text-[11px] font-semibold uppercase tracking-wide", dark ? "text-steel-300" : "text-fg-3")}>
           Around you
         </p>
         <ul className="mt-1 space-y-1">
@@ -412,7 +421,7 @@ export function ShiftCard({ seat, dark = false }: { seat: string; dark?: boolean
               {f.ai ? (
                 <span
                   className={cn(
-                    "rounded-pill px-1 text-[9.5px] font-semibold uppercase leading-[1.4]",
+                    "rounded-pill px-1 text-[11px] font-semibold uppercase leading-[1.4]",
                     dark ? "bg-white/10 text-steel-300" : "bg-hover text-fg-3"
                   )}
                   title="Played by the simulation"
@@ -425,7 +434,7 @@ export function ShiftCard({ seat, dark = false }: { seat: string; dark?: boolean
                 {f.count > 1 ? <span className="sr-only"> ({f.count} events)</span> : null}
               </span>
               {f.cents ? <span className="shrink-0 tabular-nums">{money(f.cents)}</span> : null}
-              <span className={cn("shrink-0 text-[10.5px]", dark ? "text-steel-500" : "text-fg-3")}>
+              <span className={cn("shrink-0 text-[11px]", faint)}>
                 {ago(f.at, now)}
               </span>
             </li>
@@ -452,6 +461,7 @@ export function ShiftCard({ seat, dark = false }: { seat: string; dark?: boolean
       }}
       title="Shift recap"
       description="How the board looks after your shift."
+      variant={dark ? "dark" : "light"}
     >
       {phase.kind === "recap" ? (
         <div>
@@ -464,41 +474,50 @@ export function ShiftCard({ seat, dark = false }: { seat: string; dark?: boolean
             ) : (
               <span
                 aria-hidden
-                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border-2 border-border-strong text-[13px] font-bold tabular-nums text-fg-2"
+                className={cn(
+                  "flex h-11 w-11 shrink-0 items-center justify-center rounded-full border-2 text-[13px] font-bold tabular-nums",
+                  dark ? "border-white/20 text-steel-300" : "border-border-strong text-fg-2"
+                )}
               >
                 {phase.evaluation.objectives.filter((o) => o.done).length}/
                 {phase.evaluation.objectives.length}
               </span>
             )}
             <div className="min-w-0 flex-1">
-              <p className="text-[15px] font-semibold text-fg">
+              <p className={cn("text-[15px] font-semibold", strong)}>
                 {phase.evaluation.score}% · {phase.evaluation.minutes} min
               </p>
-              <p className="mt-0.5 text-[13px] text-fg-2">{phase.evaluation.headline}</p>
+              <p className={cn("mt-0.5 text-[13px]", soft)}>{phase.evaluation.headline}</p>
               {/* Only when a record that ALREADY EXISTED fell. A first shift
                   setting the first best is not an achievement, and saying so
                   would make the banner congratulate everybody for showing up. */}
               {beatRecord ? (
-                <p className="mt-1 text-[13px] font-semibold text-accent-text">
+                <p
+                  className={cn(
+                    "mt-1 text-[13px] font-semibold",
+                    dark ? "text-[color:var(--driver-accent)]" : "text-accent-text"
+                  )}
+                >
                   New best for this seat — you beat your last shift.
                 </p>
               ) : best ? (
-                <p className="mt-1 text-[13px] text-fg-3">
+                <p className={cn("mt-1 text-[13px]", faint)}>
                   Your best here is still {best.score}% · {money(best.cents)}.
                 </p>
               ) : null}
             </div>
           </div>
-          {moneyStrip(phase.evaluation.money, true)}
+          {moneyStrip(phase.evaluation.money)}
           <div className="mt-3">{objectiveRows(phase.evaluation.objectives, true)}</div>
           {phase.evaluation.onTimePct !== null ? (
-            <p className="mt-2 text-[12.5px] text-fg-2">On-time deliveries: {phase.evaluation.onTimePct}%</p>
+            <p className={cn("mt-2 text-[12.5px]", soft)}>On-time deliveries: {phase.evaluation.onTimePct}%</p>
           ) : null}
           <div className="mt-4 flex flex-wrap gap-2">
             <button
               onClick={() => void copyRecap(phase.evaluation)}
               className={cn(
-                "inline-flex min-h-[44px] items-center gap-1.5 rounded-control border border-border px-3.5 text-[13px] font-semibold text-fg hover:bg-hover",
+                "inline-flex min-h-[44px] items-center gap-1.5 rounded-control border px-3.5 text-[13px] font-semibold",
+                secondaryBtn,
                 press
               )}
             >
@@ -511,7 +530,8 @@ export function ShiftCard({ seat, dark = false }: { seat: string; dark?: boolean
                 returnFocus()
               }}
               className={cn(
-                "inline-flex min-h-[44px] items-center gap-1.5 rounded-control bg-accent px-3.5 text-[13px] font-semibold text-white hover:bg-accent-hover",
+                "inline-flex min-h-[44px] items-center gap-1.5 rounded-control px-3.5 text-[13px] font-semibold",
+                primaryBtn,
                 press
               )}
             >
@@ -524,14 +544,14 @@ export function ShiftCard({ seat, dark = false }: { seat: string; dark?: boolean
         // Skeleton while the final snapshot lands.
         <div aria-busy="true" className="space-y-3">
           <div className="flex items-center gap-3">
-            <div className="h-11 w-11 animate-pulse rounded-full bg-hover" />
+            <div className={cn("h-11 w-11 animate-pulse rounded-full", pulse)} />
             <div className="flex-1 space-y-2">
-              <div className="h-4 w-28 animate-pulse rounded-pill bg-hover" />
-              <div className="h-3 w-44 animate-pulse rounded-pill bg-hover" />
+              <div className={cn("h-4 w-28 animate-pulse rounded-pill", pulse)} />
+              <div className={cn("h-3 w-44 animate-pulse rounded-pill", pulse)} />
             </div>
           </div>
           {[0, 1, 2].map((i) => (
-            <div key={i} className="h-3 animate-pulse rounded-pill bg-hover" style={{ width: `${86 - i * 9}%` }} />
+            <div key={i} className={cn("h-3 animate-pulse rounded-pill", pulse)} style={{ width: `${86 - i * 9}%` }} />
           ))}
         </div>
       )}
@@ -554,7 +574,8 @@ export function ShiftCard({ seat, dark = false }: { seat: string; dark?: boolean
               onClick={clockIn}
               disabled={busy || sheetOpen}
               className={cn(
-                "inline-flex min-h-[44px] items-center gap-1.5 rounded-control bg-accent px-3.5 py-2 text-[13px] font-semibold text-white hover:bg-accent-hover disabled:opacity-50",
+                "inline-flex min-h-[44px] items-center gap-1.5 rounded-control px-3.5 py-2 text-[13px] font-semibold disabled:opacity-50",
+                primaryBtn,
                 press
               )}
             >
@@ -574,7 +595,7 @@ export function ShiftCard({ seat, dark = false }: { seat: string; dark?: boolean
                 <li key={m.label} className="inline-flex items-center gap-1.5">
                   <span
                     className={cn(
-                      "inline-flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-pill text-[10.5px] font-bold",
+                      "inline-flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-pill text-[11px] font-bold",
                       dark ? "bg-white/10 text-white" : "bg-hover text-fg-2"
                     )}
                   >
@@ -623,7 +644,7 @@ export function ShiftCard({ seat, dark = false }: { seat: string; dark?: boolean
             className={cn(
               "-m-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-control",
               press,
-              dark ? "text-steel-400 hover:bg-white/10 hover:text-white" : "text-fg-3 hover:bg-hover hover:text-fg"
+              dark ? "text-steel-300 hover:bg-white/10 hover:text-white" : "text-fg-3 hover:bg-hover hover:text-fg"
             )}
           >
             <X className="h-4 w-4" />
@@ -638,7 +659,7 @@ export function ShiftCard({ seat, dark = false }: { seat: string; dark?: boolean
     <div className={card}>
       <div className="flex flex-wrap items-center gap-3">
         <p className={cn("inline-flex items-center gap-1.5 text-[13px] font-semibold", strong)}>
-          <Clock3 className="h-4 w-4 text-ok" aria-hidden />
+          <Clock3 className={cn("h-4 w-4", okTone)} aria-hidden />
           On shift{live ? ` · ${live.minutes} min` : ""}
         </p>
         <button
@@ -646,7 +667,7 @@ export function ShiftCard({ seat, dark = false }: { seat: string; dark?: boolean
           className={cn(
             "ml-auto inline-flex min-h-[44px] items-center gap-1.5 rounded-control border px-3.5 py-1.5 text-[13px] font-semibold",
             press,
-            dark ? "border-white/20 text-white hover:bg-white/10" : "border-border text-fg hover:bg-hover"
+            secondaryBtn
           )}
         >
           <Square className="h-3.5 w-3.5" aria-hidden />

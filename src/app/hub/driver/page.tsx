@@ -9,6 +9,7 @@ import { getActiveAlerts } from "@/lib/hub/weather"
 import { pendingAnnouncementsForUser } from "@/lib/hub/announcements"
 import { getCarrierSettings } from "@/lib/hub/settings"
 import { fmtCentsExact } from "@/lib/hub/types"
+import { cn } from "@/lib/utils"
 import { DriverLoadCard } from "@/components/hub/driver/DriverLoadCard"
 import { AnnouncementAckCard } from "@/components/hub/driver/AnnouncementAckCard"
 import { DocRequestCard } from "@/components/hub/driver/DocRequestCard"
@@ -22,6 +23,21 @@ const ACCENT_CARD_STYLE = {
   borderColor: "color-mix(in srgb, var(--driver-accent) 40%, transparent)",
   backgroundColor: "color-mix(in srgb, var(--driver-accent) 8%, transparent)",
 } as const
+
+/** Quick-action tile: 56px tap target, body font, sentence case. */
+const QUICK_TILE_CLS =
+  "flex min-h-[56px] flex-col items-center justify-center gap-1 rounded-control border border-white/15 px-1 text-[13px] font-semibold normal-case text-steel-200 hover:bg-white/5"
+
+/**
+ * HOS clock colour is data, not decoration (DESIGN.md): white while there is
+ * time, amber inside the last hour, red once the clock has run out.
+ */
+function hosClockTone(minutes: number | null | undefined): string {
+  if (minutes == null) return "text-white"
+  if (minutes <= 0) return "text-red-300"
+  if (minutes <= 60) return "text-amber-300"
+  return "text-white"
+}
 
 export default async function DriverHomePage() {
   const user = await requireDriverUser()
@@ -62,7 +78,7 @@ export default async function DriverHomePage() {
       ))}
 
       {weatherAlerts.length > 0 ? (
-        <section className="rounded-2xl border p-4" style={ACCENT_CARD_STYLE}>
+        <section className="driver-card p-4" style={ACCENT_CARD_STYLE}>
           <p className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-[color:var(--driver-accent)]">
             <CloudLightning className="h-4 w-4" /> Weather on your route
           </p>
@@ -76,9 +92,9 @@ export default async function DriverHomePage() {
 
       {/* The work */}
       {loads.length === 0 ? (
-        <section className="rounded-2xl border border-white/10 bg-navy-800/80 p-6 text-center">
-          <p className="font-display text-lg font-extrabold text-white">No active load</p>
-          <p className="mt-1 text-body-sm text-steel-400">
+        <section className="driver-card p-6 text-center">
+          <p className="text-lg font-semibold text-white">No active load</p>
+          <p className="mt-1 text-body-sm text-steel-300">
             When dispatch assigns you a load it shows up here — with an alert if you turned them on.
           </p>
           <div className="mt-4">
@@ -100,20 +116,20 @@ export default async function DriverHomePage() {
       <div className="grid grid-cols-2 gap-3">
         <Link
           href="/hub/driver/pay"
-          className="rounded-2xl border border-white/10 bg-navy-800/80 p-4 hover:bg-white/5"
+          className="driver-card p-4"
         >
-          <p className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-steel-400">
+          <p className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-steel-300">
             <Wallet className="h-3.5 w-3.5" /> Last pay
           </p>
-          <p className="mt-1 font-display text-xl font-extrabold text-[color:var(--driver-accent)]">
+          <p className="mt-1 font-mono text-2xl font-medium tabular-nums text-[color:var(--driver-accent)]">
             {pay ? fmtCentsExact(pay.net_cents) : "—"}
           </p>
           {pay ? (
-            <p className="text-body-xs text-steel-400">
+            <p className="text-body-xs text-steel-300">
               week of {new Date(pay.period_end).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
             </p>
           ) : (
-            <p className="text-body-xs text-steel-400">No settlements yet</p>
+            <p className="text-body-xs text-steel-300">No settlements yet</p>
           )}
           {/* Everything earned since that settlement closed. Without this a
               driver sees nothing at all between delivering on Tuesday and the
@@ -125,8 +141,8 @@ export default async function DriverHomePage() {
             </p>
           ) : null}
         </Link>
-        <div className="rounded-2xl border border-white/10 bg-navy-800/80 p-4">
-          <p className="text-[11px] font-bold uppercase tracking-wider text-steel-400">My cards</p>
+        <div className="driver-card p-4">
+          <p className="text-[11px] font-bold uppercase tracking-wider text-steel-300">My cards</p>
           <div className="mt-1.5 space-y-1.5">
             <p className="flex items-center justify-between gap-1 text-body-xs text-steel-200">
               CDL <DriverExpiryPill date={expiries.cdl_expiry} />
@@ -139,8 +155,8 @@ export default async function DriverHomePage() {
       </div>
 
       {/* HOS clocks — display only, the ELD is always the legal record */}
-      <div className="rounded-2xl border border-white/10 bg-navy-800/80 p-4">
-        <p className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-steel-400">
+      <div className="driver-card p-4">
+        <p className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-steel-300">
           <Clock3 className="h-3.5 w-3.5" /> Hours of service
         </p>
         {hos ? (
@@ -150,41 +166,41 @@ export default async function DriverHomePage() {
               { label: "Shift", minutes: hos.shift_remaining_minutes },
               { label: "Cycle", minutes: hos.cycle_remaining_minutes },
             ].map((clock) => (
-              <div key={clock.label} className="rounded-xl bg-white/[0.04] py-2">
-                <p className="font-display text-lg font-extrabold text-[color:var(--driver-accent)]">
+              <div key={clock.label} className="driver-card driver-card--well py-2">
+                <p className={cn("font-mono text-xl font-medium tabular-nums", hosClockTone(clock.minutes))}>
                   {clock.minutes != null ? `${Math.floor(clock.minutes / 60)}h ${clock.minutes % 60}m` : "—"}
                 </p>
-                <p className="text-[10px] font-bold uppercase tracking-wider text-steel-400">{clock.label}</p>
+                <p className="text-[12px] font-bold uppercase tracking-wider text-steel-300">{clock.label}</p>
               </div>
             ))}
-            <p className="col-span-3 text-[10px] text-steel-400">
+            <p className="col-span-3 text-[12px] text-steel-300">
               From the ELD as of {new Date(hos.ts).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })} — the ELD is always the legal record.
             </p>
           </div>
         ) : (
-          <p className="mt-1 text-body-xs text-steel-400">
+          <p className="mt-1 text-body-xs text-steel-300">
             Clocks show here automatically once the ELD sync is connected. Your ELD stays the legal record.
           </p>
         )}
       </div>
 
       {/* Quick actions */}
-      <div className="grid grid-cols-3 gap-2">
+      <div className="grid grid-cols-3 gap-3">
         <Link
           href="/hub/driver/dvir"
-          className="flex min-h-[52px] flex-col items-center justify-center gap-1 rounded-xl border border-white/15 px-1 font-display text-[11px] font-bold uppercase tracking-[0.04em] text-steel-200 hover:bg-white/5"
+          className={QUICK_TILE_CLS}
         >
           <ClipboardCheck className="h-4 w-4" /> Inspection
         </Link>
         <Link
           href="/hub/driver/timeoff"
-          className="flex min-h-[52px] flex-col items-center justify-center gap-1 rounded-xl border border-white/15 px-1 font-display text-[11px] font-bold uppercase tracking-[0.04em] text-steel-200 hover:bg-white/5"
+          className={QUICK_TILE_CLS}
         >
           <CalendarOff className="h-4 w-4" /> Time off
         </Link>
         <Link
           href="/hub/driver/incident"
-          className="flex min-h-[52px] flex-col items-center justify-center gap-1 rounded-xl border border-white/15 px-1 font-display text-[11px] font-bold uppercase tracking-[0.04em] text-steel-200 hover:bg-white/5"
+          className={QUICK_TILE_CLS}
         >
           <ShieldAlert className="h-4 w-4" /> Incident
         </Link>

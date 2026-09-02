@@ -90,14 +90,14 @@ export function PushManager({
   if (state === "unsupported" || state === "loading") return null
   if (state === "on") {
     return compact ? null : (
-      <p className={office ? "flex items-center gap-2 text-body-xs text-fg-3" : "flex items-center gap-2 text-body-xs text-steel-400"}>
+      <p className={office ? "flex items-center gap-2 text-body-xs text-fg-3" : "flex items-center gap-2 text-body-xs text-steel-300"}>
         <Check className={office ? "h-3.5 w-3.5 text-fg-2" : "h-3.5 w-3.5 text-steel-200"} /> Alerts are on for this device
       </p>
     )
   }
   if (state === "denied") {
     return compact ? null : (
-      <p className={office ? "text-body-xs text-fg-3" : "text-body-xs text-steel-400"}>
+      <p className={office ? "text-body-xs text-fg-3" : "text-body-xs text-steel-300"}>
         Alerts are blocked — allow notifications for this site in your phone settings.
       </p>
     )
@@ -108,7 +108,7 @@ export function PushManager({
       className={
         office
           ? "flex w-full min-h-[44px] items-center justify-center gap-2 rounded-control border border-border-strong px-3 py-2 text-sm font-semibold text-fg-2 hover:bg-hover"
-          : "flex w-full min-h-[44px] items-center justify-center gap-2 rounded-xl border border-white/15 px-3 py-2 text-sm font-semibold text-steel-200 hover:bg-white/5"
+          : "flex w-full min-h-[48px] items-center justify-center gap-2 rounded-control border border-white/15 px-3 py-2 text-base font-semibold text-steel-200 hover:bg-white/5"
       }
     >
       <BellRing className="h-4 w-4" />

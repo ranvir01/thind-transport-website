@@ -19,7 +19,9 @@ export function publicStatus(status: LoadStatus): { label: string; index: number
  * Five-segment progress bar for forced-dark sharelink/portal surfaces
  * (/track and /hub/portal). Filled segments follow the carrier's
  * --portal-accent (both surfaces set it; unbranded carriers keep the
- * default gold). Decorative — pair it with visible status text.
+ * default gold). The current segment breathes (opacity-only pulse, off under
+ * reduced motion) so the stage the load is IN reads apart from the ones it
+ * has finished. Decorative — pair it with visible status text.
  * Renders nothing for cancelled loads — callers show their own cancelled treatment.
  */
 export function LoadProgressBar({ status, className }: { status: LoadStatus; className?: string }) {
@@ -30,7 +32,11 @@ export function LoadProgressBar({ status, className }: { status: LoadStatus; cla
       {PUBLIC_FLOW.map((step, i) => (
         <div
           key={step}
-          className={`h-2 flex-1 rounded-full ${i <= index ? "bg-[color:var(--portal-accent)]" : "bg-white/10"}`}
+          className={cn(
+            "h-1.5 flex-1 rounded-pill",
+            i <= index ? "bg-[color:var(--portal-accent)]" : "bg-white/10",
+            i === index && index < PUBLIC_FLOW.length - 1 && "motion-safe:animate-pulse"
+          )}
         />
       ))}
     </div>

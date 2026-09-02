@@ -5,9 +5,11 @@ import { useState, useTransition } from "react"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { Check, Loader2, Megaphone } from "lucide-react"
+import { cn } from "@/lib/utils"
 import { driverAcknowledgeAnnouncement } from "@/app/hub/_actions/driver"
 import { runOrQueue } from "@/components/hub/driver/offline-queue"
 import { SignaturePad } from "@/components/hub/SignaturePad"
+import { btnDriverPrimaryCls, btnDriverSecondaryCls } from "@/components/hub/ui"
 
 export function AnnouncementAckCard({
   announcement,
@@ -34,7 +36,7 @@ export function AnnouncementAckCard({
 
   return (
     <section
-      className="rounded-2xl border p-4"
+      className="driver-card p-4"
       style={{
         borderColor: "color-mix(in srgb, var(--driver-accent) 30%, transparent)",
         backgroundColor: "color-mix(in srgb, var(--driver-accent) 6%, transparent)",
@@ -44,18 +46,18 @@ export function AnnouncementAckCard({
         <Megaphone className="h-4 w-4" /> From the office
         {announcement.created_by_name ? ` · ${announcement.created_by_name}` : ""}
       </p>
-      <h2 className="mt-1 font-display text-base font-extrabold text-white">{announcement.title}</h2>
-      <p className="mt-1 text-body-sm text-steel-200 whitespace-pre-wrap">{announcement.body}</p>
+      <h2 className="mt-1 text-[17px] font-semibold text-white">{announcement.title}</h2>
+      <p className="mt-1 whitespace-pre-wrap text-body-sm text-steel-200">{announcement.body}</p>
 
       {announcement.requires_ack ? (
-        <div className="mt-3 space-y-2">
+        <div className="mt-3 space-y-3">
           <SignaturePad onChange={setSignature} height={110} variant="dark" />
           <button
             onClick={ack}
             disabled={pending || !signature}
-            className="flex w-full min-h-[48px] items-center justify-center gap-2 rounded-control bg-accent font-display text-sm font-bold uppercase tracking-[0.06em] text-accent-fg hover:bg-accent-hover disabled:opacity-50"
+            className={btnDriverPrimaryCls}
           >
-            {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+            {pending ? <Loader2 className="h-5 w-5 animate-spin" /> : <Check className="h-5 w-5" />}
             Sign & acknowledge
           </button>
         </div>
@@ -63,13 +65,13 @@ export function AnnouncementAckCard({
         <button
           onClick={ack}
           disabled={pending}
-          className="mt-3 flex w-full min-h-[48px] items-center justify-center gap-2 rounded-xl border font-display text-sm font-bold uppercase tracking-[0.06em] text-[color:var(--driver-accent)] hover:bg-white/5 disabled:opacity-60"
+          className={cn(btnDriverSecondaryCls, "mt-3 text-[color:var(--driver-accent)]")}
           style={{
             borderColor: "color-mix(in srgb, var(--driver-accent) 50%, transparent)",
             backgroundColor: "color-mix(in srgb, var(--driver-accent) 10%, transparent)",
           }}
         >
-          {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+          {pending ? <Loader2 className="h-5 w-5 animate-spin" /> : <Check className="h-5 w-5" />}
           Got it
         </button>
       )}

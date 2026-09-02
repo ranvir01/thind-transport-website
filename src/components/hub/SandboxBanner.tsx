@@ -113,7 +113,7 @@ export function SandboxBanner({
           <Link
             href="/hub/sandbox"
             className={cn(
-              "rounded-control px-2 py-1 hover:underline",
+              "inline-flex min-h-[44px] items-center rounded-control px-2 py-1 hover:underline",
               dark ? "text-white" : "text-accent-text"
             )}
           >
@@ -123,7 +123,7 @@ export function SandboxBanner({
             onClick={reset}
             disabled={pending || resetting}
             className={cn(
-              "inline-flex items-center gap-1 rounded-control px-2 py-1 disabled:opacity-50",
+              "inline-flex min-h-[44px] items-center gap-1 rounded-control px-2 py-1 disabled:opacity-50",
               dark ? "text-white hover:bg-white/10" : "text-accent-text hover:bg-accent-soft"
             )}
           >
@@ -150,8 +150,8 @@ export function SandboxBanner({
               onClick={dismissTour}
               aria-label="Dismiss tour"
               className={cn(
-                "-m-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-control",
-                dark ? "text-steel-400 hover:bg-white/10 hover:text-white" : "text-fg-3 hover:bg-hover hover:text-fg"
+                "-m-2 flex h-11 w-11 shrink-0 items-center justify-center rounded-control",
+                dark ? "text-steel-300 hover:bg-white/10 hover:text-white" : "text-fg-3 hover:bg-hover hover:text-fg"
               )}
             >
               <X className="h-4 w-4" />
@@ -164,7 +164,7 @@ export function SandboxBanner({
                   href={step.href}
                   onClick={dismissTour}
                   className={cn(
-                    "group flex min-h-[40px] items-center gap-2.5 rounded-control px-2 py-1.5 text-[13px]",
+                    "group flex min-h-[44px] items-center gap-2.5 rounded-control px-2 py-1.5 text-[13px]",
                     dark ? "text-steel-200 hover:bg-white/5" : "text-fg-2 hover:bg-hover"
                   )}
                 >
@@ -194,7 +194,7 @@ export function SandboxBanner({
           <p
             className={cn(
               "mt-2 flex items-start gap-1.5 border-t pt-2 text-[12px]",
-              dark ? "border-white/10 text-steel-400" : "border-border text-fg-3"
+              dark ? "border-white/10 text-steel-300" : "border-border text-fg-3"
             )}
           >
             <Clock3 className="mt-[2px] h-3.5 w-3.5 shrink-0" aria-hidden />

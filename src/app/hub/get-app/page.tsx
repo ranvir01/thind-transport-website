@@ -71,7 +71,7 @@ export default function GetAppInstallPage() {
               iOS pre-fills comes from the page's manifest, so on the website it
               reads Thind Transport and on this page it reads LoadOff. Saying so
               turns a silent wrong install into something the driver can catch. */}
-          <p className="mt-4 rounded-md border border-border bg-surface-2 px-3 py-2 text-xs text-fg-2">
+          <p className="mt-4 rounded-control border border-border bg-surface-2 px-3 py-2 text-xs text-fg-2">
             The name it offers should read{" "}
             <span className="font-semibold text-fg">{PRODUCT.name}</span>. If it says Thind
             Transport, you&apos;re on a website page — come back here and add it from this screen.

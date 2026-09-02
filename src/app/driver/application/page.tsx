@@ -373,7 +373,7 @@ export default function DriverApplicationPage() {
   if (submitSuccess) {
     return (
       <div className="portal-light min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-2xl shadow-xl p-8 max-w-lg w-full text-center">
+        <div className="bg-white rounded-fleet-lg shadow-xl p-8 max-w-lg w-full text-center">
           <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
             <CheckCircle className="w-12 h-12 text-green-500" />
           </div>
@@ -490,7 +490,7 @@ export default function DriverApplicationPage() {
         <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <Link href="/driver/dashboard">
-              <Button variant="ghost" size="sm">
+              <Button variant="ghost" className="text-gray-700 hover:bg-gray-100 hover:text-gray-900">
                 <ArrowLeft className="w-4 h-4 mr-1" />
                 Dashboard
               </Button>
@@ -505,9 +505,8 @@ export default function DriverApplicationPage() {
               <User className="w-4 h-4" />
               <span>{session?.user?.name || session?.user?.email}</span>
             </div>
-            <Button 
-              variant="ghost" 
-              size="sm" 
+            <Button
+              variant="ghost"
               onClick={handleLogout}
               className="text-gray-600 hover:text-red-600 hover:bg-red-50"
               title="Logout"
@@ -526,7 +525,7 @@ export default function DriverApplicationPage() {
             <span className="text-sm font-medium text-gray-700">
               Application Progress: {Math.round((completedSteps.length / 9) * 100)}% Complete
             </span>
-            <span className="text-xs text-gray-500">
+            <span className="text-xs text-gray-600">
               Step {currentStep} of 9
             </span>
           </div>
@@ -552,7 +551,7 @@ export default function DriverApplicationPage() {
 
       {/* Main Content */}
       <main className="max-w-5xl mx-auto px-4 py-8">
-        <div className="bg-white rounded-xl shadow-sm p-6 md:p-8">
+        <div className="bg-white rounded-fleet-lg shadow-sm p-6 md:p-8">
           {renderStep()}
         </div>
 
@@ -563,6 +562,7 @@ export default function DriverApplicationPage() {
               variant="outline"
               onClick={handlePrevious}
               disabled={currentStep === 1}
+              className="bg-white border-gray-300 text-gray-700 hover:bg-gray-50 hover:text-gray-900"
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
               Previous
@@ -580,7 +580,7 @@ export default function DriverApplicationPage() {
 
         {/* Error Summary */}
         {Object.keys(errors).length > 0 && (
-          <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+          <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-fleet">
             <div className="flex items-start gap-3">
               <AlertCircle className="w-5 h-5 text-red-500 mt-0.5" />
               <div>
