@@ -4,14 +4,31 @@ export type HubAccentTheme = "indigo" | "teal" | "ink"
 const MODE_KEY = "hauldesk-mode"
 const THEME_KEY = "hauldesk-theme"
 
+const COLOR_MODES: readonly HubColorMode[] = ["light", "dark"]
+const ACCENT_THEMES: readonly HubAccentTheme[] = ["indigo", "teal", "ink"]
+
+export function isColorMode(value: unknown): value is HubColorMode {
+  return typeof value === "string" && (COLOR_MODES as readonly string[]).includes(value)
+}
+
+export function isAccentTheme(value: unknown): value is HubAccentTheme {
+  return typeof value === "string" && (ACCENT_THEMES as readonly string[]).includes(value)
+}
+
 export function readAppearance(): { mode: HubColorMode; theme: HubAccentTheme } {
   if (typeof window === "undefined") return { mode: "light", theme: "indigo" }
   // localStorage access throws under "block all cookies"/private-mode
   // policies — a blocked preference must never crash the shell.
   try {
-    const mode = (localStorage.getItem(MODE_KEY) as HubColorMode | null) ?? "light"
-    const theme = (localStorage.getItem(THEME_KEY) as HubAccentTheme | null) ?? "indigo"
-    return { mode, theme }
+    // Allowlist, never cast: a stale or garbage value would stamp an unmatched
+    // data-theme/data-mode and the page would silently fall back to indigo/light
+    // while the menu claimed otherwise.
+    const mode = localStorage.getItem(MODE_KEY)
+    const theme = localStorage.getItem(THEME_KEY)
+    return {
+      mode: isColorMode(mode) ? mode : "light",
+      theme: isAccentTheme(theme) ? theme : "indigo",
+    }
   } catch {
     return { mode: "light", theme: "indigo" }
   }

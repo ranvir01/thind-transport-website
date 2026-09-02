@@ -65,7 +65,10 @@ function elevation(k: number): string {
 }
 
 const config: Config = {
-  darkMode: ["class"],
+  // The hub stamps the mode as an attribute (boot script in app/hub/layout.tsx),
+  // never as a class — `dark:` utilities now read the same attribute the CSS
+  // tokens do. The marketing site has no mode toggle, so nothing fires there.
+  darkMode: ["selector", '[data-mode="dark"]'],
   content: [
     "./pages/**/*.{ts,tsx}",
     "./components/**/*.{ts,tsx}",
@@ -251,10 +254,14 @@ const config: Config = {
         cedar: "var(--m-cedar)",
 
         bg: "var(--bg)",
-        surface: { DEFAULT: "var(--surface)", 2: "var(--surface-2)" },
-        border: { DEFAULT: "var(--border)", strong: "var(--border-strong)" },
+        surface: { DEFAULT: "var(--surface)", 2: "var(--surface-2)", 3: "var(--surface-3)" },
+        // `control` is the solid ≥3:1 edge for inputs/toggles (WCAG 1.4.11);
+        // DEFAULT/strong are the whisper hairlines for cards and dividers.
+        border: { DEFAULT: "var(--border)", strong: "var(--border-strong)", control: "var(--border-control)" },
         fg: { DEFAULT: "var(--text)", 2: "var(--text-2)", 3: "var(--text-3)" },
         hover: "var(--hover)",
+        selected: "var(--selected)",
+        overlay: "var(--overlay)",
         accent: {
           DEFAULT: "var(--accent)",
           hover: "var(--accent-hover)",
@@ -264,7 +271,7 @@ const config: Config = {
         },
         ok: { DEFAULT: "var(--green)", soft: "var(--green-soft)" },
         warn: { DEFAULT: "var(--amber)", soft: "var(--amber-soft)" },
-        bad: { DEFAULT: "var(--red)", soft: "var(--red-soft)" },
+        bad: { DEFAULT: "var(--red)", soft: "var(--red-soft)", fg: "var(--bad-fg)" },
         info: { DEFAULT: "var(--blue)", soft: "var(--blue-soft)" },
       },
       fontSize: {
