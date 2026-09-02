@@ -96,6 +96,39 @@ export async function driverOwnsTruck(
  * open DVIR in the review chain — restricting this to type='post' left it
  * invisible to the driver/office UI once that happened.
  */
+/**
+ * Every truck sitting on an unsafe DVIR nobody has certified a repair for —
+ * the fleet's grounded list. One row per truck (its latest open defect
+ * report), oldest first, because the one that has sat longest is the one
+ * costing the most.
+ */
+export interface GroundedTruck {
+  dvir_id: string
+  truck_id: string
+  truck_unit: string
+  driver_name: string
+  created_at: string
+  defects: DvirDefect[]
+}
+
+export async function trucksAwaitingRepair(carrierId: string): Promise<GroundedTruck[]> {
+  return query<GroundedTruck>(
+    `SELECT DISTINCT ON (v.truck_id)
+            v.id AS dvir_id, v.truck_id, t.unit_number AS truck_unit,
+            d.first_name || ' ' || d.last_name AS driver_name, v.created_at, v.defects
+       FROM hub.dvirs v
+       JOIN hub.trucks t ON t.id = v.truck_id AND t.carrier_id = v.carrier_id
+       JOIN hub.drivers d ON d.id = v.driver_id AND d.carrier_id = v.carrier_id
+      WHERE v.carrier_id = $1 AND v.safe_to_operate = FALSE AND v.repair_certified_at IS NULL
+        AND NOT EXISTS (
+          SELECT 1 FROM hub.dvirs r
+           WHERE r.prior_dvir_id = v.id AND r.carrier_id = v.carrier_id AND r.truck_id = v.truck_id
+        )
+      ORDER BY v.truck_id, v.created_at DESC`,
+    [carrierId]
+  ).then((rows) => rows.sort((a, b) => String(a.created_at).localeCompare(String(b.created_at))))
+}
+
 export async function truckDvirState(
   carrierId: string,
   truckId: string

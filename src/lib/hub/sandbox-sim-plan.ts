@@ -46,8 +46,12 @@ export interface SimLoad {
   loadedMiles: number
   driverId: string | null
   truckId: string | null
-  /** Driven by a seat driver (Jordan/Sam) — the sim never advances these. */
+  /** Driven by a seat driver (Jordan/Sam) — the sim never advances these on
+   *  the road. The one exception is paperwork: see the POD step below. */
   playerDriven: boolean
+  /** A POD document is attached to the load (the driver sent one). Optional
+   *  so fixtures built before it existed stay valid — absent reads as none. */
+  podOnFile?: boolean
   createdAt: Date
   deliveredAt: Date | null
   pickup: SimStop | null
@@ -384,8 +388,21 @@ export function planSandboxTick(
   /* 3 · PAPERWORK — deliberately a beat behind the humans. */
   let pods = 0
   for (const load of world.loads) {
-    if (load.playerDriven || load.status !== "delivered" || !load.deliveredAt) continue
+    if (load.status !== "delivered" || !load.deliveredAt) continue
     if (pods >= (catchUp ? SIM.podCapCatchUp : SIM.podCapLive)) break
+    if (load.playerDriven) {
+      // The player's paperwork is theirs to send — the sim never invents a
+      // POD for a human. But once one is on file, the back office confirms
+      // it the same way it confirms an NPC's, because nobody else is going
+      // to: a player load parked at 'delivered' never reaches the
+      // accountant's queue, and the driver's idle clock (which starts at
+      // pod_received) never starts, so dispatch never offers the next load.
+      if (load.podOnFile) {
+        ops.push({ op: "advanceStatus", loadId: load.id, to: "pod_received" })
+        pods++
+      }
+      continue
+    }
     if (now >= podDueAt(load.deliveredAt, load.id)) {
       ops.push({ op: "advanceStatus", loadId: load.id, to: "pod_received" })
       pods++

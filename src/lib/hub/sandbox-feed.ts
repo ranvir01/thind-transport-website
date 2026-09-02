@@ -122,9 +122,17 @@ export async function readCompanyFeed(limit = 8): Promise<FeedItem[]> {
         LIMIT $2`,
       [C, capped]
     ),
-    query<{ id: string; at: string; number: string; cents: number; customer: string | null }>(
+    // Who billed it comes off the audit row createInvoiceFromLoad writes: a
+    // null actor is the autopilot's back office, a name is a human. Until
+    // this join every invoice was captioned "Back office (AI)" — including
+    // the ones Rosa raised herself, which credited her shift to a machine.
+    query<{ id: string; at: string; number: string; cents: number; customer: string | null; actor: string | null }>(
       `SELECT i.id::text AS id, i.created_at AS at, i.number, i.amount_cents AS cents,
-              c.name AS customer
+              c.name AS customer,
+              (SELECT a.actor_name FROM hub.audit_log a
+                WHERE a.carrier_id = $1 AND a.entity_type = 'invoice' AND a.action = 'create'
+                  AND a.entity_id = i.id::text AND a.actor_id IS NOT NULL
+                ORDER BY a.created_at DESC LIMIT 1) AS actor
          FROM hub.invoices i
          LEFT JOIN hub.customers c ON c.id = i.customer_id AND c.carrier_id = $1
         WHERE i.carrier_id = $1
@@ -132,9 +140,20 @@ export async function readCompanyFeed(limit = 8): Promise<FeedItem[]> {
         LIMIT $2`,
       [C, capped]
     ),
-    query<{ id: string; at: string; cents: number; number: string | null; customer: string | null }>(
+    // A payment has no actor column; recordPayment logs it against the
+    // invoice with the amount in new_value. The autopilot pays with a null
+    // actor (sandbox-sim.ts payInvoice), a human with theirs — so the closest
+    // matching audit row says which. The customer stays the subject of the
+    // sentence either way; what changes is the AI badge.
+    query<{ id: string; at: string; cents: number; number: string | null; customer: string | null; ai: boolean }>(
       `SELECT p.id::text AS id, p.created_at AS at, p.amount_cents AS cents,
-              i.number, c.name AS customer
+              i.number, c.name AS customer,
+              COALESCE((SELECT a.actor_id IS NULL FROM hub.audit_log a
+                         WHERE a.carrier_id = $1 AND a.entity_type = 'payment' AND a.action = 'record'
+                           AND a.entity_id = p.invoice_id::text
+                           AND (a.new_value->>'amountCents')::bigint = p.amount_cents
+                         ORDER BY ABS(EXTRACT(EPOCH FROM (a.created_at - p.created_at))) ASC
+                         LIMIT 1), FALSE) AS ai
          FROM hub.payments p
          LEFT JOIN hub.invoices i ON i.id = p.invoice_id AND i.carrier_id = $1
          LEFT JOIN hub.customers c ON c.id = i.customer_id AND c.carrier_id = $1
@@ -147,7 +166,10 @@ export async function readCompanyFeed(limit = 8): Promise<FeedItem[]> {
 
   const rows: (FeedItem & { verb: Verb })[] = []
   for (const m of moves) {
-    const ai = !m.actor_name || m.actor_name === AUTOPILOT
+    // The autopilot signs as "Blue Ridge autopilot" on the road and as
+    // "Dispatch autopilot" when it offers a player the next load
+    // (sandbox-sim.ts offerPlayerLoad) — anything wearing that suffix is it.
+    const ai = !m.actor_name || m.actor_name === AUTOPILOT || /autopilot$/i.test(m.actor_name)
     // A load reaching status 'paid' and a customer sending a payment are
     // different events with the same word on them; keep them apart so the
     // collapse never merges "invoiced 3 loads" with "sent 3 payments".
@@ -174,8 +196,8 @@ export async function readCompanyFeed(limit = 8): Promise<FeedItem[]> {
     rows.push({
       id: `i-${i.id}`,
       at: new Date(i.at).toISOString(),
-      who: "Back office",
-      ai: true,
+      who: i.actor ?? "Back office",
+      ai: !i.actor,
       text: phraseFor("billed", `${i.customer ?? "a customer"} on ${i.number}`),
       cents: i.cents,
       kind: "money",
@@ -188,7 +210,7 @@ export async function readCompanyFeed(limit = 8): Promise<FeedItem[]> {
       id: `p-${p.id}`,
       at: new Date(p.at).toISOString(),
       who: p.customer ?? "A customer",
-      ai: false,
+      ai: p.ai,
       text: p.number ? phraseFor("paid", p.number) : "sent a payment",
       cents: p.cents,
       kind: "money",

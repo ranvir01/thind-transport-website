@@ -62,6 +62,9 @@ describe("driverFileVisible", () => {
     expect(text).toContain("entity_type = 'driver' AND entity_id = $3")
     // Their own settlements, and only ones the driver app already shows.
     expect(text).toContain("driver_id = $3 AND status IN ('approved','paid')")
+    // Photos on their own direct thread with the office — and only theirs.
+    expect(text).toContain("JOIN hub.message_threads t ON t.id = d.entity_id AND d.entity_type = 'message' AND t.carrier_id = d.carrier_id")
+    expect(text).toContain("t.driver_id = $3")
     expect(params).toEqual([
       "/api/hub/files/secret.pdf",
       CARRIER,
@@ -71,7 +74,7 @@ describe("driverFileVisible", () => {
     ])
   })
 
-  it("never grants on carrier scope alone — $3 (the driver) constrains all three branches", async () => {
+  it("never grants on carrier scope alone — $3 (the driver) constrains all four branches", async () => {
     // The bug being fixed was exactly this: same-carrier was treated as
     // sufficient. Every branch must narrow past carrier_id.
     queryOneMock
@@ -80,7 +83,7 @@ describe("driverFileVisible", () => {
     await driverFileVisible(CARRIER, USER, "pod.pdf")
     const text = String(queryOneMock.mock.calls[1][0])
     const branches = text.split("UNION ALL")
-    expect(branches).toHaveLength(3)
+    expect(branches).toHaveLength(4)
     for (const branch of branches) expect(branch).toContain("$3")
   })
 

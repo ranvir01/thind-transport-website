@@ -150,12 +150,14 @@ suite("the driver app tells the truth about money", () => {
     const unsettled = await driverUnsettledPay(C, driver_id)
 
     // Third opinion, straight off the schema: he has delivered work nobody has
-    // settled. If this is zero the assertion below is vacuous.
+    // PAID him for — no settlement, or one still in draft. If this is zero the
+    // assertion below is vacuous.
     const [{ n }] = await query<{ n: number }>(
-      `SELECT COUNT(*)::int AS n FROM hub.loads
-        WHERE carrier_id = $1 AND driver_id = $2 AND deleted_at IS NULL
-          AND settlement_id IS NULL
-          AND status IN ('delivered','pod_received','invoiced','paid')`,
+      `SELECT COUNT(*)::int AS n FROM hub.loads l
+         LEFT JOIN hub.settlements s ON s.id = l.settlement_id AND s.carrier_id = l.carrier_id
+        WHERE l.carrier_id = $1 AND l.driver_id = $2 AND l.deleted_at IS NULL
+          AND (l.settlement_id IS NULL OR s.status = 'draft')
+          AND l.status IN ('delivered','pod_received','invoiced','paid')`,
       [C, driver_id]
     )
     expect(n).toBeGreaterThan(0)

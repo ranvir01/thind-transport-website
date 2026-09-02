@@ -73,11 +73,25 @@ const isTestFile = (file) =>
 function runTsc() {
   try {
     execSync("npx tsc --noEmit", { encoding: "utf-8", stdio: ["ignore", "pipe", "pipe"] })
-    return ""
+    return { output: "", status: 0 }
   } catch (err) {
     // tsc exits non-zero when it finds anything; the diagnostics are on stdout.
-    return `${err.stdout ?? ""}${err.stderr ?? ""}`
+    return { output: `${err.stdout ?? ""}${err.stderr ?? ""}`, status: err.status ?? 1 }
   }
+}
+
+/**
+ * A non-zero tsc exit that produced NO src/ diagnostics is not a clean run —
+ * it is tsc failing to run (a bad tsconfig, an out-of-memory crash, a missing
+ * type package, an error in a file outside src/). The old gate parsed zero
+ * diagnostics from that and printed a green tick. Exported for the parser
+ * test.
+ */
+export function tscRanButWasNotParsed(status, diagnostics, output) {
+  return status !== 0 && diagnostics.length === 0 && /error TS\d+/.test(output)
+}
+export function tscExitedWithoutDiagnostics(status, diagnostics) {
+  return status !== 0 && diagnostics.length === 0
 }
 
 /**
@@ -110,8 +124,16 @@ export const isTestDiagnostic = (file) => isTestFile(file)
 const isMain = process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href
 
 if (isMain) {
-const output = runTsc()
+const { output, status } = runTsc()
 const diagnostics = parseDiagnostics(output)
+
+if (tscExitedWithoutDiagnostics(status, diagnostics)) {
+  console.log(`\n🔎 typecheck gate`)
+  console.log(`❌ tsc exited ${status} but no src/ diagnostics were parsed — tsc did not run cleanly.`)
+  console.log(`   This is not a pass. The raw output follows:\n`)
+  console.log(output.trim().split("\n").slice(0, 40).join("\n"))
+  process.exit(1)
+}
 
 const appErrors = diagnostics.filter((d) => !isTestFile(d.file))
 const testErrors = diagnostics.filter((d) => isTestFile(d.file))

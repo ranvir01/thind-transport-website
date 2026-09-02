@@ -6,6 +6,7 @@ import { logAudit } from "@/lib/hub/audit"
 import { actionError } from "@/lib/hub/action-error"
 import { query } from "@/lib/hub/db"
 import { getIntakeDraft, resolveIntakeDraft } from "@/lib/hub/intake-drafts"
+import { assertCarrierRefs } from "@/lib/hub/tenancy"
 
 interface Result {
   ok: boolean
@@ -28,6 +29,14 @@ export async function acceptIntakeDraftAction(draftId: string, loadId: string): 
     const user = await requirePermission("loads:write")
     const draft = await getIntakeDraft(user.carrierId, draftId)
     if (!draft) return { ok: false, error: "That draft is no longer in the Inbox" }
+
+    // The load id comes from the client. It has to be THIS carrier's: the
+    // draft is filed against it and its rate con is re-parented onto it
+    // below, and a foreign id would make the document vanish from every
+    // carrier-scoped list while the audit row points at freight the carrier
+    // cannot see. Throws "Load not found", which the catch turns into the
+    // ordinary error result.
+    await assertCarrierRefs(user.carrierId, { load_id: loadId })
 
     const resolved = await resolveIntakeDraft({
       carrierId: user.carrierId, id: draftId, status: "accepted",

@@ -276,15 +276,24 @@ function objectivesFor(seat: ShiftSeatKey, base: ShiftMetrics, cur: ShiftMetrics
       ]
     case "driver":
       return [
-        make("legs", "Advance your load 3 legs (arrive → load → deliver)", 3, cur.myStatusMoves - base.myStatusMoves),
+        // Three legs is more than one load offers from the seat (the seeded
+        // run is already rolling — deliver is the only status left), so the
+        // rest come off the NEXT load: send the POD, and dispatch offers you
+        // one a few minutes later. The label says so; a target you cannot
+        // see the path to reads as the product losing your work.
+        make("legs", "Move freight 3 legs — deliver, then arrive and load the next one", 3, cur.myStatusMoves - base.myStatusMoves),
         make("ontime", "Arrive inside the appointment window", 1, cur.myOnTimeArrivals - base.myOnTimeArrivals),
-        make("pod", "Submit the POD", 1, cur.myPodsSubmitted - base.myPodsSubmitted),
+        make("pod", "Send the POD from your phone", 1, cur.myPodsSubmitted - base.myPodsSubmitted),
       ]
     case "accountant":
       return [
         make("invoice", "Invoice 2 delivered loads", 2, cur.myInvoices - base.myInvoices),
         make("billed", "Bill $3,000 or more", 1, cur.myInvoicedCents - base.myInvoicedCents >= 300_000 ? 1 : 0),
-        make("payment", "A payment lands on an overdue invoice", 1, cur.paymentsRecorded - base.paymentsRecorded),
+        // Counts payments THIS user records (audit-scoped), on any invoice.
+        // It used to say "on an overdue invoice", which the reader never
+        // checked — the card ticked for a payment on a fresh one and the
+        // label lied about what it had measured.
+        make("payment", "Record a customer payment", 1, cur.paymentsRecorded - base.paymentsRecorded),
         // Same clamp as the dispatcher's board: the sim invoices delivered
         // loads itself (autoInvoice), which drains this backlog without the
         // accountant lifting a finger. Your own invoice has to be part of it.

@@ -30,16 +30,17 @@ useful information.
    out, arrivals every ~12 min — but you will not watch a truck cross a state in an
    afternoon.
 
-The app now says the first two of these itself: every seat carries the clock rule
-under its shift card, and the sandbox strip names which of the two worlds is loaded
-("Steady week" / "Crunch day"). You should not need this page to avoid those two
-surprises — if you do, that is a finding worth writing down.
+The app now says the first two of these itself: every seat carries the clock rule and
+the broker hours under its shift card, and the sandbox strip names which of the two
+worlds is loaded ("Steady week" / "Crunch day"). You should not need this page to avoid
+those two surprises — if you do, that is a finding worth writing down.
 
 **Two scenarios on the seat-picker page:**
 - **Steady week** — the normal company.
-- **Crunch day** — the morning goes wrong on purpose: pickups 4 hours late, a truck dead
-  at inspection, invoices past due. Use this one to see whether the software *helps* when
-  it matters.
+- **Crunch day** — the morning goes wrong on purpose: two pickups 4 hours late with no
+  truck on them (the assigned trucks never showed — find another and dispatch it), a
+  truck dead at inspection, invoices past due. Use this one to see whether the software
+  *helps* when it matters.
 
 **One bug I found and fixed — worth 30 seconds of your eyes.** Some trucks were showing
 on **two loads at the same time**, which is physically impossible and would have been the
@@ -131,13 +132,18 @@ Would this save you time on a real Tuesday morning? ______________________
 
 1. On your phone, open `/hub/sandbox` → take the **Company driver** seat (Jordan).
 2. **Clock in.**
-3. Work the load in front of you: **I'm here** at the pickup → **I'm heading to the
-   pickup** / rolling → at the receiver, mark **Delivered** → **Snap & send** the POD.
-4. **End shift**, read the recap.
+3. Work the load in front of you. Jordan is already rolling, so the first taps are at the
+   receiver: **I'm here** → **Delivered** → **Snap & send** the POD.
+4. Wait it out: once the POD is in, the back office confirms it and about five minutes
+   later dispatch offers you the next load. That one starts from the top — **I'm heading
+   to the pickup** → **I'm here** → **Loaded — rolling now** — and those are the legs
+   the shift's "3 legs" objective is counting.
+5. **End shift**, read the recap.
 
 **Should happen:** your truck is already ~35 minutes from delivering; you get a
 notification when you arrive; the buttons are big enough to hit while distracted; the
-sim never does your job for you — the taps are yours.
+sim never does your job for you — the taps are yours. The POD objective ticks the moment
+you send one; if it doesn't, that is a finding.
 
 ☐ Worked as described ☐ Partly ☐ Broken
 
@@ -150,7 +156,10 @@ Would a driver of yours actually use this? Why / why not: ________________
 #### 2b — What the run pays (new)
 
 The load card now carries a line like **THIS RUN PAYS YOU · $95.70 · 165 mi × $0.58/mi**,
-and the *Last pay* tile carries a second line: **$1,071.84 since then, not settled yet**.
+and the *Last pay* tile carries a second line: **$167.62 since then, not settled yet** — the
+same figure as the office's draft settlement for Jordan, because it is the same loads through
+the same engine. (An earlier build showed $1,071.84 here: month-old loads the seed had never
+put on a settlement. That was the seed lying, and it is fixed.)
 
 Both come out of the same pay engine that cuts your settlements, so the phone can never
 quote a wage payroll would disagree with. The per-run figure is **gross** — escrow and
@@ -208,11 +217,15 @@ ________________________________________________________________
 
 1. Take the **Accountant** seat (Rosa) → **Clock in**.
 2. Invoice a delivered load that's waiting to be billed.
-3. Watch the aging/overdue numbers — payments land on their own as the shift runs.
-4. **End shift**, read the recap.
+3. Record one customer payment yourself (any open invoice) — that is the objective the
+   card is counting; the autopilot's own payments land beside it but never score you.
+4. Watch the aging/overdue numbers move.
+5. **End shift**, read the recap.
 
 **Should happen:** PODs keep landing so there's always something to bill; money comes
-back in without you doing it; the recap counts what you invoiced and how much.
+back in without you doing it; the recap counts what you invoiced and how much; the crew
+rail on the right credits *you* by name for the invoice you raised, and the AI badge only
+for what the autopilot did.
 
 ☐ Worked ☐ Partly ☐ Broken
 
@@ -224,7 +237,8 @@ Does the money math match how you actually bill? ________________________
 
 ### Drill 4 — Two people at once (the multiplayer check)
 
-Do this one with a second device, or a second browser window.
+Do this one with a second device, or a **private/incognito window**. A normal second
+tab or window shares the login, so taking a seat there signs the first one out.
 
 1. Desktop: **Dispatcher** seat. Phone: **Company driver** seat.
 2. From the desktop, book and dispatch a load onto **Jordan Reyes**.
@@ -244,7 +258,9 @@ What I saw: ______________________________________________________________
 1. Seat picker → **Crunch day** → take the **Dispatcher** seat.
 2. Spend five minutes trying to sort out the mess.
 
-**Should happen:** late pickups, a truck out of service, overdue invoices — and the
+**Should happen:** two pickups four hours late with **no truck on them** (the assigned
+trucks never showed — they sit as booked, unassigned, until you put a truck on them; the
+autopilot will not do it for you), a truck out of service, overdue invoices — and the
 software should make it *obvious* what's on fire and what to do first.
 
 ☐ It made the mess clear ☐ Somewhat ☐ I couldn't tell what mattered
@@ -266,18 +282,18 @@ doesn't sound like the actual work, say so and I'll change it.
 | # | Seat & shift | Objectives sound right? | Notes |
 |---|---|---|---|
 | 6 | **Owner** (Priya, `/hub`) — approve the pay run, pay it, move money, shrink the settlement queue | ☐ yes ☐ no | |
-| 7 | **Safety** (Elena) — certify a repair to release a truck, log an incident, close one out | ☐ yes ☐ no | |
-| 8 | **Recruiter** (Grace) — move 2 applicants forward, get an offer signed, hire through orientation | ☐ yes ☐ no | |
-| 9 | **Owner-operator** (Sam) — move your load, send a receipt, draw an advance, file a DVIR | ☐ yes ☐ no | |
+| 7 | **Safety** (Elena) — certify a repair to release a truck (the grounded truck is at the top of `/hub/safety` now, with a "Certify repair" link — you should not have to hunt for it), log an incident, close one out | ☐ yes ☐ no | |
+| 8 | **Recruiter** (Grace) — move 2 applicants forward, get an offer signed, hire through orientation. Dale Norwood is staged for this: his offer is out and his checklist is four of five, so a signature and one tick gets you a hire | ☐ yes ☐ no | |
+| 9 | **Owner-operator** (Sam) — move your load, send a receipt, draw an advance, file a DVIR. *My pay* now shows his escrow on deposit above the advances | ☐ yes ☐ no | |
 
 **The rest of the app** — quick passes, comment only where something's off.
 
 | # | Drill | Result | Notes |
 |---|---|---|---|
-| 10 | **Broker portal** (Dana) — can your broker self-serve tracking + POD? | ☐ ok ☐ off | |
-| 11 | **Shipper portal** (Alex) — quotes, pickups, delivery proof | ☐ ok ☐ off | |
+| 10 | **Broker portal** (Dana) — can your broker self-serve tracking + POD? Two of Summit's delivered loads carry a signed POD PDF; open one | ☐ ok ☐ off | |
+| 11 | **Shipper portal** (Alex) — quotes, pickups, delivery proof. Two of Cascade's loads carry a POD to grab | ☐ ok ☐ off | |
 | 12 | **Money** — invoices, aging, settlements to the penny | ☐ ok ☐ off | |
-| 13 | **Fuel → IFTA** — a quarter's worth, reefer gallons handled | ☐ ok ☐ off | |
+| 13 | **Fuel → IFTA** — a quarter's worth of fuel rolled into the return; the five reefer fills and the DEF stay out of the taxable gallons | ☐ ok ☐ off | |
 | 14 | **Dark mode** — flip your phone to dark and re-walk the driver app | ☐ ok ☐ off | |
 | 15 | **One-handed on your phone** — anything you couldn't reach or read | ☐ ok ☐ off | |
 

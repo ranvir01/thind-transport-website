@@ -258,6 +258,54 @@ export async function buildInvoicePdf(input: InvoicePdfInput): Promise<Uint8Arra
   return b.doc.save()
 }
 
+// ---- Proof of delivery (generated stand-in) ----
+
+export interface PodPdfInput {
+  brand: PdfBrand
+  loadReference: string
+  customerName: string
+  commodity: string
+  pickup: { facility: string; city: string; at: string }
+  delivery: { facility: string; city: string; at: string }
+  driverName: string
+  receivedBy: string
+  pieces: string
+}
+
+/**
+ * A signed delivery receipt as a PDF, for worlds where nobody stood at a dock
+ * with a phone — the sandbox seeds these onto its outside customers' loads so
+ * the broker and shipper seats have a real document to open. Same builder,
+ * same fonts, same private storage path as every other generated document;
+ * the only thing it fakes is the signature, which is typed.
+ */
+export async function buildPodPdf(input: PodPdfInput): Promise<Uint8Array> {
+  const b = await newBuilder()
+  b.header(input.brand, `Proof of delivery ${input.loadReference}`)
+  b.keyValue([
+    ["Load", input.loadReference],
+    ["Customer", input.customerName],
+    ["Commodity", input.commodity],
+    ["Driver", input.driverName],
+  ])
+  b.table(
+    [
+      { header: "STOP", width: 90 },
+      { header: "FACILITY", width: 226 },
+      { header: "CITY", width: 120 },
+      { header: "TIME", width: 100, align: "right" },
+    ],
+    [
+      ["Pickup", input.pickup.facility, input.pickup.city, input.pickup.at],
+      ["Delivery", input.delivery.facility, input.delivery.city, input.delivery.at],
+    ]
+  )
+  b.text(`Received ${input.pieces} in good condition, no exceptions noted.`, { size: 10 })
+  b.y -= 6
+  b.box("RECEIVED BY", [input.receivedBy, `Signed at delivery, ${input.delivery.at}`])
+  return b.doc.save()
+}
+
 // ---- Customer statement (AR rollup, one PDF per customer) ----
 
 export interface StatementPdfInput {

@@ -147,15 +147,20 @@ export async function driverRunPay(
  * way to see money that existed but had not been through payroll yet. This is
  * that gap, filled with the same engine so it can never disagree with Friday.
  *
- * `settlement_id IS NULL` is the whole rule, and deliberately the only one. The
- * first draft also required `delivered_at > MAX(period_end)`, which reads as a
- * sensible "since the last settlement" window and is in fact a way to hide
- * earned money: a carrier whose latest settlement period ends in the FUTURE
- * (the sandbox seeds exactly that) zeroes out every real unpaid load a driver
- * has. Jordan had three of them and his phone said nothing. A load that has
- * not been attached to a settlement has not been paid — no date arithmetic
- * needed, and any extra condition here can only ever subtract from a number
- * the driver is owed.
+ * "Not on an approved or paid settlement" is the whole rule, and deliberately
+ * the only one. The first draft also required `delivered_at > MAX(period_end)`,
+ * which reads as a sensible "since the last settlement" window and is in fact
+ * a way to hide earned money: a carrier whose latest settlement period ends in
+ * the FUTURE (the sandbox seeds exactly that) zeroes out every real unpaid load
+ * a driver has. Jordan had three of them and his phone said nothing. No date
+ * arithmetic needed, and any extra condition here can only ever subtract from
+ * a number the driver is owed.
+ *
+ * A load sitting on a DRAFT counts too. draftSettlements links loads to the
+ * draft the moment it is written (settlements.ts), days before anyone approves
+ * it — and until it is approved the driver has not been paid. Reading
+ * `settlement_id IS NULL` alone dropped every load the office had merely
+ * started the paperwork on.
  */
 export async function driverUnsettledPay(carrierId: string, driverId: string): Promise<number> {
   const ruleSet = await getActivePayRules(carrierId, driverId)
@@ -173,9 +178,10 @@ export async function driverUnsettledPay(carrierId: string, driverId: string): P
             (SELECT COUNT(*)::int FROM hub.stops s
               WHERE s.carrier_id = $1 AND s.load_id = l.id) AS stops_count
        FROM hub.loads l
+       LEFT JOIN hub.settlements st ON st.id = l.settlement_id AND st.carrier_id = l.carrier_id
       WHERE l.carrier_id = $1 AND l.driver_id = $2 AND l.deleted_at IS NULL
         AND l.status IN ('delivered','pod_received','invoiced','paid')
-        AND l.settlement_id IS NULL
+        AND (l.settlement_id IS NULL OR st.status = 'draft')
       LIMIT 100`,
     [carrierId, driverId]
   )
@@ -302,6 +308,10 @@ export async function driverSettlementLines(
  *   - documents on loads assigned to them        (driverActiveLoads)
  *   - their own driver documents                 (driverDocuments)
  *   - their own approved/paid settlement PDFs    (driverSettlements)
+ *   - photos in their own direct thread with the office (messages: a photo
+ *     sent on a thread with no load is stored entity_type 'message' against
+ *     the thread id; without this branch every one of them 404'd on the
+ *     driver's phone while the office could open it)
  *
  * Note it does NOT filter load documents by kind, so a rate confirmation on
  * their own load stays readable — drivers are routinely sent theirs, and
@@ -339,6 +349,11 @@ export async function driverFileVisible(
      SELECT 1 AS ok FROM hub.settlements
      WHERE (statement_url = $1 OR (statement_url LIKE 'https://%' AND right(statement_url, $4::int) = $5::text))
        AND carrier_id = $2 AND driver_id = $3 AND status IN ('approved','paid')
+     UNION ALL
+     SELECT 1 AS ok FROM hub.documents d
+       JOIN hub.message_threads t ON t.id = d.entity_id AND d.entity_type = 'message' AND t.carrier_id = d.carrier_id
+     WHERE (d.url = $1 OR (d.url LIKE 'https://%' AND right(d.url, $4::int) = $5::text))
+       AND d.carrier_id = $2 AND t.driver_id = $3
      LIMIT 1`,
     [url, carrierId, account.driver_id, legacySuffix.length, legacySuffix]
   )

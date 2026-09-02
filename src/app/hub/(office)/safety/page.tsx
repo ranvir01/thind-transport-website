@@ -1,7 +1,8 @@
 import Link from "next/link"
-import { ChevronRight, Clock, Download, FileWarning, Plus, ShieldAlert } from "lucide-react"
+import { ChevronRight, Clock, Download, FileWarning, Plus, ShieldAlert, Wrench } from "lucide-react"
 import { listIncidents } from "@/lib/hub/incidents"
 import { listClaims, daysToDeadline } from "@/lib/hub/claims"
+import { trucksAwaitingRepair } from "@/lib/hub/dvir"
 import { fleetHosStatus, type HosLevel } from "@/lib/hub/telematics"
 import { driverSafetyBoard, fleetSafetySnapshot } from "@/lib/hub/safety-events-db"
 import { requirePermissionPage } from "@/lib/hub/session"
@@ -37,12 +38,13 @@ function formatMinutes(minutes: number | null): string {
 
 export default async function SafetyPage() {
   const user = await requirePermissionPage("compliance:read")
-  const [incidents, openClaims, hosStatus, safety, safetyDrivers] = await Promise.all([
+  const [incidents, openClaims, hosStatus, safety, safetyDrivers, grounded] = await Promise.all([
     listIncidents(user.carrierId),
     listClaims(user.carrierId, { openOnly: true }),
     fleetHosStatus(user.carrierId),
     fleetSafetySnapshot(user.carrierId),
     driverSafetyBoard(user.carrierId),
+    trucksAwaitingRepair(user.carrierId),
   ])
   const register = incidents.filter((i) => i.dot_recordable)
   const urgentClaims = openClaims.filter((c) => {
@@ -80,6 +82,42 @@ export default async function SafetyPage() {
         kindMix={safety.kindMix}
         drivers={safetyDrivers}
       />
+
+      {/* Grounded — a truck on an unsafe DVIR earns nothing until somebody
+          certifies the repair. This used to be discoverable only by opening
+          trucks one at a time. */}
+      {grounded.length > 0 ? (
+        <Panel className="mb-4 p-4 md:p-5 border-bad-soft">
+          <div className="flex flex-wrap items-center gap-2 mb-2">
+            <Wrench className="h-4 w-4 text-bad" />
+            <h2 className="text-[13.5px] font-semibold text-fg">Grounded — repair awaiting certification</h2>
+            <span className="rounded-full border border-bad-soft bg-bad-soft px-2 py-0.5 text-[11px] font-bold text-bad">
+              {grounded.length}
+            </span>
+          </div>
+          <ul className="divide-y divide-border">
+            {grounded.map((g) => (
+              <li key={g.dvir_id}>
+                <Link
+                  href={`/hub/fleet/trucks/${g.truck_id}`}
+                  className="flex items-center justify-between gap-2 py-2.5 px-2 -mx-2 rounded-lg hover:bg-hover"
+                >
+                  <div className="min-w-0">
+                    <p className="font-semibold text-fg truncate">Unit {g.truck_unit}</p>
+                    <p className="text-body-xs text-fg-3 truncate">
+                      {g.defects[0]?.label ?? "Defect"}{g.defects[0]?.note ? ` — ${g.defects[0].note}` : ""} · reported by {g.driver_name}{" "}
+                      {new Date(g.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                    </p>
+                  </div>
+                  <span className="flex shrink-0 items-center gap-1 text-[12px] font-semibold text-accent-text">
+                    Certify repair <ChevronRight className="h-4 w-4" />
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </Panel>
+      ) : null}
 
       {/* Hours of service */}
       <Panel className="mb-4 p-4 md:p-5">
