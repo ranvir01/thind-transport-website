@@ -63,8 +63,17 @@ function eventText(event: LoadEvent): string {
       return `${String(p.kind ?? "document").replace("_", " ")} uploaded (${p.file ?? ""})`
     case "geo":
       return `${p.field === "arrived_at" ? "Arrived" : "Departed"} ${p.city ?? ""}, ${p.state ?? ""}`
-    case "check_call":
+    case "check_call": {
+      // Pickup verification rides the check_call kind (no constraint change);
+      // read as the fact it is, not an empty "Check call:".
+      if (p.type === "pickup_verification") {
+        const dist = p.distance_miles == null ? "" : ` · ${p.distance_miles} mi from dock`
+        if (p.result === "verified") return `Pickup verified${dist}`
+        if (p.result === "mismatch") return `Pickup mismatch${dist}`
+        return "Pickup photo sent — no location on the phone, so not verified"
+      }
       return `Check call: ${p.note ?? ""}`
+    }
     case "note":
       return String(p.note ?? "Note")
     case "weather_alert":

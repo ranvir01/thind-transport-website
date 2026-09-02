@@ -381,8 +381,9 @@ export default async function ReportsPage({
           <Download className="h-3.5 w-3.5" /> Drivers CSV
         </a>
       </div>
-      <Panel className="overflow-x-auto" data-testid="driver-pnl">
-        <table className="w-full text-sm">
+      {/* Panel does not forward data-* props; the testid lives on the table. */}
+      <Panel className="overflow-x-auto">
+        <table className="w-full text-sm" data-testid="driver-pnl">
           <thead>
             <tr className="border-b border-border text-left text-label text-fg-3 uppercase">
               <th className="px-4 py-3">Driver</th>
