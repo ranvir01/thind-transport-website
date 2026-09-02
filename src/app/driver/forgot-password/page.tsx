@@ -54,7 +54,7 @@ export default function ForgotPasswordPage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <div className="bg-blue-50 border border-blue-200 rounded-fleet p-4">
               <p className="text-sm text-blue-900">
                 <strong>Note:</strong> The link will expire in 1 hour. If you don't see the email, check your spam folder.
               </p>
@@ -71,9 +71,9 @@ export default function ForgotPasswordPage() {
 
             <p className="text-center text-sm text-steel-400">
               Didn't receive the email?{" "}
-              <button 
-                onClick={() => setSubmitted(false)} 
-                className="text-orange hover:underline"
+              <button
+                onClick={() => setSubmitted(false)}
+                className="inline-block px-1 py-3 text-orange-400 hover:text-orange-300 hover:underline"
               >
                 Try again
               </button>
@@ -112,7 +112,7 @@ export default function ForgotPasswordPage() {
               />
             </div>
 
-            <Button type="submit" className="w-full bg-orange-600 hover:bg-orange/90" disabled={loading}>
+            <Button type="submit" className="w-full bg-orange-600 hover:bg-orange-500 text-white" disabled={loading}>
               {loading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -127,8 +127,8 @@ export default function ForgotPasswordPage() {
             </Button>
           </form>
 
-          <div className="mt-6 text-center">
-            <Link href="/driver/login" className="text-sm text-steel-300 hover:text-white flex items-center justify-center gap-2">
+          <div className="mt-3 text-center">
+            <Link href="/driver/login" className="flex min-h-[44px] items-center justify-center gap-2 text-sm text-steel-300 hover:text-white">
               <ArrowLeft className="h-4 w-4" />
               Back to Login
             </Link>

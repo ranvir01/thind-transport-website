@@ -8,10 +8,12 @@
 import { useState, useTransition } from "react"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
-import { CloudUpload, Loader2, MapPin, ShieldAlert } from "lucide-react"
+import { Loader2, MapPin, ShieldAlert } from "lucide-react"
 import { fileDriverIncidentReport } from "@/app/hub/_actions/safety"
 import { runOrQueue } from "@/components/hub/driver/offline-queue"
-import { fieldDarkCls, labelDarkCls } from "@/components/hub/ui"
+import {
+  btnDriverPrimaryCls, fieldDarkCls, fieldDarkTextareaCls, labelDarkCls,
+} from "@/components/hub/ui"
 import { cn } from "@/lib/utils"
 
 const QUESTIONS = [
@@ -23,7 +25,9 @@ const QUESTIONS = [
 export function DriverIncidentForm({ loads }: { loads: { id: string; reference: string }[] }) {
   const router = useRouter()
   const [pending, startTransition] = useTransition()
-  const [queued, setQueued] = useState(false)
+  // After an offline queue, lock re-submit so a second tap can't enqueue a
+  // duplicate crash report. The filled form stays readable at the scene.
+  const [savedOffline, setSavedOffline] = useState(false)
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null)
   const [form, setForm] = useState({
     location: "",
@@ -48,6 +52,7 @@ export function DriverIncidentForm({ loads }: { loads: { id: string; reference: 
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault()
+    if (savedOffline) return
     startTransition(async () => {
       const input = {
         occurredAt: new Date().toISOString(),
@@ -68,11 +73,11 @@ export function DriverIncidentForm({ loads }: { loads: { id: string; reference: 
       )
       if ("queued" in result) {
         // No navigation while offline — router.push/refresh needs the network
-        // it doesn't have, same as the DVIR queued path. Swap the form for a
-        // confirmation instead: a filled form with a live button invites a
-        // driver who doubts the toast to queue the same report twice.
+        // it doesn't have, same as the DVIR queued path. Park the button
+        // instead: a filled form with a live "File" invites a driver who
+        // doubts the toast to queue the same report twice.
         toast.success("No signal — report saved on your phone, sends automatically")
-        setQueued(true)
+        setSavedOffline(true)
       } else if (result.ok) {
         toast.success("Report filed — the office has been alerted")
         router.push("/hub/driver")
@@ -81,28 +86,14 @@ export function DriverIncidentForm({ loads }: { loads: { id: string; reference: 
     })
   }
 
-  if (queued) {
-    return (
-      <div className="rounded-2xl border border-white/10 bg-navy-800/80 p-6 text-center">
-        <CloudUpload className="mx-auto h-8 w-8 text-green-400" />
-        <p className="mt-2 font-display text-base font-bold uppercase tracking-[0.08em] text-white">
-          Report saved on your phone
-        </p>
-        <p className="mt-1 text-body-sm text-steel-200">
-          It sends itself the moment you&apos;re back in signal — no need to file it again.
-        </p>
-      </div>
-    )
-  }
-
   return (
     <form onSubmit={submit} className="space-y-4">
-      <div className="rounded-2xl border border-white/10 bg-navy-800/80 p-4 space-y-3">
+      <div className="driver-card space-y-3 p-4">
         <div>
           <label htmlFor="inc-location" className={labelDarkCls}>Where are you?</label>
-          <div className="flex gap-2">
+          <div className="flex gap-3">
             <input
-              id="inc-location" required className={fieldDarkCls}
+              id="inc-location" required className={cn(fieldDarkCls, "h-12 md:h-12")}
               placeholder="I-90 EB near exit 110, Ellensburg WA"
               value={form.location}
               onChange={(e) => setForm({ ...form, location: e.target.value })}
@@ -112,8 +103,8 @@ export function DriverIncidentForm({ loads }: { loads: { id: string; reference: 
               onClick={grabLocation}
               aria-label="Use my GPS location"
               className={cn(
-                "flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border",
-                coords ? "text-[color:var(--driver-accent)]" : "border-white/15 text-steel-200 hover:bg-white/5"
+                "flex h-12 w-12 shrink-0 items-center justify-center rounded-control border",
+                coords ? "text-[color:var(--driver-accent)]" : "border-white/15 text-steel-200 hover:bg-white/10"
               )}
               style={
                 coords
@@ -132,7 +123,7 @@ export function DriverIncidentForm({ loads }: { loads: { id: string; reference: 
         <div>
           <label htmlFor="inc-desc" className={labelDarkCls}>What happened?</label>
           <textarea
-            id="inc-desc" rows={3} required className={fieldDarkCls}
+            id="inc-desc" required className={fieldDarkTextareaCls}
             placeholder="Plain words. What, who, road conditions…"
             value={form.description}
             onChange={(e) => setForm({ ...form, description: e.target.value })}
@@ -163,14 +154,14 @@ export function DriverIncidentForm({ loads }: { loads: { id: string; reference: 
         </div>
       </div>
 
-      <div className="rounded-2xl border border-white/10 bg-navy-800/80 p-4 space-y-2">
+      <div className="driver-card space-y-2 p-4">
         <p className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-[color:var(--driver-accent)]">
           <ShieldAlert className="h-4 w-4" /> Three quick questions — answer honestly
         </p>
         {QUESTIONS.map(({ key, q }) => (
-          <div key={key} className="flex items-center justify-between gap-3 min-h-[48px]">
+          <div key={key} className="flex min-h-[48px] items-center justify-between gap-3">
             <p className="min-w-0 flex-1 text-sm font-semibold text-white">{q}</p>
-            <div role="group" aria-label={q} className="flex shrink-0 rounded-xl border border-white/15 overflow-hidden">
+            <div role="group" aria-label={q} className="flex shrink-0 rounded-control border border-white/15 overflow-hidden">
               {[false, true].map((value) => (
                 <button
                   key={String(value)}
@@ -178,12 +169,12 @@ export function DriverIncidentForm({ loads }: { loads: { id: string; reference: 
                   aria-pressed={form[key] === value}
                   onClick={() => setForm({ ...form, [key]: value })}
                   className={cn(
-                    "min-h-[44px] px-4 text-sm font-bold",
+                    "min-h-[44px] px-4 text-sm font-semibold",
                     form[key] === value
                       ? value
-                        ? "bg-orange/25 text-orange"
+                        ? "bg-orange/25 text-orange-300"
                         : "bg-white/15 text-white"
-                      : "text-steel-400 hover:bg-white/5"
+                      : "text-steel-300 hover:bg-white/5"
                   )}
                 >
                   {value ? "Yes" : "No"}
@@ -195,13 +186,18 @@ export function DriverIncidentForm({ loads }: { loads: { id: string; reference: 
       </div>
 
       <button
-        type="submit" disabled={pending}
-        className="flex w-full min-h-[56px] items-center justify-center gap-2 rounded-control bg-accent font-display text-base font-bold uppercase tracking-[0.08em] text-accent-fg hover:bg-accent-hover disabled:opacity-60"
+        type="submit" disabled={pending || savedOffline}
+        className={btnDriverPrimaryCls}
       >
         {pending ? <Loader2 className="h-5 w-5 animate-spin" /> : null}
-        File the report
+        {savedOffline ? "Saved on your phone" : "File the report"}
       </button>
-      <p className="text-center text-body-xs text-steel-400">
+      {savedOffline ? (
+        <p className="text-center text-[13px] text-steel-300">
+          Sends automatically when you have signal — no need to tap again.
+        </p>
+      ) : null}
+      <p className="text-center text-[13px] text-steel-300">
         After filing, message dispatch any photos from the scene.
       </p>
     </form>

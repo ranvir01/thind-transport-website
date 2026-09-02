@@ -76,7 +76,7 @@ export default function QuotePage() {
     <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-50">
       <PageBreadcrumb pageName="Get a Quote" category="Company" />
 
-      <div className="bg-[#060607] text-white">
+      <div className="bg-navy-950 text-white">
         <div className="container px-4 py-14 md:py-20">
           <div className="max-w-3xl">
             <span className="fleet-badge fleet-badge-gold mb-5">Direct carrier · No broker</span>

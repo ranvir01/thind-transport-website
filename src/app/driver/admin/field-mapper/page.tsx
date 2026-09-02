@@ -19,6 +19,12 @@ const PDFPageViewer = dynamic(
 const PDF_URL = "/templates/thind-transport-application-template.pdf"
 const STORAGE_KEY = "thind_field_map"
 
+// The marketing `outline` Button variant is white-on-dark; this toolbar sits on a
+// white bar, so every secondary control takes the light outline treatment and a
+// 44px minimum hit area (the `sm` size alone is 36px).
+const toolBtnCls = "min-h-[44px] bg-white border-gray-300 text-gray-700 hover:bg-gray-50 hover:text-gray-900"
+const toolIconBtnCls = "bg-white border-gray-300 text-gray-700 hover:bg-gray-50 hover:text-gray-900"
+
 export default function FieldMapperPage() {
   const [fields, setFields] = useState<FieldDefinition[]>([])
   const [currentPage, setCurrentPage] = useState(1)
@@ -195,11 +201,11 @@ export default function FieldMapperPage() {
             <p className="text-sm text-white/70">Click on the PDF to place form fields</p>
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-sm bg-white/20 px-3 py-1 rounded">
+            <span className="text-sm bg-white/20 px-3 py-1 rounded-full">
               {fields.length} fields mapped
             </span>
             {hasUnsavedChanges && (
-              <span className="text-sm bg-yellow-500/80 px-3 py-1 rounded">
+              <span className="text-sm bg-yellow-500/80 px-3 py-1 rounded-full">
                 Unsaved changes
               </span>
             )}
@@ -210,7 +216,7 @@ export default function FieldMapperPage() {
       {/* Notification */}
       {notification && (
         <div
-          className={`fixed top-20 right-4 z-50 px-4 py-3 rounded-lg shadow-lg ${
+          className={`fixed top-20 right-4 z-50 px-4 py-3 rounded-fleet shadow-lg ${
             notification.type === "success" ? "bg-green-500" : "bg-red-500"
           } text-white`}
         >
@@ -225,7 +231,8 @@ export default function FieldMapperPage() {
           <div className="flex items-center gap-2">
             <Button
               variant="outline"
-              size="sm"
+              size="icon"
+              className={toolIconBtnCls}
               onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
               disabled={currentPage === 1}
             >
@@ -238,19 +245,20 @@ export default function FieldMapperPage() {
                 max={totalPages}
                 value={currentPage}
                 onChange={(e) => setCurrentPage(Math.min(totalPages, Math.max(1, Number(e.target.value))))}
-                className="w-16 px-2 py-1 border rounded text-center"
+                className="h-11 w-16 rounded-fleet border border-neutral-300 bg-white px-2 text-center text-base text-neutral-900 md:text-sm"
               />
               <span className="text-gray-600">/ {totalPages}</span>
             </div>
             <Button
               variant="outline"
-              size="sm"
+              size="icon"
+              className={toolIconBtnCls}
               onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
               disabled={currentPage === totalPages}
             >
               <ChevronRight className="h-4 w-4" />
             </Button>
-            <span className="ml-2 text-sm text-gray-500">
+            <span className="ml-2 text-sm text-gray-600">
               ({fieldsOnCurrentPage} fields on this page)
             </span>
           </div>
@@ -259,7 +267,8 @@ export default function FieldMapperPage() {
           <div className="flex items-center gap-2">
             <Button
               variant="outline"
-              size="sm"
+              size="icon"
+              className={toolIconBtnCls}
               onClick={() => setScale(s => Math.max(0.5, s - 0.1))}
             >
               <ZoomOut className="h-4 w-4" />
@@ -267,7 +276,8 @@ export default function FieldMapperPage() {
             <span className="text-sm w-16 text-center">{Math.round(scale * 100)}%</span>
             <Button
               variant="outline"
-              size="sm"
+              size="icon"
+              className={toolIconBtnCls}
               onClick={() => setScale(s => Math.min(2, s + 0.1))}
             >
               <ZoomIn className="h-4 w-4" />
@@ -279,14 +289,15 @@ export default function FieldMapperPage() {
             <Button
               size="sm"
               onClick={() => setAddMode(!addMode)}
-              className={addMode ? "bg-green-600 hover:bg-green-700 text-white" : "bg-gray-600 hover:bg-gray-700 text-white"}
+              className={`min-h-[44px] text-white ${addMode ? "bg-green-700 hover:bg-green-800" : "bg-orange-600 hover:bg-orange-500"}`}
             >
               {addMode ? "✓ Click PDF to Add" : "+ Add Field"}
             </Button>
             <Button
+              variant="outline"
               size="sm"
               onClick={handleLoadTemplate}
-              className="bg-purple-600 hover:bg-purple-700 text-white"
+              className={toolBtnCls}
             >
               <Wand2 className="h-4 w-4 mr-1" />
               Load All Fields
@@ -294,13 +305,14 @@ export default function FieldMapperPage() {
             <Button
               variant="outline"
               size="sm"
+              className={toolBtnCls}
               onClick={() => setShowFieldList(!showFieldList)}
             >
               <List className="h-4 w-4 mr-1" />
               Field List
             </Button>
             <label className="cursor-pointer">
-              <Button variant="outline" size="sm" asChild>
+              <Button variant="outline" size="sm" className={toolBtnCls} asChild>
                 <span>
                   <Upload className="h-4 w-4 mr-1" />
                   Import
@@ -316,6 +328,7 @@ export default function FieldMapperPage() {
             <Button
               variant="outline"
               size="sm"
+              className={toolBtnCls}
               onClick={handleExport}
               disabled={fields.length === 0}
             >
@@ -325,6 +338,7 @@ export default function FieldMapperPage() {
             <Button
               variant="destructive"
               size="sm"
+              className="min-h-[44px]"
               onClick={handleClearAll}
               disabled={fields.length === 0}
             >
@@ -354,19 +368,19 @@ export default function FieldMapperPage() {
 
           {/* Field List Sidebar */}
           {showFieldList && (
-            <div className="w-80 bg-white rounded-lg shadow-lg overflow-hidden flex flex-col max-h-[calc(100vh-160px)]">
+            <div className="w-80 bg-white rounded-fleet-lg shadow-lg overflow-hidden flex flex-col max-h-[calc(100vh-160px)]">
               <div className="p-3 bg-gray-50 border-b font-semibold flex items-center justify-between">
                 <span>All Fields ({fields.length})</span>
                 <button
                   onClick={() => setShowFieldList(false)}
-                  className="text-gray-400 hover:text-gray-600"
+                  className="-my-2 -mr-2 inline-flex h-11 w-11 items-center justify-center rounded-fleet text-gray-600 hover:text-gray-900"
                 >
                   ×
                 </button>
               </div>
               <div className="flex-1 overflow-y-auto">
                 {fields.length === 0 ? (
-                  <div className="p-4 text-gray-500 text-center">
+                  <div className="p-4 text-gray-600 text-center">
                     <AlertCircle className="h-8 w-8 mx-auto mb-2 opacity-50" />
                     <p>No fields mapped yet</p>
                     <p className="text-sm">Click on the PDF to add fields</p>
@@ -386,11 +400,11 @@ export default function FieldMapperPage() {
                       >
                         <div className="flex items-center justify-between">
                           <span className="font-medium text-sm">{field.label}</span>
-                          <span className="text-xs bg-gray-100 px-2 py-0.5 rounded">
+                          <span className="text-xs bg-gray-100 px-2 py-0.5 rounded-full">
                             Page {field.page}
                           </span>
                         </div>
-                        <div className="text-xs text-gray-500 mt-1">
+                        <div className="text-xs text-gray-600 mt-1">
                           {field.id} • {field.type} {field.required && "• required"}
                         </div>
                       </li>
@@ -404,7 +418,7 @@ export default function FieldMapperPage() {
       </main>
 
       {/* Instructions */}
-      <div className="fixed bottom-4 left-4 right-4 md:left-auto md:right-4 md:w-96 bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm">
+      <div className="fixed bottom-4 left-4 right-4 md:left-auto md:right-4 md:w-96 bg-blue-50 border border-blue-200 rounded-fleet-lg p-4 text-sm">
         <h4 className="font-semibold text-blue-800 mb-2">How to Use:</h4>
         <ol className="list-decimal list-inside text-blue-700 space-y-1">
           <li><strong>Load All Fields</strong> - Pre-populates DOT form fields</li>

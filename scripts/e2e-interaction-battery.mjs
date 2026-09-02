@@ -82,8 +82,14 @@ async function main() {
   } catch {}
   check(drawerClosed, "4. Esc closes the mobile drawer")
 
-  // 5. All three bottom-bar tap targets are ≥44px tall. Anchor on the tel:
-  // link — "div.fixed.bottom-0" also matches the drawer.
+  // 5. Both bottom-bar tap targets (Call, Apply) are ≥44px tall. The bar mounts
+  // only once the hero has scrolled off (one red per viewport), so scroll first.
+  // Anchor on the tel: link — "div.fixed.bottom-0" also matches the drawer.
+  await page.evaluate(() => window.scrollTo({ top: 900, behavior: "instant" }))
+  await sleep(600)
+  try {
+    await page.waitForSelector('div.fixed.bottom-0 a[href^="tel:"]', { timeout: 4000 })
+  } catch {}
   const targets = await page.evaluate(() => {
     const tel = document.querySelector('div.fixed.bottom-0 a[href^="tel:"]')
     const bar = tel?.closest("div.fixed.bottom-0")
@@ -95,7 +101,7 @@ async function main() {
     }))
   })
   check(
-    targets && targets.length === 3 && targets.every((t) => t.h >= 44 && t.w >= 44),
+    targets && targets.length === 2 && targets.every((t) => t.h >= 44 && t.w >= 44),
     `5. bottom-bar tap targets ≥44px (${JSON.stringify(targets)})`
   )
 

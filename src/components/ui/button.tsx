@@ -4,29 +4,34 @@ import { cva, type VariantProps } from "class-variance-authority"
 
 import { cn } from "@/lib/utils"
 
+/**
+ * Marketing button. One shape (rounded-fleet), flat fills, no lift/glow/caps by
+ * default: the previous base carried shadow-lg, hover:-translate-y, a 4px ring
+ * and uppercase condensed type, so a "Cancel" link lifted and shouted, and the
+ * default fill was the off-brand `secondary` gradient (#D94B45) — a different
+ * red from every hand-rolled bg-orange-600 CTA on the site. Focus is the
+ * global :focus-visible outline in globals.css; no second ring here.
+ */
 const buttonVariants = cva(
-  "inline-flex items-center justify-center whitespace-nowrap rounded-xl text-sm font-semibold ring-offset-transparent transition-all duration-200 transform focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-secondary-500/25 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 disabled:cursor-not-allowed hover:-translate-y-0.5 active:translate-y-0 shadow-lg font-display uppercase tracking-[0.08em]",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-fleet font-semibold transition-colors duration-fast disabled:pointer-events-none disabled:opacity-50 disabled:cursor-not-allowed",
   {
     variants: {
       variant: {
-        default: "bg-gradient-to-r from-secondary-500 to-secondary-600 text-white hover:from-secondary-400 hover:to-secondary-500 hover:shadow-xl active:from-secondary-600 active:to-secondary-700 shadow-secondary-500/30",
-        primary: "bg-gradient-to-r from-primary-500 to-primary-600 text-white hover:from-primary-400 hover:to-primary-500 hover:shadow-xl active:from-primary-600 active:to-primary-700 shadow-primary-500/25",
-        secondary:
-          "bg-gradient-to-r from-neutral-100 to-neutral-200 text-primary-700 hover:from-white hover:to-neutral-100 hover:shadow-xl active:from-neutral-200 active:to-neutral-300 shadow-black/20",
-        outline:
-          "border-2 border-white/20 bg-white/5 text-white hover:bg-white/10 hover:border-white/35 hover:shadow-xl active:bg-white/15 shadow-sm",
-        ghost: "shadow-none hover:bg-white/10 hover:shadow-md hover:text-white active:bg-white/15 text-steel-200",
-        link: "shadow-none text-secondary-400 underline-offset-4 hover:underline hover:text-secondary-300",
-        destructive:
-          "bg-gradient-to-r from-red-500 to-red-600 text-white hover:from-red-600 hover:to-red-700 hover:shadow-xl active:from-red-700 active:to-red-800 shadow-red-500/25",
-        success:
-          "bg-gradient-to-r from-green-500 to-emerald-600 text-white hover:from-green-600 hover:to-emerald-700 hover:shadow-xl active:from-green-700 active:to-emerald-800 shadow-green-500/25",
+        /** The brand red at the AA-safe fill shade (#C42820, 5.5:1 with white). */
+        default: "bg-orange-600 text-white hover:bg-orange-500 active:bg-orange-700",
+        primary: "bg-navy text-white border border-white/10 hover:bg-navy-600 active:bg-navy-700",
+        secondary: "bg-white text-navy border border-steel-200 hover:bg-steel-50 active:bg-steel-100",
+        outline: "border border-white/20 bg-white/5 text-white hover:bg-white/10 hover:border-white/35 active:bg-white/15",
+        ghost: "text-steel-200 hover:bg-white/10 hover:text-white active:bg-white/15",
+        link: "text-orange-400 underline-offset-4 hover:underline hover:text-orange-300",
+        destructive: "bg-error-600 text-white hover:bg-error-700 active:bg-error-800",
+        success: "bg-success-700 text-white hover:bg-success-800 active:bg-success-900",
       },
       size: {
-        default: "h-11 px-6 py-2.5 text-sm",
-        sm: "h-9 rounded-lg px-4 text-xs tracking-[0.07em]",
-        lg: "h-12 rounded-xl px-8 text-base",
-        xl: "h-14 rounded-2xl px-10 text-lg",
+        default: "min-h-[44px] px-6 py-2.5 text-sm",
+        sm: "min-h-[36px] px-4 py-2 text-xs",
+        lg: "min-h-[48px] px-8 py-3 text-base",
+        xl: "min-h-[56px] px-10 py-3.5 text-lg",
         icon: "h-11 w-11",
       },
     },

@@ -3,23 +3,27 @@ import { cva, type VariantProps } from "class-variance-authority"
 
 import { cn } from "@/lib/utils"
 
-const cardVariants = cva(
-  "rounded-2xl border text-white transition-all duration-300 backdrop-blur-sm",
-  {
-    variants: {
-      variant: {
-        default: "border-white/10 bg-[linear-gradient(180deg,rgba(20,31,47,0.94),rgba(11,20,34,0.96))] shadow-lg hover:shadow-xl",
-        elevated: "border-white/10 bg-[linear-gradient(180deg,rgba(20,31,47,0.98),rgba(11,20,34,0.98))] shadow-xl hover:shadow-2xl hover:-translate-y-1",
-        ghost: "border-transparent bg-transparent shadow-none",
-        outline: "border-white/10 bg-transparent shadow-sm hover:shadow-md",
-        light: "border-gray-200 bg-white text-gray-900 shadow-sm backdrop-blur-none",
-      },
+/**
+ * Card. Flat surfaces, one radius (rounded-fleet-lg), colour set per variant
+ * and inherited by the header/title/description — the old base hardcoded
+ * text-white on a dark gradient, so a page filling a default Card with
+ * text-gray-900 got dark-on-dark (the original /loadoff bug). No backdrop
+ * blur: one blurred fixed bar per scroller is the budget, not every card.
+ */
+const cardVariants = cva("rounded-fleet-lg border transition-colors duration-base", {
+  variants: {
+    variant: {
+      default: "border-white/10 bg-navy-600 text-white shadow-brand",
+      elevated: "border-white/10 bg-navy-500 text-white shadow-brand-lg",
+      ghost: "border-transparent bg-transparent text-white shadow-none",
+      outline: "border-white/10 bg-transparent text-white",
+      light: "border-steel-200 bg-white text-navy shadow-m-e2",
     },
-    defaultVariants: {
-      variant: "default",
-    },
-  }
-)
+  },
+  defaultVariants: {
+    variant: "default",
+  },
+})
 
 export interface CardProps
   extends React.HTMLAttributes<HTMLDivElement>,
@@ -55,7 +59,7 @@ const CardTitle = React.forwardRef<
   <h3
     ref={ref}
     className={cn(
-      "text-h3 font-semibold leading-tight text-white font-display tracking-[0.04em]",
+      "text-h3 font-semibold leading-tight font-display",
       className
     )}
     {...props}
@@ -69,7 +73,7 @@ const CardDescription = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <p
     ref={ref}
-    className={cn("text-body-sm text-steel-200", className)}
+    className={cn("text-body-sm opacity-80", className)}
     {...props}
   />
 ))

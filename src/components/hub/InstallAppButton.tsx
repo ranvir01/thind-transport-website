@@ -15,9 +15,20 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { ChevronRight, Share, Smartphone } from "lucide-react"
 import { track } from "@vercel/analytics"
+import { btnDriverSecondaryCls } from "@/components/hub/ui"
 
 /** The install walkthrough, and the one page this component never links to. */
 const INSTALL_PAGE = "/hub/get-app"
+
+/**
+ * Accent-tinted edge + fill for the driver surface. Opacity modifiers drop
+ * silently on CSS-var colours (AGENTS.md), so the carrier's --driver-accent is
+ * mixed through color-mix() like the home page's weather card.
+ */
+const DRIVER_ACCENT_TINT = {
+  borderColor: "color-mix(in srgb, var(--driver-accent) 40%, transparent)",
+  backgroundColor: "color-mix(in srgb, var(--driver-accent) 10%, transparent)",
+} as const
 
 interface BeforeInstallPromptEvent extends Event {
   prompt(): Promise<void>
@@ -75,7 +86,7 @@ export function InstallAppButton({ appearance = "driver" }: { appearance?: "driv
       </>
     )
     const shareIcon = (
-      <Share className={office ? "mt-0.5 h-4 w-4 shrink-0 text-accent-text" : "mt-0.5 h-4 w-4 shrink-0 text-gold"} />
+      <Share className={office ? "mt-0.5 h-4 w-4 shrink-0 text-accent-text" : "mt-0.5 h-4 w-4 shrink-0 text-[color:var(--driver-accent)]"} />
     )
 
     // On the install page itself there is nowhere better to send anyone, and
@@ -86,7 +97,7 @@ export function InstallAppButton({ appearance = "driver" }: { appearance?: "driv
           className={
             office
               ? "flex items-start gap-2 rounded-control border border-border bg-surface-2 p-4 text-body-xs text-fg-2"
-              : "flex items-start gap-2 rounded-2xl border border-white/10 bg-navy-800/80 p-4 text-body-xs text-steel-300"
+              : "driver-card flex items-start gap-2 p-4 text-body-xs text-steel-300"
           }
         >
           {shareIcon}
@@ -110,19 +121,20 @@ export function InstallAppButton({ appearance = "driver" }: { appearance?: "driv
             // <alpha-value> placeholder, so Tailwind 3 drops the modifier and
             // the tint would render as a solid indigo block. accent-soft is
             // the token that exists for exactly this.
-            ? "flex min-h-[52px] w-full items-start gap-2 rounded-control border border-accent bg-accent-soft p-4 text-body-xs text-fg-2 transition-colors hover:border-accent-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-            : "flex min-h-[52px] w-full items-start gap-2 rounded-2xl border border-gold/40 bg-gold/10 p-4 text-body-xs text-steel-200 transition-colors hover:border-gold hover:bg-gold/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold"
+            ? "flex min-h-[52px] w-full items-start gap-2 rounded-control border border-accent bg-accent-soft p-4 text-body-xs text-fg-2 transition-colors hover:border-accent-hover"
+            : "flex min-h-[52px] w-full items-start gap-2 rounded-card border p-4 text-body-xs text-steel-200 transition-colors"
         }
+        style={office ? undefined : DRIVER_ACCENT_TINT}
       >
         {shareIcon}
         <span className="flex-1">
           {hint}{" "}
-          <span className={office ? "font-semibold text-accent-text underline" : "font-semibold text-gold underline"}>
+          <span className={office ? "font-semibold text-accent-text underline" : "font-semibold text-[color:var(--driver-accent)] underline"}>
             Show me how
           </span>
         </span>
         <ChevronRight
-          className={office ? "mt-0.5 h-4 w-4 shrink-0 text-accent-text" : "mt-0.5 h-4 w-4 shrink-0 text-gold"}
+          className={office ? "mt-0.5 h-4 w-4 shrink-0 text-accent-text" : "mt-0.5 h-4 w-4 shrink-0 text-[color:var(--driver-accent)]"}
           aria-hidden
         />
       </Link>
@@ -139,7 +151,7 @@ export function InstallAppButton({ appearance = "driver" }: { appearance?: "driv
         className={
           office
             ? "flex w-full min-h-[52px] items-center justify-center gap-2 rounded-control border border-border-strong bg-surface-2 px-3 text-sm font-semibold text-fg hover:bg-hover"
-            : "flex w-full min-h-[52px] items-center justify-center gap-2 rounded-xl border border-white/15 bg-navy-800/80 px-3 text-sm font-semibold text-white hover:bg-white/5"
+            : btnDriverSecondaryCls
         }
       >
         <Smartphone className="h-4 w-4" />

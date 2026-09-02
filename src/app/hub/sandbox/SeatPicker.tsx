@@ -93,14 +93,14 @@ export function SeatPicker({
         <div className="mb-6 flex items-center justify-between gap-2">
           <Link
             href="/loadoff"
-            className="inline-flex min-h-[40px] items-center gap-1.5 rounded-control px-2 text-sm font-semibold text-fg-2 hover:bg-hover"
+            className="inline-flex min-h-[44px] items-center gap-1.5 rounded-control px-2 text-sm font-semibold text-fg-2 hover:bg-hover"
           >
             <ArrowLeft className="h-4 w-4" /> LoadOff
           </Link>
           <button
             onClick={reset}
             disabled={resetting || busy !== null}
-            className="inline-flex min-h-[40px] items-center gap-1.5 rounded-control border border-border-strong bg-surface px-3 text-sm font-semibold text-fg-2 hover:bg-hover disabled:opacity-50"
+            className="inline-flex min-h-[44px] items-center gap-1.5 rounded-control border border-border-strong bg-surface px-3 text-sm font-semibold text-fg-2 hover:bg-hover disabled:opacity-50"
           >
             {resetting ? <Loader2 className="h-4 w-4 animate-spin" /> : <RotateCcw className="h-4 w-4" />}
             Reset sandbox
@@ -108,7 +108,13 @@ export function SeatPicker({
         </div>
 
         {signedInAs ? (
-          <div className="mb-6 rounded-card border border-warn-soft bg-warn-soft p-3.5">
+          <div
+            className="mb-6 rounded-card border bg-warn-soft p-3.5"
+            // A real edge, not soft-on-soft. `border-warn/30` would be the
+            // utility, but --amber is a CSS var and Tailwind drops alpha
+            // modifiers on var colours silently (AGENTS.md); color-mix it.
+            style={{ borderColor: "color-mix(in srgb, var(--amber) 30%, transparent)" }}
+          >
             <p className="text-[13px] font-semibold text-warn">
               You are signed in to {signedInAs}.
             </p>
@@ -118,7 +124,7 @@ export function SeatPicker({
             </p>
             <Link
               href="/hub"
-              className="mt-2.5 inline-flex min-h-[40px] items-center gap-1.5 rounded-control border border-border-strong bg-surface px-3 text-sm font-semibold text-fg hover:bg-hover"
+              className="mt-2.5 inline-flex min-h-[44px] items-center gap-1.5 rounded-control border border-border-strong bg-surface px-3 text-sm font-semibold text-fg hover:bg-hover"
             >
               <ArrowLeft className="h-4 w-4" /> Back to {signedInAs}
             </Link>
@@ -157,7 +163,7 @@ export function SeatPicker({
                 aria-pressed={scenario === s.key}
                 className={cn(
                   "flex min-h-[64px] flex-col items-start gap-0.5 rounded-card border p-3.5 text-left shadow-card transition-colors duration-fast",
-                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)]",
+                  "",
                   scenario === s.key
                     ? "border-accent bg-accent-soft"
                     : "border-border bg-surface hover:border-border-strong hover:bg-hover",
@@ -197,7 +203,7 @@ export function SeatPicker({
                     className={cn(
                       "hub-pop-enter group relative flex min-h-[92px] flex-col items-start gap-1 rounded-card border border-border bg-surface p-4 text-left shadow-card",
                       "transition-colors duration-fast hover:border-border-strong hover:bg-hover",
-                      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)]",
+                      "",
                       "disabled:pointer-events-none",
                       busy !== null && busy !== seat.key && "opacity-40"
                     )}
@@ -207,7 +213,7 @@ export function SeatPicker({
                       {busy === seat.key ? (
                         <Loader2 className="h-4 w-4 animate-spin text-accent-text" aria-hidden />
                       ) : (
-                        <span className="rounded-pill bg-accent-soft px-2 py-0.5 text-[11px] font-bold text-accent-text opacity-0 transition-opacity duration-fast group-hover:opacity-100">
+                        <span className="rounded-pill border border-border bg-surface-2 px-2 py-0.5 text-[11px] font-semibold text-fg-3 opacity-100 transition-colors duration-fast group-hover:border-border-strong group-hover:text-accent-text">
                           Take seat
                         </span>
                       )}

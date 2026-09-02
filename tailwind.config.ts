@@ -77,12 +77,13 @@ const config: Config = {
   ],
   prefix: "",
   theme: {
+    // One `.container` definition (globals.css used to re-declare it at 1280px
+    // with 16/24/32px gutters and won on source order, so the 1400px here never
+    // applied). These values reproduce what actually rendered, now from one place.
     container: {
       center: true,
-      padding: "2rem",
-      screens: {
-        "2xl": "1400px",
-      },
+      padding: { DEFAULT: "1rem", sm: "1.5rem", lg: "2rem" },
+      screens: { sm: "640px", md: "768px", lg: "1024px", xl: "1280px", "2xl": "1280px" },
     },
     extend: {
       colors: {
@@ -93,6 +94,9 @@ const config: Config = {
         // Primary: Navy Blue - Trust, Authority, Stability
         navy: {
           DEFAULT: "#121316",
+          // The site's deepest black (hero scrims, band grounds, the command
+          // bar). It was typed as a raw #060607 in 12 files before it had a name.
+          950: "#060607",
           50: "#EDEDEE",
           100: "#D2D3D6",
           200: "#A9ABB0",
@@ -240,18 +244,22 @@ const config: Config = {
         // ---- Marketing palette (see docs/design/DIRECTION.md §1) ----
         // Paper ground, graphite ink, one red. Dark is punctuation, not the page.
         // Every pair below is contrast-verified in DIRECTION.md.
-        paper: "var(--m-paper)",
+        // rgb(var(--x-rgb) / <alpha-value>) so `bg-signal/10`, `border-ink/20`
+        // work — Tailwind cannot apply an opacity modifier to a bare var() colour
+        // and silently drops the class, which is why nine components carried
+        // hand-written rgba() copies of these values.
+        paper: "rgb(var(--m-paper-rgb) / <alpha-value>)",
         ink: {
-          DEFAULT: "var(--m-ink)",
-          2: "var(--m-ink-2)",
-          3: "var(--m-ink-3)",
+          DEFAULT: "rgb(var(--m-ink-rgb) / <alpha-value>)",
+          2: "rgb(var(--m-ink-2-rgb) / <alpha-value>)",
+          3: "rgb(var(--m-ink-3-rgb) / <alpha-value>)",
         },
         signal: {
-          DEFAULT: "var(--m-signal)",
-          up: "var(--m-signal-up)",
+          DEFAULT: "rgb(var(--m-signal-rgb) / <alpha-value>)",
+          up: "rgb(var(--m-signal-up-rgb) / <alpha-value>)",
         },
-        asphalt: "var(--m-asphalt)",
-        cedar: "var(--m-cedar)",
+        asphalt: "rgb(var(--m-asphalt-rgb) / <alpha-value>)",
+        cedar: "rgb(var(--m-cedar-rgb) / <alpha-value>)",
 
         bg: "var(--bg)",
         surface: { DEFAULT: "var(--surface)", 2: "var(--surface-2)", 3: "var(--surface-3)" },
@@ -331,8 +339,13 @@ const config: Config = {
         black: "900",
       },
       fontFamily: {
-        sans: ["var(--font-geist-sans)", "var(--font-sans)", "system-ui", "sans-serif"],
-        mono: ["var(--font-geist-mono)", "ui-monospace", "monospace"],
+        // The Geist variables exist only under /hub (hub/layout.tsx). A bare
+        // var() with no fallback made the whole font-family declaration invalid
+        // on the marketing site, so `font-mono` rendered in Source Sans and every
+        // calculator figure was proportional. The fallback INSIDE var() fixes
+        // that without loading a second font on 26 marketing routes.
+        sans: ["var(--font-geist-sans, var(--font-sans, system-ui))", "system-ui", "sans-serif"],
+        mono: ["var(--font-geist-mono, ui-monospace)", "SFMono-Regular", "Menlo", "Consolas", "monospace"],
         display: ["var(--font-display)", "Arial Narrow", "sans-serif"],
       },
       borderRadius: {
@@ -385,6 +398,12 @@ const config: Config = {
         standard: "cubic-bezier(0.2, 0, 0, 1)",
         decelerate: "cubic-bezier(0.05, 0.7, 0.1, 1)",
         accelerate: "cubic-bezier(0.3, 0, 0.8, 0.15)",
+      },
+      spacing: {
+        // Section rhythm: three rungs replace fifteen ad-hoc py-* pairs.
+        "section-tight": "3rem",
+        section: "4rem",
+        "section-loose": "6rem",
       },
       maxWidth: {
         // Measure, enforced in ch so it tracks the font, not a guessed px width.

@@ -198,25 +198,27 @@
   --driver-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 1px 2px rgba(0, 0, 0, 0.4), 0 6px 20px rgba(0, 0, 0, 0.3);
   --driver-shadow-raised: 0 0 0 1px rgba(255, 255, 255, 0.07), 0 8px 24px rgba(0, 0, 0, 0.5), 0 24px 48px rgba(0, 0, 0, 0.4);
 }
-/* The card on a forced-dark surface. Radius is the ladder's 14px; the class
-   wins over a stray rounded-xl/2xl utility on purpose (siblings must agree). */
-[data-app="hauldesk"] .driver-card {
+/* The card on a forced-dark surface. Radius is the ladder's 14px. The whole
+   selector sits in :where() (specificity 0) so a utility on the same element —
+   hover:bg-driver-surface-2, rounded-control on a compact row — wins without
+   !important; the base look is the default, never a lock. */
+:where([data-app="hauldesk"] .driver-card) {
   background: var(--driver-surface, #1c1e23);
   border: 1px solid var(--driver-border, rgba(255, 255, 255, 0.06));
   border-radius: 14px;
   box-shadow: var(--driver-shadow, inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 1px 2px rgba(0, 0, 0, 0.4));
 }
-[data-app="hauldesk"] .driver-card--raised {
+:where([data-app="hauldesk"] .driver-card--raised) {
   background: var(--driver-surface-2, #262930);
   box-shadow: var(--driver-shadow-raised, 0 0 0 1px rgba(255, 255, 255, 0.07), 0 8px 24px rgba(0, 0, 0, 0.5));
 }
-[data-app="hauldesk"] .driver-card--well {
+:where([data-app="hauldesk"] .driver-card--well) {
   background: rgba(255, 255, 255, 0.04);
   border-color: transparent;
   box-shadow: none;
 }
 @media (forced-colors: active) {
-  [data-app="hauldesk"] .driver-card {
+  :where([data-app="hauldesk"] .driver-card) {
     border-color: CanvasText;
   }
 }
@@ -255,6 +257,27 @@
   background: var(--bg);
   color: var(--text);
   letter-spacing: -0.006em;
+  /* Height of the fixed chrome above the content: the 56px header plus, under
+     md, the 44px mobile sub-nav. Sticky table headers and focus scroll-padding
+     read it so nothing lands under the bar (WCAG 2.4.11). */
+  --chrome-h: calc(3.5rem + 2.75rem + env(safe-area-inset-top, 0px));
+  scroll-padding-top: var(--chrome-h);
+  scroll-padding-bottom: calc(4.5rem + env(safe-area-inset-bottom, 0px));
+  /* Reserve the classic scrollbar's width so Radix scroll-locking a sheet or a
+     list growing past the fold no longer shifts the header by 15px. */
+  scrollbar-gutter: stable;
+}
+@media (min-width: 768px) {
+  [data-app="hauldesk"] {
+    --chrome-h: calc(3.5rem + env(safe-area-inset-top, 0px));
+    scroll-padding-bottom: 1rem;
+  }
+}
+
+/* Cards in dark carry depth by surface step + inner highlight; the hairline
+   is the light-mode edge. Dividers inside the card keep their border classes. */
+[data-app="hauldesk"][data-mode="dark"] .hub-panel {
+  border-color: transparent;
 }
 
 /* The marketing base layer paints <body> navy (--brand-bg) with two fixed
@@ -370,7 +393,7 @@
 /* Data tables: sticky header, zebra rows, hover highlight. */
 [data-app="hauldesk"] .hub-table thead th {
   position: sticky;
-  top: 0;
+  top: var(--chrome-h, 0px);
   background: var(--surface);
   z-index: 1;
 }
@@ -386,10 +409,22 @@
   overscroll-behavior-y: none;
 }
 
-/* Focus ring inside the app uses the theme accent, not the marketing red. */
-[data-app="hauldesk"] :focus-visible {
+/* Focus: ONE indicator for every control — a 2px solid accent outline with a
+   2px gap (WCAG 2.4.13: ≥2px perimeter, ≥3:1 change). Components carry no
+   ring classes of their own; utilities like focus-visible:outline-bad may
+   recolour it. :where() keeps this at (0,1,0)+pseudo so any utility can win. */
+:where([data-app="hauldesk"]) :focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
+}
+/* Fields sit flush: the outline hugs the border instead of floating 2px off. */
+:where([data-app="hauldesk"][data-surface="dark"]) :focus-visible {
+  /* Forced-dark surfaces focus in the tenant's driver accent, not the office
+     hue (var(--accent) is indigo/teal/ink there and reads as a stranger). */
+  outline-color: var(--driver-accent, #fff);
+}
+:where([data-app="hauldesk"]) :is(input, select, textarea):focus-visible {
+  outline-offset: 0;
 }
 
 /* Horizontal pill rows: snap, hidden scrollbar, edge fades so clipped items
@@ -414,11 +449,17 @@
     transform: translateX(100%);
   }
 }
-[data-app="hauldesk"] .hub-skeleton {
+/* :where() so a rounded-* utility on the block beats the inherited radius. */
+:where([data-app="hauldesk"] .hub-skeleton) {
   position: relative;
   overflow: hidden;
   background: var(--surface-2);
   border-radius: inherit;
+}
+/* Forced-dark surfaces: --surface-2 is the OFFICE well (white in light mode),
+   so the skeleton paints its own wash there and a brighter sheen. */
+:where([data-app="hauldesk"][data-surface="dark"] .hub-skeleton) {
+  background: rgba(255, 255, 255, 0.06);
 }
 [data-app="hauldesk"] .hub-skeleton::after {
   content: "";
@@ -427,6 +468,9 @@
   transform: translateX(-100%);
   background: linear-gradient(90deg, transparent, var(--skeleton-sheen), transparent);
   animation: hub-shimmer 1.4s ease-in-out infinite;
+}
+[data-app="hauldesk"][data-surface="dark"] .hub-skeleton::after {
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.08), transparent);
 }
 @media (prefers-reduced-motion: reduce) {
   [data-app="hauldesk"] .hub-skeleton::after {
@@ -466,6 +510,8 @@
 }
 [data-app="hauldesk"] .hub-tab-pop {
   animation: hub-tab-pop 320ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  /* A damped spring instead of a 156% overshoot bezier; dropped where linear() is unknown. */
+  animation-timing-function: linear(0, 0.006, 0.025 2.8%, 0.101 6.1%, 0.539 18.9%, 0.721 25.3%, 0.849 31.5%, 0.937 38.1%, 0.968 41.8%, 0.991 45.7%, 1.006 50.1%, 1.015 55%, 1.017 63.9%, 1.001);
 }
 
 /* Mobile tab bar: frosted glass over the content with layered upward
@@ -641,6 +687,9 @@
 [data-app="hauldesk"] .hub-stagger > *:nth-child(4) { animation-delay: 90ms; }
 [data-app="hauldesk"] .hub-stagger > *:nth-child(5) { animation-delay: 120ms; }
 [data-app="hauldesk"] .hub-stagger > *:nth-child(6) { animation-delay: 150ms; }
+/* Engines with sibling-index() get a true per-item ramp capped at 8; items 7+
+   used to all land together at 180ms. Unsupported → the ladder above stands. */
+[data-app="hauldesk"] .hub-stagger > * { animation-delay: calc(min(sibling-index(), 8) * 30ms); }
 
 /* Bottom sheet + backdrop entrances (used by the Sheet primitive). */
 @keyframes hub-sheet-in {

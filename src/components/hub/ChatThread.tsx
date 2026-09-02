@@ -76,7 +76,7 @@ export function ChatThread({
     <div className="flex flex-col h-[calc(100dvh-220px)] min-h-[320px]">
       <div className="flex-1 overflow-y-auto space-y-2 pr-1">
         {messages.length === 0 ? (
-          <p className={cn("py-10 text-center text-body-sm", dark ? "text-steel-400" : "text-fg-3")}>
+          <p className={cn("py-10 text-center text-body-sm", dark ? "text-steel-300" : "text-fg-3")}>
             No messages yet — say hello.
           </p>
         ) : (
@@ -86,21 +86,25 @@ export function ChatThread({
               <div key={m.id} className={cn("flex", mine ? "justify-end" : "justify-start")}>
                 <div
                   className={cn(
-                    "max-w-[80%] rounded-2xl px-3.5 py-2.5",
+                    "max-w-[80%] rounded-card px-3.5 py-2.5",
                     mine
-                      ? "bg-accent text-accent-fg rounded-br-md"
+                      ? dark
+                        // The office accent (bg-accent) is indigo and mode-dependent;
+                        // on the forced-dark surface own bubbles wear the carrier's accent.
+                        ? "bg-[color:var(--driver-accent-fill,var(--driver-accent))] text-[color:var(--driver-accent-fg,#121316)]"
+                        : "bg-accent text-accent-fg"
                       : dark
-                        ? "bg-white/[0.07] text-steel-200 rounded-bl-md"
-                        : "bg-surface-2 text-fg-2 rounded-bl-md"
+                        ? "bg-white/[0.07] text-steel-200"
+                        : "bg-surface-2 text-fg-2"
                   )}
                 >
                   {!mine ? (
-                    <p className="text-[10px] font-bold uppercase tracking-wider opacity-70 mb-0.5">{m.sender_name}</p>
+                    <p className="text-[12px] font-bold uppercase tracking-wider opacity-70 mb-0.5">{m.sender_name}</p>
                   ) : null}
                   {m.document_url ? (
                     m.document_mime?.startsWith("image/") ? (
                       // eslint-disable-next-line @next/next/no-img-element
-                      <img src={m.document_url} alt="Attachment" className="mb-1.5 max-h-60 rounded-lg" />
+                      <img src={m.document_url} alt="Attachment" className="mb-1.5 max-h-60 rounded-control" />
                     ) : (
                       <a href={m.document_url} target="_blank" rel="noreferrer" className="block underline mb-1">
                         Attachment
@@ -108,7 +112,7 @@ export function ChatThread({
                     )
                   ) : null}
                   {m.body ? <p className="text-sm whitespace-pre-wrap break-words">{m.body}</p> : null}
-                  <p className={cn("mt-1 text-[10px]", mine ? "opacity-60" : dark ? "text-steel-400" : "text-fg-3")}>
+                  <p className={cn("mt-1 text-[12px]", mine ? "opacity-60" : dark ? "text-steel-300" : "text-fg-3")}>
                     {new Date(m.created_at).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}
                   </p>
                 </div>
@@ -117,7 +121,7 @@ export function ChatThread({
           })
         )}
         {seenBy.length > 0 ? (
-          <p className={cn("text-right text-[10px]", dark ? "text-steel-400" : "text-fg-3")}>
+          <p className={cn("text-right text-[12px]", dark ? "text-steel-300" : "text-fg-3")}>
             Seen by {seenBy.join(", ")}
           </p>
         ) : null}
@@ -130,7 +134,12 @@ export function ChatThread({
             <button
               key={t.id}
               onClick={() => setBody(t.body)}
-              className="shrink-0 rounded-full border border-border-strong bg-surface-2 px-3 py-1.5 text-body-xs font-semibold text-fg-2 hover:bg-hover min-h-[32px]"
+              className={cn(
+                "shrink-0 rounded-full border px-3 font-semibold",
+                dark
+                  ? "min-h-[44px] border-white/15 bg-white/5 text-[13px] text-steel-200 hover:bg-white/10"
+                  : "min-h-[32px] border-border-strong bg-surface-2 py-1.5 text-body-xs text-fg-2 hover:bg-hover"
+              )}
             >
               {t.label}
             </button>
@@ -146,9 +155,9 @@ export function ChatThread({
           aria-label="Attach a photo"
           disabled={pending}
           className={cn(
-            "flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border disabled:opacity-60",
+            "flex h-12 w-12 shrink-0 items-center justify-center rounded-control border disabled:opacity-60",
             dark
-              ? "border-white/15 text-steel-200 hover:bg-white/5"
+              ? "border-white/15 text-steel-200 hover:bg-white/10"
               : "border-border-strong text-fg-2 hover:bg-hover"
           )}
         >
@@ -166,10 +175,11 @@ export function ChatThread({
           rows={1}
           placeholder="Type a message…"
           className={cn(
-            "flex-1 resize-none rounded-xl px-3 py-3 text-sm min-h-[48px]",
+            "flex-1 resize-none min-h-[48px]",
             dark
+              // fieldDarkCls brings text-base at touch widths (no iOS focus-zoom).
               ? cn(fieldDarkCls, "h-auto min-h-[48px] py-3")
-              : "border border-border-strong bg-surface text-fg placeholder:text-fg-3"
+              : "rounded-control border border-border-strong bg-surface px-3 py-3 text-sm text-fg placeholder:text-fg-3"
           )}
           value={body}
           onChange={(e) => setBody(e.target.value)}
@@ -184,7 +194,12 @@ export function ChatThread({
           onClick={() => send()}
           aria-label="Send"
           disabled={pending || !body.trim()}
-          className="flex h-12 w-12 shrink-0 items-center justify-center rounded-control bg-accent text-accent-fg hover:bg-accent-hover disabled:opacity-50"
+          className={cn(
+            "flex h-12 w-12 shrink-0 items-center justify-center rounded-control",
+            dark
+              ? "bg-[color:var(--driver-accent-fill,var(--driver-accent))] text-[color:var(--driver-accent-fg,#121316)] hover:brightness-110 disabled:pointer-events-none disabled:bg-white/10 disabled:text-white/40"
+              : "bg-accent text-accent-fg hover:bg-accent-hover disabled:opacity-50"
+          )}
         >
           {pending ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5" />}
         </button>

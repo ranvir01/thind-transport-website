@@ -17,7 +17,9 @@ export default async function DriverInvitePage({ params }: { params: Promise<{ t
 
   return (
     <div className="min-h-screen bg-navy px-4 py-16">
-      <div className="mx-auto max-w-md rounded-2xl border border-white/10 bg-navy-800/80 p-6">
+      {/* No session here, so no layout sets --driver-accent: fall back to the
+          brand gold the unbranded driver app uses. */}
+      <div className="driver-card mx-auto max-w-md p-6">
         <span className="brand-wordmark text-xl font-semibold text-white tracking-[0.14em]">{PRODUCT.wordmark}</span>
         {!invite.valid ? (
           <p className="mt-4 text-body-sm text-steel-200">
@@ -25,7 +27,7 @@ export default async function DriverInvitePage({ params }: { params: Promise<{ t
           </p>
         ) : invite.claimed ? (
           <p className="mt-4 text-body-sm text-steel-200">
-            This invite was already used — <a href="/hub/login" className="text-gold underline">sign in here</a>.
+            This invite was already used — <a href="/hub/login" className="text-[color:var(--driver-accent,#F2A900)] underline">sign in here</a>.
           </p>
         ) : (
           <>
@@ -34,7 +36,7 @@ export default async function DriverInvitePage({ params }: { params: Promise<{ t
               driver app access for <span className="font-semibold text-white">{invite.driverName}</span>:
               your loads, POD uploads from your phone, and your pay — all in one place.
             </p>
-            <p className="mt-1 text-body-xs text-steel-400">Account email: {invite.email}</p>
+            <p className="mt-1 text-[13px] text-steel-300">Account email: {invite.email}</p>
             <div className="mt-4">
               <DriverInviteAcceptForm token={token} email={invite.email!} />
             </div>

@@ -32,7 +32,17 @@ describe("driver expiry pill uses the fixed dark palette, not office semantic to
 
   it("DriverExpiryPill uses fixed literal colors for every tone", () => {
     expect(EXPIRY_PILL_SOURCE).toMatch(/bg-red-500\/20 text-red-300/)
-    expect(EXPIRY_PILL_SOURCE).toMatch(/bg-orange\/15 text-orange/)
+    expect(EXPIRY_PILL_SOURCE).toMatch(/bg-orange-500\/15 text-orange-300/)
     expect(EXPIRY_PILL_SOURCE).toMatch(/bg-green-500\/25 text-green-300/)
+  })
+
+  it("the warn tone never uses the bare brand red as TEXT (≈3.7:1 on the dark card)", () => {
+    // `text-orange` is the fill/edge red; only the -300 tint clears 4.5:1 here.
+    expect(EXPIRY_PILL_SOURCE).not.toMatch(/text-orange(?![-\d])/)
+  })
+
+  it("a missing date renders a real pill, never a bare dash (DESIGN.md)", () => {
+    expect(EXPIRY_PILL_SOURCE).toMatch(/No date/)
+    expect(EXPIRY_PILL_SOURCE).not.toMatch(/>—</)
   })
 })

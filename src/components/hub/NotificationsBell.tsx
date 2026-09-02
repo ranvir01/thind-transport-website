@@ -118,13 +118,20 @@ export function NotificationsBell({
           // Office header uses borderless ghost icons; the driver chrome keeps
           // its bordered dark variant.
           dark
-            ? "h-9 w-9 border border-white/15 text-steel-200 hover:bg-white/5"
+            ? "h-12 w-12 border border-white/15 text-steel-200 hover:bg-white/5"
             : "h-10 w-10 text-fg-2 hover:bg-hover"
         )}
       >
-        <Bell className={dark ? "h-4 w-4" : "h-[18px] w-[18px]"} />
+        <Bell className={dark ? "h-5 w-5" : "h-[18px] w-[18px]"} />
         {unread > 0 ? (
-          <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-pill bg-accent px-1 text-[10px] font-bold text-accent-fg">
+          <span
+            className={cn(
+              "absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-pill px-1 font-bold tabular-nums",
+              dark
+                ? "bg-[color:var(--driver-accent)] text-[11px] text-[color:var(--driver-accent-fg,#121316)]"
+                : "bg-accent text-[10px] text-accent-fg"
+            )}
+          >
             {unread > 9 ? "9+" : unread}
           </span>
         ) : null}
@@ -138,7 +145,7 @@ export function NotificationsBell({
             // edge). sm+: anchor to the button like a normal popover.
             "z-50 overflow-hidden rounded-card border shadow-raised",
             "fixed inset-x-3 sm:absolute sm:inset-x-auto sm:right-0 sm:w-[min(92vw,360px)]",
-            dark ? "border-white/10 bg-navy-600" : "border-border bg-surface",
+            dark ? "driver-card driver-card--raised" : "border-border bg-surface",
             direction === "down"
               ? "top-[calc(3.5rem+env(safe-area-inset-top,0px)+0.375rem)] sm:top-11"
               : "bottom-[calc(4rem+env(safe-area-inset-bottom,0px))] sm:bottom-11"
@@ -147,14 +154,14 @@ export function NotificationsBell({
           <p
             className={cn(
               "border-b px-4 py-3 text-[11px] font-semibold uppercase tracking-wide",
-              dark ? "border-white/10 text-steel-400" : "border-border text-fg-3"
+              dark ? "border-white/10 text-steel-300" : "border-border text-fg-3"
             )}
           >
             Notifications
           </p>
           <div className="max-h-[60vh] overflow-y-auto">
             {items.length === 0 ? (
-              <p className={cn("px-4 py-8 text-center text-body-sm", dark ? "text-steel-400" : "text-fg-3")}>
+              <p className={cn("px-4 py-8 text-center text-body-sm", dark ? "text-steel-300" : "text-fg-3")}>
                 Nothing yet — alerts about dispatches, messages, and paperwork will show up here.
               </p>
             ) : (
@@ -166,14 +173,14 @@ export function NotificationsBell({
                   className={cn(
                     "block border-b px-4 py-3",
                     dark ? "border-white/10 hover:bg-white/5" : "border-border hover:bg-hover",
-                    !item.read_at && (dark ? "bg-white/[0.04]" : "bg-accent-soft")
+                    !item.read_at && (dark ? "bg-white/[0.06]" : "bg-accent-soft")
                   )}
                 >
                   <p className={cn("text-sm font-semibold break-words", dark ? "text-white" : "text-fg")}>{item.title}</p>
                   {item.body ? (
                     <p className={cn("mt-0.5 text-body-xs break-words", dark ? "text-steel-200" : "text-fg-2")}>{item.body}</p>
                   ) : null}
-                  <p className={cn("mt-1 text-[11px]", dark ? "text-steel-400" : "text-fg-3")}>
+                  <p className={cn("mt-1", dark ? "text-[12px] text-steel-300" : "text-[11px] text-fg-3")}>
                     {timeAgo(item.created_at)}
                   </p>
                 </Link>

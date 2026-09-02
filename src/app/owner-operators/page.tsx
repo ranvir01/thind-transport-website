@@ -100,7 +100,7 @@ export default function OwnerOperatorsPage() {
       <PageBreadcrumb pageName="Owner Operators" category="Drivers" />
 
       {/* Hero */}
-      <div className="bg-[#060607] text-white">
+      <div className="bg-navy-950 text-white">
         <div className="container px-4 py-16 md:py-24">
           <div className="max-w-3xl">
             <span className="fleet-badge fleet-badge-gold mb-5">Lease on · Kent, WA</span>
@@ -206,7 +206,7 @@ export default function OwnerOperatorsPage() {
       </div>
 
       {/* CTA */}
-      <div className="border-t border-gray-200 bg-[#060607] text-white">
+      <div className="border-t border-gray-200 bg-navy-950 text-white">
         <div className="container px-4 py-14 text-center">
           <h2 className="text-2xl md:text-3xl font-black mb-3">Bring your truck. Keep {OO.commission}.</h2>
           <p className="text-white/80 max-w-2xl mx-auto mb-7">

@@ -73,6 +73,12 @@ const companyMenuItems = [
     icon: Truck,
   },
   {
+    href: "/brokers",
+    label: "For brokers",
+    description: "Carrier packet, authority, insurance",
+    icon: Shield,
+  },
+  {
     href: "/loadoff",
     label: "LoadOff TMS",
     description: "The software we run on",
@@ -135,7 +141,7 @@ function DesktopDropdown({
     <div ref={dropdownRef} className="relative">
       <button
         onClick={onToggle}
-        className={`flex items-center gap-1 px-3 py-2 text-sm font-semibold transition-colors rounded-fleet font-display uppercase tracking-wide
+        className={`flex items-center gap-1 px-3 py-2 text-sm font-semibold transition-colors rounded-fleet
           ${
             hasActiveItem
               ? "text-orange-400 bg-steel-800/80"
@@ -533,7 +539,7 @@ export const CinematicNavbar = () => {
       <header
         className={`fixed top-0 left-0 right-0 z-[100] border-b transition-[transform,box-shadow] duration-300 ${
           scrolled ? "border-steel-700 shadow-brand" : "border-steel-800/80"
-        } ${navHidden ? "-translate-y-full" : "translate-y-0"} bg-[#131418] md:bg-[#131418]/95 md:backdrop-blur-md`}
+        } ${navHidden ? "-translate-y-full" : "translate-y-0"} bg-navy/95 supports-[backdrop-filter]:bg-navy/85 supports-[backdrop-filter]:backdrop-blur-md`}
       >
         <div className="fleet-accent-line" />
         <nav className="container flex items-center justify-between gap-4 h-14 md:h-16 px-4">
@@ -543,7 +549,7 @@ export const CinematicNavbar = () => {
             className="relative z-20 hover:opacity-80 transition-opacity whitespace-nowrap leading-none flex items-center"
             data-cursor="HOME"
           >
-            <span className="brand-wordmark text-base md:text-lg font-bold leading-none text-white tracking-[0.14em]">
+            <span className="brand-wordmark text-lg md:text-xl font-bold leading-none text-white tracking-[0.14em]">
               THIND
               <span className="text-orange-400 font-semibold"> TRANSPORT</span>
             </span>
@@ -577,7 +583,7 @@ export const CinematicNavbar = () => {
 
             <Link
               href="/driver/login"
-              className={`px-3 py-2 text-sm font-semibold rounded-fleet transition-colors font-display uppercase tracking-wide
+              className={`px-3 py-2 text-sm font-semibold rounded-fleet transition-colors
                   ${
                     pathname === "/driver/login" ||
                     pathname.startsWith("/driver/")
@@ -610,7 +616,7 @@ export const CinematicNavbar = () => {
           {/* Apply Button */}
           <Link
             href="/apply"
-            className="hidden sm:flex items-center px-4 py-2 bg-orange-600 hover:bg-orange-500 text-white font-bold rounded-full text-xs uppercase tracking-widest transition-all hover:shadow-cta-hover shadow-cta font-display"
+            className="hidden sm:flex min-h-[40px] items-center rounded-fleet bg-orange-600 px-4 text-sm font-semibold text-white transition-colors hover:bg-orange-500 active:bg-orange-700"
             data-cursor="APPLY"
           >
             Apply Now

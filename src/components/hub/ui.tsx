@@ -5,15 +5,19 @@ import { STATUS_LABELS, type LoadStatus } from "@/lib/hub/types"
 
 /** Form controls — light surfaces inside hub cards.
  *  16px text on touch widths (iOS zooms into anything smaller on focus);
- *  compact 34px/14px from md up where a mouse is doing the tapping. */
+ *  36px/14px from md up where a mouse is doing the tapping (36 so a field
+ *  baseline-aligns with the md Button rung next to it, not 34 vs 40).
+ *  The border is the solid --border-control: inputs are controls, and WCAG
+ *  1.4.11 wants their boundary at 3:1 — cards may whisper, fields may not.
+ *  No focus ring classes here: hub-theme.css paints ONE global :focus-visible
+ *  outline; a per-control ring on top of it drew two indicators. */
 export const fieldCls =
-  "flex h-11 md:h-[34px] w-full rounded-control border border-border-strong bg-surface px-3 text-base md:text-sm text-fg shadow-none transition-colors placeholder:text-fg-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)] focus-visible:border-accent disabled:cursor-not-allowed disabled:opacity-50"
+  "flex h-11 md:h-9 w-full rounded-control border border-border-control bg-surface px-3 text-base md:text-sm text-fg shadow-none transition-colors placeholder:text-fg-3 focus-visible:border-accent disabled:cursor-not-allowed disabled:opacity-50"
 
 export const labelCls = "block text-[11px] font-semibold uppercase tracking-wide text-fg-3 mb-1.5"
 
 /** Error-state field: danger border + ring; pair with a helper line in text-bad. */
-export const fieldErrorCls =
-  "border-bad focus-visible:ring-[var(--red-soft)] focus-visible:border-bad"
+export const fieldErrorCls = "border-bad focus-visible:border-bad focus-visible:outline-bad"
 
 /**
  * Form controls for the forced-dark driver/portal chrome. Those surfaces are
@@ -66,8 +70,8 @@ export const sectionTitleCls = "text-[13.5px] font-semibold text-fg"
 export const tableHeadCls =
   "border-b border-border text-left text-[11px] font-semibold uppercase tracking-wide text-fg-3"
 
-/** Money / IDs — monospace per HANDOFF. */
-export const moneyCls = "font-mono font-medium text-fg tabular-nums"
+/** Money / IDs — monospace, tabular, slashed zero so columns and count-ups never jitter. */
+export const moneyCls = "font-mono font-medium text-fg tabular-nums slashed-zero"
 
 /** Inline link accent. */
 export const linkAccentCls = "font-semibold text-accent-text hover:underline"
@@ -80,7 +84,7 @@ export const linkAccentCls = "font-semibold text-accent-text hover:underline"
  * loading (spinner overlays a hidden label so width never jumps).
  */
 const buttonBase =
-  "press-sink relative inline-flex items-center justify-center gap-2 rounded-control font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)] focus-visible:ring-offset-1 disabled:pointer-events-none disabled:opacity-50"
+  "press-sink relative inline-flex items-center justify-center gap-2 rounded-control font-semibold transition-colors disabled:pointer-events-none disabled:opacity-50"
 
 const BUTTON_SIZE = {
   sm: "h-8 px-3 text-[13px]",
@@ -93,7 +97,8 @@ const BUTTON_VARIANT = {
   primary: "bg-accent text-accent-fg shadow-card hover:bg-accent-hover",
   secondary: "border border-border-strong bg-surface text-fg hover:bg-hover",
   ghost: "text-fg-2 hover:bg-hover hover:text-fg",
-  danger: "bg-bad text-white shadow-card hover:opacity-90",
+  // --bad-fg, not white: dark --red is a light coral and white on it is 2.4:1.
+  danger: "bg-bad text-bad-fg shadow-card hover:opacity-90",
   link: "text-accent-text underline-offset-2 hover:underline",
 } as const
 
@@ -137,14 +142,24 @@ export function Panel({
   children,
   title,
   action,
+  nested = false,
 }: {
   className?: string
   children: React.ReactNode
   title?: string
   action?: React.ReactNode
+  /** A panel inside a panel steps UP one surface and drops its own shadow — an
+   *  elevation ladder, not the same card twice. */
+  nested?: boolean
 }) {
   return (
-    <section className={cn("rounded-card border border-border bg-surface shadow-card", className)}>
+    <section
+      className={cn(
+        "hub-panel rounded-card border bg-surface",
+        nested ? "border-transparent bg-surface-2 shadow-none" : "border-border shadow-card",
+        className
+      )}
+    >
       {title ? (
         <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-3 md:px-[18px]">
           <h2 className="text-[13.5px] font-semibold text-fg">{title}</h2>
@@ -197,7 +212,7 @@ export function EmptyState({
   icon?: React.ReactNode
 }) {
   return (
-    <section className="rounded-card border border-dashed border-border-strong px-6 py-12 text-center">
+    <section className="rounded-card border border-dashed border-border-control px-6 py-12 text-center">
       <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-card bg-surface-2 text-fg-3">
         {icon ?? <Inbox className="h-5 w-5" />}
       </div>
@@ -219,19 +234,28 @@ const PILL_TONE: Record<PillTone, string> = {
   info: "bg-info-soft text-info",
 }
 
+const PILL_SIZE = {
+  /** Table cells and dense rows — 11px is the floor of the sanctioned small register. */
+  xs: "px-2 py-[2px] text-[11px]",
+  sm: "px-2.5 py-[3px] text-[11.5px]",
+} as const
+
 export function Pill({
   children,
   tone = "neutral",
+  size = "sm",
   className,
 }: {
   children: React.ReactNode
   tone?: PillTone
+  size?: keyof typeof PILL_SIZE
   className?: string
 }) {
   return (
     <span
       className={cn(
-        "inline-flex items-center whitespace-nowrap rounded-pill px-2.5 py-[3px] text-[11.5px] font-semibold",
+        "inline-flex items-center whitespace-nowrap rounded-pill font-semibold",
+        PILL_SIZE[size],
         PILL_TONE[tone],
         className
       )}
@@ -290,7 +314,8 @@ export function ExpiryPill({
     const rounded = Math.abs(Math.round(miles)).toLocaleString()
     return <Pill tone={t}>{miles <= 0 ? `${rounded} mi overdue` : `${rounded} mi left`}</Pill>
   }
-  return <span className="text-sm text-fg-3">—</span>
+  // Never a bare "—" (DESIGN.md): say what is missing.
+  return <Pill tone="neutral">No date</Pill>
 }
 
 export function BackLink({ href, label }: { href: string; label: string }) {

@@ -2,13 +2,14 @@
 
 /**
  * Replays queued driver actions when the signal returns, and shows an honest
- * "waiting to send" chip while anything is pending. Mounted in the driver
+ * "waiting to send" strip while anything is pending. Mounted in the driver
  * layout so it works on every screen.
  */
 import { useCallback, useEffect, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { CloudOff, RefreshCw } from "lucide-react"
+import { cn } from "@/lib/utils"
 import { listIntents, queueCount, replayQueue } from "./offline-queue"
 import { executeIntent } from "./execute-intent"
 
@@ -71,26 +72,27 @@ export function OfflineSync() {
   if (online && pending === 0) return null
 
   return (
-    <div className="fixed top-14 inset-x-0 z-30 mx-auto max-w-lg px-4 pt-2">
+    // A full-width strip docked directly under the header (56px + the notch
+    // inset the header pads itself by). Raised surface + strong hairline so it
+    // separates from the page without a blur — one frosted surface per
+    // scroller, and the tab bar has it. The offline tone is orange-300: the
+    // brand red (#E0392F) sits at ~3.7:1 on these surfaces and fails AA as
+    // text; the "sending" tone stays the carrier's --driver-accent, which is
+    // resolved to ≥4.5:1 on the dark card (portal/accent.ts).
+    <div className="fixed inset-x-0 top-[calc(3.5rem+env(safe-area-inset-top,0px))] z-30 border-b border-driver-border-strong bg-driver-surface-2">
       <p
-        className={`flex items-center gap-2 rounded-xl border px-3 py-2 text-body-xs font-semibold backdrop-blur-sm ${
+        className={cn(
+          "mx-auto flex min-h-[44px] w-full max-w-lg items-center gap-2 rounded-none border-l-2 py-2 pl-[max(1rem,env(safe-area-inset-left,0px))] pr-[max(1rem,env(safe-area-inset-right,0px))] text-[13px] font-semibold",
           online
-            ? "text-[color:var(--driver-accent)]"
-            : "border-orange/40 bg-orange/15 text-orange"
-        }`}
-        // Opacity modifiers silently drop on CSS-var colors (AGENTS.md), so the
-        // carrier-accent border/bg mix goes through color-mix() like DriverNav's
-        // other --driver-accent surfaces instead of border-[…]/40 bg-[…]/15.
-        style={
-          online
-            ? {
-                borderColor: "color-mix(in srgb, var(--driver-accent) 40%, transparent)",
-                backgroundColor: "color-mix(in srgb, var(--driver-accent) 15%, transparent)",
-              }
-            : undefined
-        }
+            ? "border-l-[color:var(--driver-accent)] text-[color:var(--driver-accent)]"
+            : "border-l-orange-300 text-orange-300"
+        )}
       >
-        {online ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : <CloudOff className="h-3.5 w-3.5" />}
+        {online ? (
+          <RefreshCw className="h-4 w-4 shrink-0 motion-safe:animate-spin" />
+        ) : (
+          <CloudOff className="h-4 w-4 shrink-0" />
+        )}
         {online
           ? `Sending ${pending} saved update${pending > 1 ? "s" : ""}…`
           : pending > 0

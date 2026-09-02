@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import Link from "next/link"
 
 import { usePathname } from "next/navigation"
@@ -8,7 +8,6 @@ import { COMPANY_INFO, SUPPORT, TRUST_INDICATORS } from "@/lib/constants"
 import {
   Award,
   BadgeCheck,
-  MessageSquare,
   Shield,
   ShieldCheck,
   Phone,
@@ -18,14 +17,61 @@ import {
   ChevronDown,
 } from "lucide-react"
 
-// Collapsible footer link section for mobile
+const FooterSection = ({
+  title,
+  links,
+}: {
+  title: string
+  links: { href: string; label: string; highlight?: boolean; external?: boolean }[]
+}) => (
+  <details className="group border-b border-white/10 md:border-0 [&:not([open])>ul]:hidden md:[&:not([open])>ul]:block">
+    <summary className="flex min-h-[44px] cursor-pointer list-none items-center justify-between py-4 marker:content-none md:cursor-default md:py-0 md:pointer-events-none [&::-webkit-details-marker]:hidden">
+      <h4 className="font-display text-sm font-bold uppercase tracking-[0.18em] text-steel-300">{title}</h4>
+      <ChevronDown
+        aria-hidden
+        className="h-5 w-5 text-steel-400 transition-transform duration-200 group-open:rotate-180 md:hidden"
+      />
+    </summary>
+    <ul className="space-y-3 pb-4 pl-2 text-sm md:mt-6 md:pb-0 md:pl-0">
+      {links.map((link) => (
+        <li key={link.href}>
+          {link.external ? (
+            <a
+              href={link.href}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group/link flex items-center gap-2 py-1 text-steel-300 transition-colors hover:text-orange-400"
+            >
+              <span className="h-1 w-1 rounded-full bg-steel-600 transition-colors group-hover/link:bg-orange-400" />
+              <span>{link.label}</span>
+              <ExternalLink className="h-3 w-3 opacity-60" aria-hidden />
+            </a>
+          ) : (
+            <Link
+              href={link.href}
+              className={`group/link flex items-center gap-2 py-1 transition-colors hover:text-orange-400 ${
+                link.highlight ? "font-semibold text-steel-100" : "text-steel-300"
+              }`}
+            >
+              <span
+                className={`h-1 w-1 rounded-full transition-colors group-hover/link:bg-orange-400 ${
+                  link.highlight ? "bg-orange-600" : "bg-steel-600"
+                }`}
+              />
+              <span>{link.label}</span>
+            </Link>
+          )}
+        </li>
+      ))}
+    </ul>
+  </details>
+)
+
+// Footer link sections: one list each, rendered ONCE. On phones the section is
+// a native <details> (no JS, no duplicated DOM — the old version shipped every
+// link twice as md:hidden + hidden md:block copies and animated max-height,
+// which clipped the eight-item driver list); from md the list is always open.
 const FooterLinkSections = () => {
-  const [openSection, setOpenSection] = useState<string | null>(null)
-
-  const toggleSection = (section: string) => {
-    setOpenSection(openSection === section ? null : section)
-  }
-
   const driverLinks = [
     { href: "/apply", label: "Apply Now", highlight: true },
     { href: "/pay-rates", label: "Pay Rates" },
@@ -57,140 +103,9 @@ const FooterLinkSections = () => {
   ]
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-0 md:gap-8">
-      {/* For Drivers - Collapsible on Mobile */}
-      <div className="border-b border-white/10 md:border-0">
-        <button
-          onClick={() => toggleSection("drivers")}
-          className="w-full flex items-center justify-between py-4 md:py-0 md:cursor-default min-h-[44px]"
-        >
-          <h4 className="font-display font-bold text-sm uppercase tracking-[0.18em] text-steel-300">
-            For Drivers
-          </h4>
-          <ChevronDown
-            className={`w-5 h-5 text-zinc-500 md:hidden transition-transform duration-200 ${openSection === "drivers" ? "rotate-180" : ""}`}
-          />
-        </button>
-
-        {/* Mobile Collapsible */}
-        <div
-          className={`md:hidden overflow-hidden transition-all duration-300 ease-in-out ${openSection === "drivers" ? "max-h-96 pb-4" : "max-h-0"}`}
-        >
-          <ul className="space-y-3 text-sm pl-2">
-            {driverLinks.map((link) => (
-              <li key={link.href}>
-                <Link
-                  href={link.href}
-                  className={`${link.highlight ? "text-steel-100 font-semibold" : "text-steel-300"} hover:text-orange-500 transition-colors flex items-center gap-2 group py-1`}
-                >
-                  <span
-                    className={`w-1 h-1 rounded-full ${link.highlight ? "bg-orange-600" : "bg-zinc-700"} group-hover:bg-orange-500 transition-all`}
-                  />
-                  <span>{link.label}</span>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        {/* Desktop Always Visible */}
-        <ul className="hidden md:block space-y-3 text-sm mt-6">
-          {driverLinks.map((link) => (
-            <li key={link.href}>
-              <Link
-                href={link.href}
-                className={`${link.highlight ? "text-zinc-300 font-semibold" : "text-zinc-400"} hover:text-orange-500 transition-colors flex items-center gap-2 group`}
-              >
-                <span
-                  className={`w-1 h-1 rounded-full ${link.highlight ? "bg-orange-600" : "bg-zinc-700"} group-hover:bg-orange-500 group-hover:scale-150 transition-all`}
-                />
-                <span className="group-hover:translate-x-1 transition-transform">
-                  {link.label}
-                </span>
-              </Link>
-            </li>
-          ))}
-        </ul>
-      </div>
-
-      {/* Company - Collapsible on Mobile */}
-      <div className="border-b border-white/10 md:border-0">
-        <button
-          onClick={() => toggleSection("company")}
-          className="w-full flex items-center justify-between py-4 md:py-0 md:cursor-default min-h-[44px]"
-        >
-          <h4 className="font-display font-bold text-sm uppercase tracking-[0.18em] text-steel-300">
-            Company
-          </h4>
-          <ChevronDown
-            className={`w-5 h-5 text-zinc-500 md:hidden transition-transform duration-200 ${openSection === "company" ? "rotate-180" : ""}`}
-          />
-        </button>
-
-        {/* Mobile Collapsible */}
-        <div
-          className={`md:hidden overflow-hidden transition-all duration-300 ease-in-out ${openSection === "company" ? "max-h-96 pb-4" : "max-h-0"}`}
-        >
-          <ul className="space-y-3 text-sm pl-2">
-            {companyLinks.map((link) => (
-              <li key={link.href}>
-                {link.external ? (
-                  <a
-                    href={link.href}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-zinc-400 hover:text-orange-500 transition-colors flex items-center gap-2 group py-1"
-                  >
-                    <span className="w-1 h-1 rounded-full bg-zinc-700 group-hover:bg-orange-500 transition-colors" />
-                    <span>{link.label}</span>
-                    <ExternalLink className="w-3 h-3" />
-                  </a>
-                ) : (
-                  <Link
-                    href={link.href}
-                    className="text-zinc-400 hover:text-orange-500 transition-colors flex items-center gap-2 group py-1"
-                  >
-                    <span className="w-1 h-1 rounded-full bg-zinc-700 group-hover:bg-orange-500 transition-colors" />
-                    <span>{link.label}</span>
-                  </Link>
-                )}
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        {/* Desktop Always Visible */}
-        <ul className="hidden md:block space-y-3 text-sm mt-6">
-          {companyLinks.map((link) => (
-            <li key={link.href}>
-              {link.external ? (
-                <a
-                  href={link.href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-zinc-400 hover:text-orange-500 transition-colors flex items-center gap-2 group"
-                >
-                  <span className="w-1 h-1 rounded-full bg-zinc-700 group-hover:bg-orange-500 transition-colors" />
-                  <span className="group-hover:translate-x-1 transition-transform">
-                    {link.label}
-                  </span>
-                  <ExternalLink className="w-3 h-3" />
-                </a>
-              ) : (
-                <Link
-                  href={link.href}
-                  className="text-zinc-400 hover:text-orange-500 transition-colors flex items-center gap-2 group"
-                >
-                  <span className="w-1 h-1 rounded-full bg-zinc-700 group-hover:bg-orange-500 transition-colors" />
-                  <span className="group-hover:translate-x-1 transition-transform">
-                    {link.label}
-                  </span>
-                </Link>
-              )}
-            </li>
-          ))}
-        </ul>
-      </div>
+    <div className="grid grid-cols-1 gap-0 md:grid-cols-2 md:gap-8">
+      <FooterSection title="For Drivers" links={driverLinks} />
+      <FooterSection title="Company" links={companyLinks} />
     </div>
   )
 }
@@ -207,38 +122,81 @@ const FooterLinkSections = () => {
 // /apply — so a driver halfway through pre-qualifying taps it, navigates away,
 // and every answer is gone: the form holds its state in React with nothing
 // persisted. /apply was excluded for exactly this and /pre-qualify was missed.
+//
+// The B2B and product pages are excluded because their one primary action is
+// not the driver Apply: a shipper reading /shippers, a broker on /brokers, a
+// carrier owner on /loadoff or someone booking a call on /schedule-meeting
+// used to get a fixed red "Apply Now" competing with the page's own CTA.
+const NOT_A_DRIVER_PAGE = new Set(["/shippers", "/brokers", "/quote", "/trust", "/loadoff", "/schedule-meeting"])
+
 export const shouldHideMobileCommandBar = (pathname: string): boolean =>
   pathname === "/apply" ||
   pathname === "/pre-qualify" ||
   pathname.startsWith("/hub") ||
   pathname.startsWith("/track") ||
-  pathname.startsWith("/driver")
+  pathname.startsWith("/driver") ||
+  NOT_A_DRIVER_PAGE.has(pathname)
+
+/** The bar mounts once the hero has scrolled away; before that the hero's own CTA is the one red on screen. */
+const PAST_HERO_PX = 420
 
 export const MobileCommandBar = () => {
   const pathname = usePathname()
+  const hide = shouldHideMobileCommandBar(pathname)
+  const [pastHero, setPastHero] = useState(false)
+  const [formInView, setFormInView] = useState(false)
 
-  if (shouldHideMobileCommandBar(pathname)) return null
+  useEffect(() => {
+    if (hide) return
+    const onScroll = () => setPastHero(window.scrollY > Math.min(PAST_HERO_PX, window.innerHeight * 0.5))
+    onScroll()
+    window.addEventListener("scroll", onScroll, { passive: true })
+    return () => window.removeEventListener("scroll", onScroll)
+  }, [hide, pathname])
+
+  // Never float "Apply Now" over a form the visitor is filling in — the tap
+  // navigates away and the form keeps its state in React only. Any <form> in
+  // the main content counts (the inline application block, quote forms, the
+  // calculator's email capture).
+  useEffect(() => {
+    if (hide || typeof IntersectionObserver === "undefined") return
+    const forms = Array.from(document.querySelectorAll<HTMLFormElement>("main form"))
+    if (forms.length === 0) return
+    const visible = new Set<Element>()
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) {
+          if (e.isIntersecting) visible.add(e.target)
+          else visible.delete(e.target)
+        }
+        setFormInView(visible.size > 0)
+      },
+      { rootMargin: "0px 0px -72px 0px", threshold: 0.05 }
+    )
+    forms.forEach((f) => observer.observe(f))
+    return () => {
+      observer.disconnect()
+      // Leaving a page with forms must not keep the bar hidden on the next one.
+      setFormInView(false)
+    }
+  }, [hide, pathname])
+
+  if (hide || !pastHero || formInView) return null
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-[90] md:hidden bg-gradient-to-t from-[#060607] via-[#060607]/98 to-[#060607]/95 backdrop-blur-xl border-t border-white/10 safe-area-bottom">
-      <div className="flex gap-2 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+    <div className="fixed bottom-0 left-0 right-0 z-[90] md:hidden border-t border-white/10 bg-navy-950/95 supports-[backdrop-filter]:bg-navy-950/85 supports-[backdrop-filter]:backdrop-blur-md motion-safe:animate-slide-up">
+      <div className="flex gap-2 px-3 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom,0px))] pl-[max(0.75rem,env(safe-area-inset-left,0px))] pr-[max(0.75rem,env(safe-area-inset-right,0px))]">
         <a
           href={`tel:${COMPANY_INFO.phoneFormatted}`}
-          className="flex-1 flex items-center justify-center gap-1.5 bg-white/10 hover:bg-white/15 active:bg-white/20 text-white font-semibold py-3.5 px-2 rounded-xl transition-all active:scale-[0.98]"
+          className="flex min-h-[48px] flex-1 items-center justify-center gap-2 rounded-fleet border border-white/15 bg-white/5 px-3 font-semibold text-white transition-colors hover:bg-white/10 active:bg-white/15"
         >
-          <Phone className="w-4 h-4" />
+          <Phone className="h-4 w-4" aria-hidden />
           <span className="text-sm">Call</span>
-        </a>
-        <a
-          href={`sms:${COMPANY_INFO.phoneFormatted}?body=${encodeURIComponent("Hi, I'm interested in driving for Thind Transport.")}`}
-          className="flex-1 flex items-center justify-center gap-1.5 bg-white/10 hover:bg-white/15 active:bg-white/20 text-white font-semibold py-3.5 px-2 rounded-xl transition-all active:scale-[0.98]"
-        >
-          <MessageSquare className="w-4 h-4" />
-          <span className="text-sm">Text</span>
+          <span className="font-mono text-sm tabular-nums text-steel-200">{COMPANY_INFO.phone}</span>
         </a>
         <Link
           href="/apply"
-          className="flex-[1.4] flex items-center justify-center gap-2 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 active:from-orange-700 active:to-orange-800 text-white font-bold py-3.5 px-3 rounded-xl transition-all shadow-lg shadow-orange-500/30 active:scale-[0.98]"
+          className="flex min-h-[48px] flex-[1.2] items-center justify-center gap-2 rounded-fleet bg-orange-600 px-4 font-semibold text-white transition-colors hover:bg-orange-500 active:bg-orange-700"
         >
           <span className="text-sm">Apply Now</span>
         </Link>
@@ -262,9 +220,9 @@ export const CinematicFooter = () => {
   const currentYear = new Date().getFullYear()
 
   return (
-    <footer className="relative w-full bg-[#060607] text-white border-t border-white/5 pb-24 md:pb-0">
+    <footer className="relative w-full bg-navy-950 text-white border-t border-white/5 pb-24 md:pb-0">
       {/* Mesh Gradient Background */}
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-navy-800 via-[#060607] to-[#060607] opacity-50" />
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-navy-800 via-navy-950 to-navy-950 opacity-50" />
 
       {/* Noise Overlay — inline SVG turbulence, no external request */}
       <div className="absolute inset-0 opacity-[0.02] pointer-events-none bg-[url('data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%22160%22 height=%22160%22><filter id=%22n%22><feTurbulence type=%22fractalNoise%22 baseFrequency=%220.8%22 numOctaves=%222%22/></filter><rect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23n)%22/></svg>')]" />
@@ -346,7 +304,7 @@ export const CinematicFooter = () => {
                     <div
                       className={`flex items-start gap-3 ${href ? "group cursor-pointer" : ""}`}
                     >
-                      <Icon className="mt-0.5 h-4 w-4 flex-shrink-0 text-zinc-600 transition-colors group-hover:text-orange-500" />
+                      <Icon className="mt-0.5 h-4 w-4 flex-shrink-0 text-zinc-400 transition-colors group-hover:text-orange-400" />
                       <div>
                         <div className="font-medium text-zinc-200 text-sm group-hover:text-white transition-colors">
                           {cert.name}
@@ -392,7 +350,7 @@ export const CinematicFooter = () => {
       </div>
 
       {/* Bottom Bar */}
-      <div className="relative z-10 border-t border-white/5 bg-[#060607]">
+      <div className="relative z-10 border-t border-white/5 bg-navy-950">
         <div className="container py-8">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <p className="text-xs text-zinc-400">

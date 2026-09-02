@@ -109,7 +109,7 @@ export default function ShippersPage() {
       <PageBreadcrumb pageName="Ship With Us" category="Company" />
 
       {/* Hero */}
-      <div className="relative overflow-hidden bg-[#060607] text-white">
+      <div className="relative overflow-hidden bg-navy-950 text-white">
         <Image
           src="/images/generated/truck-night-highway.webp"
           alt="Illustration of a tractor-trailer running a night highway lane"
@@ -118,7 +118,7 @@ export default function ShippersPage() {
           className="object-cover opacity-40"
           priority
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#060607] via-[#060607]/60 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-navy-950 via-navy-950/60 to-transparent" />
         <div className="container relative px-4 py-20 md:py-28">
           <div className="max-w-3xl">
             <span className="fleet-badge fleet-badge-gold mb-5">Asset-based carrier · Kent, WA</span>

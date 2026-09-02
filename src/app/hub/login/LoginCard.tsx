@@ -28,6 +28,22 @@ async function sessionAfterLogin() {
   return null
 }
 
+/**
+ * The demo seats a visitor can try when HUB_DEMO_LOGIN is on. One tap fills
+ * the form; the visitor still presses Sign in, so the flow they rehearse is
+ * the real one. Kept inline on purpose — this card must not pull the
+ * showcase module (and its imports) into the login bundle.
+ */
+const DEMO_PASSWORD = "ThindDemo1!"
+const DEMO_SEATS = [
+  { label: "Dispatcher", email: "dispatch@demo.thind" },
+  { label: "Driver", email: "driver@demo.thind" },
+  { label: "Accountant", email: "accounting@demo.thind" },
+  { label: "Owner", email: "owner@demo.thind" },
+  { label: "Broker", email: "broker@demo.thind" },
+  { label: "Shipper", email: "shipper@demo.thind" },
+] as const
+
 /** Client login card. `showDemo` comes from the server page (HUB_DEMO_LOGIN);
  *  `installSlot` is the install-the-app affordance the page composes in — it
  *  belongs on this route because /hub/* carries the driver app manifest. */
@@ -94,17 +110,19 @@ export function LoginCard({ showDemo, installSlot }: { showDemo: boolean; instal
               Email
             </label>
             <div className="relative">
+              {/* The role chip floats over the field's right edge; pad the
+                  text away from it so a long address never runs underneath. */}
               <input
                 id="email"
                 type="email"
                 required
                 autoComplete="email"
-                className={fieldCls}
+                className={displayRoleHint ? `${fieldCls} pr-24` : fieldCls}
                 value={form.email}
                 onChange={(e) => setForm({ ...form, email: e.target.value })}
               />
               {displayRoleHint ? (
-                <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 rounded-full border border-border bg-surface-2 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-fg-2">
+                <span className="pointer-events-none absolute right-3 top-1/2 max-w-[40%] -translate-y-1/2 truncate rounded-pill border border-border bg-surface-2 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-fg-2">
                   {displayRoleHint}
                 </span>
               ) : null}
@@ -147,29 +165,35 @@ export function LoginCard({ showDemo, installSlot }: { showDemo: boolean; instal
           </button>
         </form>
 
-        <p className="mt-6 text-center text-xs text-fg-3">Need access? Ask the office to create your account.</p>
-
         {showDemo ? (
-          <Panel className="mt-4 border-dashed bg-surface-2 p-3 text-left">
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-fg-3">Demo access</p>
-            <p className="mt-1 text-xs text-fg-2">
-              <span className="font-mono text-fg">dispatch@demo.thind</span>
-              {" · "}
-              <span className="font-mono text-fg">ThindDemo1!</span>
+          <Panel nested className="mt-6 p-3.5 text-left">
+            <p className="text-[13px] font-semibold text-fg">Try a seat</p>
+            <p className="text-body-xs text-fg-3">
+              Same password for every demo account: <span className="font-mono">{DEMO_PASSWORD}</span>
             </p>
-            <p className="mt-1 text-[11px] text-fg-3">
-              Also try owner@demo.thind, driver@demo.thind — same password.
-            </p>
+            <div className="mt-3 flex flex-wrap gap-3">
+              {DEMO_SEATS.map((seat) => (
+                <button
+                  key={seat.email}
+                  type="button"
+                  onClick={() => setForm((f) => ({ ...f, email: seat.email, password: DEMO_PASSWORD }))}
+                  className="min-h-[44px] rounded-pill border border-border-strong bg-surface px-3 text-sm font-semibold text-fg-2 hover:bg-hover hover:text-fg"
+                >
+                  {seat.label}
+                </button>
+              ))}
+            </div>
           </Panel>
         ) : null}
 
-        <p className="mt-4 text-center text-xs text-fg-3">
+        <p className="mt-6 text-center text-xs text-fg-3">
+          Need access? Ask the office to create your account.
+          {" · "}
           Run a trucking company?{" "}
           <a href="/hub/signup" className={linkAccentCls}>
             Create your workspace
           </a>
-        </p>
-        <p className="mt-2 text-center text-xs text-fg-3">
+          {" · "}
           New here?{" "}
           <a href="/hub/demo" className={linkAccentCls}>
             Watch the 90-second demo

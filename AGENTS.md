@@ -73,7 +73,7 @@ Sidecars are optional: when env vars are unset, `src/lib/hub/sidecars.ts` falls 
 - **Office screens use only semantic tokens**: `accent-text` for money/links, `warn`/`warn-soft` for
   needs-attention, `bad` for red, surface/border/fg scales for the rest. No `gold`/`navy`/`steel` in
   `(office)` routes.
-- **Never `bg-surface/95`-style opacity modifiers on CSS-var colors** — Tailwind drops the class silently.
+- **Never `bg-surface/95`-style opacity modifiers on CSS-var colors** — Tailwind drops the class silently. The one exception is the marketing `paper / ink / signal / asphalt / cedar` set, plumbed as `rgb(var(--m-*-rgb) / <alpha-value>)` in `tailwind.config.ts` precisely so `border-signal/40` works; hub tokens are plain `var()` and stay off-limits.
 - **Rust/TS golden parity**: any change to `ifta.test.ts` fixtures must update
   `services/rust/hauldesk-compute` tests in the same commit (`npm run test:sidecars`).
 - **Migrations**: append-only `migrations/hub/NNN_*.sql`, idempotent (`IF NOT EXISTS`), applied via
