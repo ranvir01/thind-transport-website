@@ -23,7 +23,20 @@ export default async function DriverAppLayout({ children }: { children: React.Re
   ])
 
   return (
-    <div className="min-h-screen bg-navy" style={{ "--driver-accent": accent.text } as React.CSSProperties}>
+    // --driver-accent is the carrier's resolved accent (≥4.5:1 on the dark card,
+    // see portal/accent.ts). The same colour doubles as the primary-button fill
+    // with a fixed dark label: anything that passes as text on the card passes
+    // with dark text on top of it, so the pair needs no second resolution.
+    <div
+      className="min-h-screen bg-navy"
+      style={
+        {
+          "--driver-accent": accent.text,
+          "--driver-accent-fill": accent.text,
+          "--driver-accent-fg": "#121316",
+        } as React.CSSProperties
+      }
+    >
       <DriverNav firstName={user.name.split(" ")[0]} />
       <OfflineSync />
       {/* Top bar 56px; bottom tabs ~64px PLUS the home-indicator inset the

@@ -1,11 +1,17 @@
 /**
- * axe-core accessibility audit over the app's key screens, light AND dark.
+ * axe-core accessibility audit over the app's key screens, light AND dark,
+ * indigo AND teal AND ink.
  *
  * Usage: node scripts/a11y-audit.mjs        (server on :3000, demo seed loaded)
  *        BASE_URL=... node scripts/a11y-audit.mjs
  *
  * Gate: zero serious/critical WCAG 2.2 AA violations. Moderate/minor are
  * reported but do not fail the run (tracked, not ignored).
+ *
+ * Theme is an axis, not a default. This script used to seed `hauldesk-mode`
+ * only, so every "dark" audit was indigo dark — and the teal/ink dark border
+ * leak (white-on-white hover rows) was never in front of axe. The office
+ * persona now runs modes × themes; teal and ink are capped to THEMED_ROUTES.
  */
 import { readFileSync } from "node:fs"
 import { createRequire } from "node:module"
@@ -38,8 +44,18 @@ const LOGINS = {
   driver: ["driver@demo.thind", "ThindDemo1!"],
   broker: ["broker@demo.thind", "ThindDemo1!"],
 }
+const MODES = ["light", "dark"]
+/** The three accents (src/lib/hub/appearance.ts). */
+const THEMES = ["indigo", "teal", "ink"]
+/** Office routes audited under teal and ink as well as indigo — the four with
+ *  the densest card / border / hover surface, where a neutral leaking across
+ *  the theme axis shows first. Indigo audits every office route. */
+const THEMED_ROUTES = ["/hub", "/hub/loads", "/hub/money", "/hub/dispatch"]
 // Forced-dark surfaces ignore the mode toggle — auditing them twice is noise.
-const MODE_AGNOSTIC = new Set(["/hub/driver", "/hub/portal", "/hub/demo"])
+// /hub/demo is deliberately NOT here: DemoSimulation renders inside
+// `.hauldesk-shell bg-bg text-fg`, so it follows the stored office mode and
+// must be audited in both.
+const MODE_AGNOSTIC = new Set(["/hub/driver", "/hub/portal"])
 
 async function login(page, persona) {
   const [email, password] = LOGINS[persona]
@@ -53,7 +69,7 @@ async function login(page, persona) {
   await new Promise((r) => setTimeout(r, 1200))
 }
 
-async function audit(page, route, mode) {
+async function audit(page, route, mode, theme) {
   await page.goto(`${BASE}${route}`, { waitUntil: "networkidle2", timeout: 60000 })
   await new Promise((r) => setTimeout(r, 1000))
   await page.evaluate(AXE_SOURCE)
@@ -70,7 +86,7 @@ async function audit(page, route, mode) {
       nodes: v.nodes.slice(0, 3).map((n) => n.target.join(" ")),
       count: v.nodes.length,
     }))
-  }).then((violations) => ({ route, mode, violations }))
+  }).then((violations) => ({ route, mode, theme, violations }))
 }
 
 const browser = await puppeteer.launch({
@@ -81,25 +97,36 @@ const browser = await puppeteer.launch({
 
 const results = []
 for (const persona of [null, "office", "driver", "broker"]) {
-  const routes = ROUTES.filter(([, p]) => p === persona)
-  if (routes.length === 0) continue
-  for (const mode of ["light", "dark"]) {
-    const context = await browser.createBrowserContext()
-    const page = await context.newPage()
-    await page.setViewport({ width: 393, height: 852, deviceScaleFactor: 2, isMobile: true, hasTouch: true })
-    await page.evaluateOnNewDocument((m) => {
-      try { localStorage.setItem("hauldesk-mode", m) } catch {}
-    }, mode)
-    if (persona) await login(page, persona)
-    for (const [route] of routes) {
-      if (mode === "dark" && MODE_AGNOSTIC.has(route)) continue
-      try {
-        results.push(await audit(page, route, mode))
-      } catch (error) {
-        results.push({ route, mode, error: error.message, violations: [] })
+  const personaRoutes = ROUTES.filter(([, p]) => p === persona)
+  if (personaRoutes.length === 0) continue
+  // Only the office persona loops themes: public pages and the forced-dark
+  // driver/portal surfaces run indigo, the default a fresh profile gets.
+  const themes = persona === "office" ? THEMES : ["indigo"]
+  for (const mode of MODES) {
+    for (const theme of themes) {
+      const routes = personaRoutes
+        .filter(([route]) => theme === "indigo" || THEMED_ROUTES.includes(route))
+        .filter(([route]) => !(mode === "dark" && MODE_AGNOSTIC.has(route)))
+      if (routes.length === 0) continue
+      const context = await browser.createBrowserContext()
+      const page = await context.newPage()
+      await page.setViewport({ width: 393, height: 852, deviceScaleFactor: 2, isMobile: true, hasTouch: true })
+      // Both keys, always: the boot script in app/hub/layout.tsx reads them on
+      // first paint, and an unseeded theme is indigo whatever the loop says.
+      await page.evaluateOnNewDocument((m, t) => {
+        try { localStorage.setItem("hauldesk-mode", m) } catch {}
+        try { localStorage.setItem("hauldesk-theme", t) } catch {}
+      }, mode, theme)
+      if (persona) await login(page, persona)
+      for (const [route] of routes) {
+        try {
+          results.push(await audit(page, route, mode, theme))
+        } catch (error) {
+          results.push({ route, mode, theme, error: error.message, violations: [] })
+        }
       }
+      await context.close()
     }
-    await context.close()
   }
 }
 await browser.close()
@@ -107,13 +134,14 @@ await browser.close()
 let serious = 0
 let moderate = 0
 for (const r of results) {
+  const label = `${r.route} [${r.mode}/${r.theme}]`
   if (r.error) {
-    console.log(`\n⚠ ${r.route} [${r.mode}] — audit error: ${r.error}`)
+    console.log(`\n⚠ ${label} — audit error: ${r.error}`)
     serious++
     continue
   }
   if (r.violations.length === 0) continue
-  console.log(`\n${r.route} [${r.mode}]`)
+  console.log(`\n${label}`)
   for (const v of r.violations) {
     const hard = v.impact === "serious" || v.impact === "critical"
     if (hard) serious += 1
@@ -123,7 +151,7 @@ for (const r of results) {
   }
 }
 const audited = results.filter((r) => !r.error).length
-console.log(`\n${audited} screen-modes audited · ${serious} serious/critical · ${moderate} moderate/minor`)
+console.log(`\n${audited} screen-mode-themes audited · ${serious} serious/critical · ${moderate} moderate/minor`)
 if (serious > 0) {
   console.error("❌ a11y gate failed — fix serious/critical violations.")
   process.exit(1)
