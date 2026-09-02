@@ -91,7 +91,7 @@ async function main() {
   await waitForText(page, ANCHORS.toastDepartureRecorded)
   const toastText = await page.evaluate(() => {
     const text = document.body.innerText
-    const start = text.indexOf(ANCHORS.toastDepartureRecorded)
+    const start = text.indexOf("Departure recorded")
     return start >= 0 ? text.slice(start, start + 80).split("\n")[0] : null
   })
   check(/detention billed: \$[\d.]+/.test(toastText ?? ""), `toast confirms auto-applied detention (${toastText})`)

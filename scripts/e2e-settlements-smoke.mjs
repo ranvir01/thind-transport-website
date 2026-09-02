@@ -155,7 +155,7 @@ async function main() {
     `statement PDF stored and served (${pdfOk.status} ${pdfOk.type} magic=${pdfOk.magic} ${pdfOk.bytes}B)`)
   await shot(page, "04-approved")
   await page.goto(`${BASE}/hub/money/advances`, { waitUntil: "networkidle2" })
-  await waitForText(page, ANCHORS.advances)
+  await waitForText(page, "Cash and EFS-code advances")
   const advanceRow = await page.evaluate(() => {
     const el = [...document.querySelectorAll("p")].find((n) => n.textContent.includes("EFS code 4417"))
     return el?.closest("div.flex")?.textContent ?? null
@@ -175,9 +175,9 @@ async function main() {
 
   console.log("7. O/O percentage draft: net to the cent, detention itemized, escrow posts once")
   await page.goto(`${BASE}${jasdeepDrafts[0]}`, { waitUntil: "networkidle2" })
-  await waitForText(page, ANCHORS.netPay)
-  check(parseCents(await totalsValue(page, ANCHORS.netPay)) === JASDEEP.netCents,
-    `O/O net is 90% linehaul + FSC − escrow (${await totalsValue(page, ANCHORS.netPay)})`)
+  await waitForText(page, "Net pay")
+  check(parseCents(await totalsValue(page, "Net pay")) === JASDEEP.netCents,
+    `O/O net is 90% linehaul + FSC − escrow (${await totalsValue(page, "Net pay")})`)
   // settle3 carries a $150 auto-billed Detention accessorial: the evaluator
   // names its 90% share on its own line instead of blending it into the base.
   const jasdeepDetail = await page.evaluate(() => document.body.innerText)
@@ -187,9 +187,9 @@ async function main() {
   check(jasdeepDetail.includes("90% of $2500.00") && jasdeepDetail.includes("$2,250.00"),
     "remainder line excludes detention from its base ($2,250.00 of $2500.00)")
   await clickByText(page, "Approve", { tag: "button" })
-  await waitForText(page, ANCHORS.statusApproved, 20000)
+  await waitForText(page, "Status: approved", 20000)
   await page.goto(`${BASE}/hub/money/settlements`, { waitUntil: "networkidle2" })
-  await waitForText(page, ANCHORS.settlements)
+  await waitForText(page, "Weekly driver pay")
   const escrowAfter = await page.evaluate(() => document.body.innerText)
   check(escrowAfter.includes(ESCROW_AFTER) && !escrowAfter.includes(ESCROW_BEFORE),
     `escrow bumped by exactly one weekly contribution (${ESCROW_AFTER})`)
@@ -202,13 +202,13 @@ async function main() {
   trackPageErrors(page2, consoleErrors)
   await login(page2, "dispatch@demo.thind")
   await page2.goto(`${BASE}/hub/money/settlements`, { waitUntil: "networkidle2" })
-  await waitForText(page2, ANCHORS.settlements)
+  await waitForText(page2, "Weekly driver pay")
   const dispatcherDraftBtn = await page2.evaluate(() =>
     [...document.querySelectorAll("button")].some((b) => b.textContent.includes("Draft this week"))
   )
   check(!dispatcherDraftBtn, "dispatcher has no draft-settlements button")
   await page2.goto(`${BASE}${jasdeepDrafts[0]}`, { waitUntil: "networkidle2" })
-  await waitForText(page2, ANCHORS.netPay)
+  await waitForText(page2, "Net pay")
   const dispatcherActions = await page2.evaluate(() =>
     [...document.querySelectorAll("button")].filter((b) => /approve|mark paid/i.test(b.textContent)).length
   )

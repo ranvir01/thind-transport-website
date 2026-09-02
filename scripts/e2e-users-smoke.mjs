@@ -136,7 +136,7 @@ async function main() {
     path: location.pathname,
     // Today's StatTile row, always rendered — the old "in one calm place"
     // subtitle was dropped in the app-chrome redesign.
-    office: document.body.innerText.includes(ANCHORS.today),
+    office: document.body.innerText.includes("Unconfirmed drivers"),
   }))
   check(hire.path === "/hub" && hire.office, `new dispatcher lands on the office Today page (${hire.path})`)
   await shot(hirePage, "05-new-hire-signed-in")
@@ -191,7 +191,7 @@ async function main() {
   await waitForPath(dispPage, "/hub")
   // Pathname flips before the Today screen streams in — wait for a body
   // tile, not the always-present "Today" nav label.
-  await waitForText(dispPage, ANCHORS.today)
+  await waitForText(dispPage, "Unconfirmed drivers")
   const disp = await dispPage.evaluate(() => ({
     path: location.pathname,
     seesRoster: document.body.innerText.includes("alert emails, and who can sign in"),
