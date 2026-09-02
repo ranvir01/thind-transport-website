@@ -88,6 +88,14 @@ async function ownerMetrics(userId: string): Promise<Partial<ShiftMetrics>> {
   // advances and payments they recorded. The autopilot's own payments carry a
   // null actor and are excluded by the actor_id filter above, so the number
   // is the owner's hand on the money and nobody else's.
+  //
+  // Payments are summed straight off their audit rows. recordPayment logs the
+  // payment against the INVOICE id (invoices.ts), not the payment row's id, so
+  // a join on hub.payments.id matched nothing and every payment the owner
+  // recorded during a shift was worth $0 on the money line while the
+  // objective beside it ticked. The audit row carries the amount, and
+  // reading it there also keeps two payments on one invoice from each
+  // counting the other.
   const moved = await query<{ cents: string }>(
     `SELECT COALESCE((SELECT SUM(s.net_cents) FROM hub.settlements s
                        JOIN hub.audit_log a ON a.carrier_id = $1 AND a.entity_type = 'settlement'
@@ -97,10 +105,10 @@ async function ownerMetrics(userId: string): Promise<Partial<ShiftMetrics>> {
                        JOIN hub.audit_log a2 ON a2.carrier_id = $1 AND a2.entity_type = 'advance'
                         AND a2.action = 'create' AND a2.entity_id = ad.id::text AND a2.actor_id = $2
                       WHERE ad.carrier_id = $1), 0)
-          + COALESCE((SELECT SUM(p.amount_cents) FROM hub.payments p
-                       JOIN hub.audit_log a3 ON a3.carrier_id = $1 AND a3.entity_type = 'payment'
-                        AND a3.action = 'record' AND a3.entity_id = p.id::text AND a3.actor_id = $2
-                      WHERE p.carrier_id = $1), 0) AS cents`,
+          + COALESCE((SELECT SUM((a3.new_value->>'amountCents')::bigint) FROM hub.audit_log a3
+                      WHERE a3.carrier_id = $1 AND a3.entity_type = 'payment'
+                        AND a3.action = 'record' AND a3.actor_id = $2
+                        AND a3.new_value ? 'amountCents'), 0) AS cents`,
     [C, userId]
   )
   return {
@@ -270,8 +278,13 @@ async function ownerOperatorMetrics(userId: string): Promise<Partial<ShiftMetric
  */
 async function companyMoney(): Promise<Partial<ShiftMetrics>> {
   const [delivered, billed, collected, rolling, dwelling, overdue] = await Promise.all([
+    // Same basis as billed: linehaul + fuel + accessorials. An invoice carries
+    // the detention, so leaving it out here let "billed" outrun "delivered"
+    // for the same freight — money billed that was never earned, on its face.
     query<{ cents: string }>(
-      `SELECT COALESCE(SUM(l.linehaul_cents + l.fuel_surcharge_cents), 0)::bigint AS cents
+      `SELECT COALESCE(SUM(l.linehaul_cents + l.fuel_surcharge_cents
+                + COALESCE((SELECT SUM((a->>'amount_cents')::int)
+                              FROM jsonb_array_elements(l.accessorials) a), 0)), 0)::bigint AS cents
          FROM hub.loads l
         WHERE l.carrier_id = $1 AND l.deleted_at IS NULL
           AND EXISTS (SELECT 1 FROM hub.load_events e
@@ -341,15 +354,21 @@ async function driverPay(userId: string): Promise<number> {
         ORDER BY p.updated_at DESC LIMIT 1`,
       [C, userId]
     ),
+    // The same load context the settlement draft and the driver's phone
+    // build (driver-app.ts driverUnsettledPay), stops included — a per-stop
+    // rule would otherwise pay on Friday and show $0 on the shift card, the
+    // exact drift this reader exists to prevent.
     query<{
       id: string; reference: string; linehaul_cents: number; fuel_surcharge_cents: number
-      accessorial_cents: number; loaded_miles: number; deadhead_miles: number
+      accessorial_cents: number; loaded_miles: number; deadhead_miles: number; stops_count: number
     }>(
       `SELECT l.id, l.reference, l.linehaul_cents, l.fuel_surcharge_cents,
               COALESCE((SELECT SUM((a->>'amount_cents')::int)
                           FROM jsonb_array_elements(l.accessorials) a), 0)::int AS accessorial_cents,
               COALESCE(l.loaded_miles, 0) AS loaded_miles,
-              COALESCE(l.deadhead_miles, 0) AS deadhead_miles
+              COALESCE(l.deadhead_miles, 0) AS deadhead_miles,
+              (SELECT COUNT(*)::int FROM hub.stops s
+                WHERE s.carrier_id = $1 AND s.load_id = l.id) AS stops_count
          FROM hub.loads l
          JOIN hub.drivers d ON d.id = l.driver_id AND d.carrier_id = $1
         WHERE l.carrier_id = $1 AND l.deleted_at IS NULL AND d.user_id = $2
@@ -369,6 +388,7 @@ async function driverPay(userId: string): Promise<number> {
     accessorialCents: l.accessorial_cents,
     loadedMiles: l.loaded_miles,
     deadheadMiles: l.deadhead_miles,
+    stopsCount: l.stops_count,
   }))
   // Gross, not net: deductions are period things (escrow, insurance) that a
   // shift did not cause, and docking a player for them would misread as a
@@ -403,12 +423,25 @@ export async function readShiftMetrics(
     return { ...emptyMetrics(now.toISOString()), ...own, ...co }
   }
 
-  const [moves, boards, arrivals, invoices, payments, booked, co, pay] = await Promise.all([
+  const [moves, pods, boards, arrivals, invoices, payments, booked, co, pay] = await Promise.all([
     query<{ to_status: string | null; n: number }>(
       `SELECT payload->>'to' AS to_status, COUNT(*)::int AS n
          FROM hub.load_events
         WHERE carrier_id = $1 AND kind = 'status_change' AND actor_id = $2
         GROUP BY 1`,
+      [C, userId]
+    ),
+    // The POD the driver actually sends. The phone's upload writes a
+    // 'document' event with the driver as actor (driver.ts) and never touches
+    // the load's status — 'pod_received' is the OFFICE confirming the
+    // paperwork, so counting that status move credited the driver with
+    // nothing they could do from the seat and "Submit the POD" sat at 0/1
+    // after they had done exactly that.
+    query<{ n: number }>(
+      `SELECT COUNT(*)::int AS n
+         FROM hub.load_events
+        WHERE carrier_id = $1 AND kind = 'document' AND actor_id = $2
+          AND payload->>'kind' = 'pod'`,
       [C, userId]
     ),
     query<{ quoted: number; unbilled: number }>(
@@ -475,7 +508,7 @@ export async function readShiftMetrics(
     myDispatches: byStatus.get("dispatched") ?? 0,
     quotedCount: boards[0]?.quoted ?? 0,
     myStatusMoves: totalMoves,
-    myPodsSubmitted: byStatus.get("pod_received") ?? 0,
+    myPodsSubmitted: pods[0]?.n ?? 0,
     myArrivals: arrivals[0]?.arrivals ?? 0,
     myOnTimeArrivals: arrivals[0]?.on_time ?? 0,
     myInvoices: invoices[0]?.n ?? 0,

@@ -140,6 +140,28 @@ export async function listDocuments(
   )
 }
 
+/**
+ * Remove a stored file's bytes. Best-effort by design: callers have already
+ * deleted (or are about to delete) the row, which is the authoritative act —
+ * a file whose row is gone is unreachable through /api/hub/files either way.
+ */
+export async function deleteStoredFile(url: string, storage: string | null): Promise<void> {
+  try {
+    if (storage === "blob") {
+      if (process.env.BLOB_READ_WRITE_TOKEN) {
+        const { del } = await import("@vercel/blob")
+        // The row stores the internal URL, not the blob URL — delete by pathname.
+        await del(blobPathnameFor(url))
+      }
+    } else {
+      const name = url.split("/").pop()
+      if (name) await fs.unlink(path.join(UPLOAD_DIR, path.basename(name)))
+    }
+  } catch {
+    // Bytes already gone or storage unreachable; the row is the record.
+  }
+}
+
 export async function deleteDocument(carrierId: string, id: string): Promise<boolean> {
   const rows = await query<{ id: string; storage: string; url: string }>(
     `DELETE FROM hub.documents WHERE carrier_id = $1 AND id = $2 RETURNING id, storage, url`,
@@ -148,21 +170,8 @@ export async function deleteDocument(carrierId: string, id: string): Promise<boo
   const doc = rows[0]
   if (!doc) return false
   // Remove the bytes too — a deleted document must stop being fetchable at its
-  // old URL. Best-effort: the row delete is the authoritative act.
-  try {
-    if (doc.storage === "blob") {
-      if (process.env.BLOB_READ_WRITE_TOKEN) {
-        const { del } = await import("@vercel/blob")
-        // The row stores the internal URL, not the blob URL — delete by pathname.
-        await del(blobPathnameFor(doc.url))
-      }
-    } else {
-      const name = doc.url.split("/").pop()
-      if (name) await fs.unlink(path.join(UPLOAD_DIR, path.basename(name)))
-    }
-  } catch {
-    // Bytes already gone or storage unreachable; the row is deleted either way.
-  }
+  // old URL.
+  await deleteStoredFile(doc.url, doc.storage)
   return true
 }
 

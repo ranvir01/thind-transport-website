@@ -3,9 +3,13 @@ import { FileText, Package } from "lucide-react"
 import { requirePortalUser } from "@/lib/hub/session"
 import { portalInvoices, portalLoads, portalPacketDocuments } from "@/lib/hub/portal"
 import { getCarrier } from "@/lib/hub/settings"
-import { fmtCents, STATUS_LABELS, type LoadStatus } from "@/lib/hub/types"
+import { fmtCents, type LoadStatus } from "@/lib/hub/types"
 import { PortalQuoteForm } from "@/components/hub/PortalQuoteForm"
-import { LoadProgressBar } from "@/components/hub/LoadProgressBar"
+// publicStatus, not STATUS_LABELS: "POD received", "Invoiced", "Paid" and
+// "Settled" are the carrier's back-office states, and a customer reading
+// "Settled" on their shipment is being told when the driver got paid.
+// Outside the office a delivered load is "Delivered" and nothing more.
+import { LoadProgressBar, publicStatus } from "@/components/hub/LoadProgressBar"
 import { cn } from "@/lib/utils"
 
 export const dynamic = "force-dynamic"
@@ -72,7 +76,7 @@ export default async function PortalHomePage() {
                       {load.customer_reference ? <span className="text-steel-400 font-normal"> · your ref {load.customer_reference}</span> : null}
                     </p>
                     <span className="shrink-0 rounded-full border border-green-500/40 bg-green-500/10 px-2.5 py-0.5 text-[11px] font-bold text-green-400">
-                      {STATUS_LABELS[load.status as LoadStatus] ?? load.status}
+                      {publicStatus(load.status as LoadStatus).label}
                     </span>
                   </div>
                   <p className="mt-0.5 text-body-sm text-steel-200">
@@ -143,7 +147,7 @@ export default async function PortalHomePage() {
                     <span className="text-steel-400"> · {load.origin_city} → {load.dest_city}</span>
                   </span>
                   <span className="shrink-0 flex items-center gap-1.5 text-[11px] font-bold text-steel-400">
-                    <Package className="h-3.5 w-3.5" /> {STATUS_LABELS[load.status as LoadStatus] ?? load.status}
+                    <Package className="h-3.5 w-3.5" /> {publicStatus(load.status as LoadStatus).label}
                   </span>
                 </Link>
               </li>

@@ -8,6 +8,7 @@ import { dollarsToCents } from "@/lib/hub/types"
 import { notifyRoles } from "@/lib/hub/notify"
 import { logAudit } from "@/lib/hub/audit"
 import { actionError } from "@/lib/hub/action-error"
+import { driverOwnsLoad } from "@/lib/hub/driver-app"
 
 export interface IncidentFormResult {
   ok: boolean
@@ -69,6 +70,16 @@ export async function fileDriverIncidentReport(input: {
     // ~30 days). The hand-rolled getHubUser + role check skipped both.
     const user = await requireDriverUser()
     const { queryOne } = await import("@/lib/hub/db")
+
+    // A first report may be pinned to a load, but only to one of the
+    // driver's own. The id comes from the phone; without this a driver could
+    // file an incident against freight another driver is hauling, and the
+    // safety register would blame the wrong truck. driver_id is already
+    // forced to the caller below — this closes the one field that was not.
+    if (input.loadId) {
+      const own = await driverOwnsLoad(user.carrierId, user.driverId, input.loadId)
+      if (!own) return { ok: false, error: "That load isn't yours" }
+    }
 
     // The driver's current truck (if assigned) rides along automatically.
     const truck = await queryOne<{ id: string }>(

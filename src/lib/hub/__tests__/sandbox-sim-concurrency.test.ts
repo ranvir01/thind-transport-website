@@ -41,6 +41,8 @@ suite("sim state commit keeps disjoint write sets", () => {
   let tickSandboxSim: typeof import("../sandbox-sim").tickSandboxSim
 
   let tenantLock: PoolClient | null = null
+  /** The live sandbox's settings row, as found — put back exactly on exit. */
+  let savedSettings: unknown = null
 
   beforeAll(async () => {
     // Hold the tenant for this suite's duration: the live-sim suite reseeds
@@ -49,6 +51,17 @@ suite("sim state commit keeps disjoint write sets", () => {
     ;({ query, hubDb } = await import("../db"))
     ;({ bumpShiftCounter } = await import("../sandbox-shift"))
     ;({ tickSandboxSim } = await import("../sandbox-sim"))
+    // This fixture borrows the REAL sandbox carrier id, and on a developer's
+    // box it is the same database localhost:3000 serves. Remember what was
+    // there so afterAll can restore it: an earlier revision DELETEd the row on
+    // the way out, which left the live sandbox "unseeded" — no heartbeat, no
+    // payments landing, every shift's epoch blank — until somebody pressed
+    // Reset and worked out why.
+    const existing = await query<{ settings: unknown }>(
+      `SELECT settings FROM hub.carrier_settings WHERE carrier_id = $1`,
+      [C]
+    )
+    savedSettings = existing[0]?.settings ?? null
     // A carrier_settings row with a sim block is all these writers need; the
     // tick's world snapshot is allowed to come back empty.
     await query(
@@ -71,9 +84,16 @@ suite("sim state commit keeps disjoint write sets", () => {
 
   afterAll(async () => {
     if (!hasDb) return
-    // Leave the fixture carrier's settings behind — the row is inert, and the
-    // sandbox seed owns this carrier id anyway (it upserts wholesale).
-    await query(`DELETE FROM hub.carrier_settings WHERE carrier_id = $1`, [C]).catch(() => {})
+    // Put the live sandbox back the way it was found. The fixture's own
+    // SIM- invoice numbering and test epoch must not outlive the suite.
+    if (savedSettings) {
+      await query(
+        `UPDATE hub.carrier_settings SET settings = $2::jsonb, updated_at = NOW() WHERE carrier_id = $1`,
+        [C, JSON.stringify(savedSettings)]
+      ).catch(() => {})
+    } else {
+      await query(`DELETE FROM hub.carrier_settings WHERE carrier_id = $1`, [C]).catch(() => {})
+    }
     await unlockSandboxTenant(tenantLock)
   })
 

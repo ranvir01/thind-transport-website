@@ -3,9 +3,11 @@ import { notFound } from "next/navigation"
 import { ChevronLeft, FileText } from "lucide-react"
 import { requirePortalUser } from "@/lib/hub/session"
 import { portalLoad, portalLoadDocuments } from "@/lib/hub/portal"
-import { STATUS_LABELS, type LoadStatus } from "@/lib/hub/types"
+import type { LoadStatus } from "@/lib/hub/types"
 import { StopTimeline } from "@/components/hub/StopTimeline"
-import { LoadProgressBar } from "@/components/hub/LoadProgressBar"
+// publicStatus folds the carrier's money states (POD received, invoiced,
+// paid, settled) to "Delivered" — a customer's shipment, not the books.
+import { LoadProgressBar, publicStatus } from "@/components/hub/LoadProgressBar"
 
 export const dynamic = "force-dynamic"
 
@@ -36,7 +38,7 @@ export default async function PortalLoadPage({ params }: { params: Promise<{ id:
             backgroundColor: "color-mix(in srgb, var(--portal-accent) 10%, transparent)",
           }}
         >
-          {STATUS_LABELS[load.status as LoadStatus] ?? load.status}
+          {publicStatus(load.status as LoadStatus).label}
         </span>
       </div>
 
