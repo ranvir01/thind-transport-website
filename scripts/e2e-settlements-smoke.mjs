@@ -13,7 +13,7 @@
  * Usage: node scripts/e2e-settlements-smoke.mjs [outputDir]
  */
 import { mkdirSync } from "node:fs"
-import { launchBrowser, BASE, failures, check, waitForText, login, makeShot, clickByText, reseed, trackPageErrors } from "./e2e-lib.mjs"
+import { ANCHORS, launchBrowser, BASE, failures, check, waitForText, login, makeShot, clickByText, reseed, trackPageErrors } from "./e2e-lib.mjs"
 
 const OUT = process.argv[2] ?? "e2e-shots-settlements"
 mkdirSync(OUT, { recursive: true })
@@ -89,7 +89,7 @@ async function main() {
   console.log("1. Login as owner, open settlements")
   await login(page, "owner@demo.thind")
   await page.goto(`${BASE}/hub/money/settlements`, { waitUntil: "networkidle2" })
-  await waitForText(page, "Weekly driver pay")
+  await waitForText(page, ANCHORS.settlements)
   const seededPaid = await settlementLinks(page, ["paid"])
   check(seededPaid.length >= 2, `seeded paid settlements listed (${seededPaid.length})`)
   await waitForText(page, "Escrow balances")
@@ -118,14 +118,14 @@ async function main() {
 
   console.log("4. Harpreet's draft itemizes to the cent")
   await page.goto(`${BASE}${harpreetDrafts[0]}`, { waitUntil: "networkidle2" })
-  await waitForText(page, "Net pay")
+  await waitForText(page, ANCHORS.netPay)
   check((await page.evaluate(() => document.body.innerText)).includes("Status: draft"), "status is draft")
   check(parseCents(await totalsValue(page, "Gross")) === HARPREET.grossCents,
     `gross is loads+reimbursement to the cent (${await totalsValue(page, "Gross")})`)
   check(parseCents(await totalsValue(page, "Deductions")) === HARPREET.deductionsCents,
     `deductions are advance+insurance to the cent (${await totalsValue(page, "Deductions")})`)
-  check(parseCents(await totalsValue(page, "Net pay")) === HARPREET.netCents,
-    `net pay is gross − deductions (${await totalsValue(page, "Net pay")})`)
+  check(parseCents(await totalsValue(page, ANCHORS.netPay)) === HARPREET.netCents,
+    `net pay is gross − deductions (${await totalsValue(page, ANCHORS.netPay)})`)
   const detailText = await page.evaluate(() => document.body.innerText)
   for (const amount of HARPREET.lineAmounts) {
     check(detailText.includes(amount), `line amount ${amount} itemized`)
@@ -139,7 +139,7 @@ async function main() {
 
   console.log("5. Approve — statement PDF stored, advance applied")
   await clickByText(page, "Approve", { tag: "button" })
-  await waitForText(page, "Status: approved", 20000)
+  await waitForText(page, ANCHORS.statusApproved, 20000)
   const pdfOk = await page.evaluate(async () => {
     const a = [...document.querySelectorAll("a")].find((n) => n.textContent.includes("Statement PDF"))
     if (!a) return { found: false }
@@ -155,7 +155,7 @@ async function main() {
     `statement PDF stored and served (${pdfOk.status} ${pdfOk.type} magic=${pdfOk.magic} ${pdfOk.bytes}B)`)
   await shot(page, "04-approved")
   await page.goto(`${BASE}/hub/money/advances`, { waitUntil: "networkidle2" })
-  await waitForText(page, "Cash and EFS-code advances")
+  await waitForText(page, ANCHORS.advances)
   const advanceRow = await page.evaluate(() => {
     const el = [...document.querySelectorAll("p")].find((n) => n.textContent.includes("EFS code 4417"))
     return el?.closest("div.flex")?.textContent ?? null
@@ -175,9 +175,9 @@ async function main() {
 
   console.log("7. O/O percentage draft: net to the cent, detention itemized, escrow posts once")
   await page.goto(`${BASE}${jasdeepDrafts[0]}`, { waitUntil: "networkidle2" })
-  await waitForText(page, "Net pay")
-  check(parseCents(await totalsValue(page, "Net pay")) === JASDEEP.netCents,
-    `O/O net is 90% linehaul + FSC − escrow (${await totalsValue(page, "Net pay")})`)
+  await waitForText(page, ANCHORS.netPay)
+  check(parseCents(await totalsValue(page, ANCHORS.netPay)) === JASDEEP.netCents,
+    `O/O net is 90% linehaul + FSC − escrow (${await totalsValue(page, ANCHORS.netPay)})`)
   // settle3 carries a $150 auto-billed Detention accessorial: the evaluator
   // names its 90% share on its own line instead of blending it into the base.
   const jasdeepDetail = await page.evaluate(() => document.body.innerText)
@@ -187,9 +187,9 @@ async function main() {
   check(jasdeepDetail.includes("90% of $2500.00") && jasdeepDetail.includes("$2,250.00"),
     "remainder line excludes detention from its base ($2,250.00 of $2500.00)")
   await clickByText(page, "Approve", { tag: "button" })
-  await waitForText(page, "Status: approved", 20000)
+  await waitForText(page, ANCHORS.statusApproved, 20000)
   await page.goto(`${BASE}/hub/money/settlements`, { waitUntil: "networkidle2" })
-  await waitForText(page, "Weekly driver pay")
+  await waitForText(page, ANCHORS.settlements)
   const escrowAfter = await page.evaluate(() => document.body.innerText)
   check(escrowAfter.includes(ESCROW_AFTER) && !escrowAfter.includes(ESCROW_BEFORE),
     `escrow bumped by exactly one weekly contribution (${ESCROW_AFTER})`)
@@ -202,13 +202,13 @@ async function main() {
   trackPageErrors(page2, consoleErrors)
   await login(page2, "dispatch@demo.thind")
   await page2.goto(`${BASE}/hub/money/settlements`, { waitUntil: "networkidle2" })
-  await waitForText(page2, "Weekly driver pay")
+  await waitForText(page2, ANCHORS.settlements)
   const dispatcherDraftBtn = await page2.evaluate(() =>
     [...document.querySelectorAll("button")].some((b) => b.textContent.includes("Draft this week"))
   )
   check(!dispatcherDraftBtn, "dispatcher has no draft-settlements button")
   await page2.goto(`${BASE}${jasdeepDrafts[0]}`, { waitUntil: "networkidle2" })
-  await waitForText(page2, "Net pay")
+  await waitForText(page2, ANCHORS.netPay)
   const dispatcherActions = await page2.evaluate(() =>
     [...document.querySelectorAll("button")].filter((b) => /approve|mark paid/i.test(b.textContent)).length
   )

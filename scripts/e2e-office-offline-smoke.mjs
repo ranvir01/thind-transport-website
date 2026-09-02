@@ -12,7 +12,7 @@
  * Requires: npm run dev (or start) on localhost:3000.
  */
 import { mkdirSync } from "node:fs"
-import {
+import { ANCHORS,
   launchBrowser, BASE, clickByText, waitForText, textAppears, textGone,
   makeShot, reseed, check, failures,
 } from "./e2e-lib.mjs"
@@ -69,7 +69,7 @@ async function main() {
   try {
     console.log("1. Login as demo dispatcher, open a load that can advance")
     await page.goto(`${BASE}/hub/login`, { waitUntil: "networkidle2" })
-    await waitForText(page, "One login for dispatch, drivers, and partners.")
+    await waitForText(page, ANCHORS.login)
     await page.type("#email", "dispatch@demo.thind")
     await page.type("#password", "ThindDemo1!")
     await Promise.all([
@@ -79,7 +79,7 @@ async function main() {
     if (!page.url().includes("/hub")) throw new Error(`Expected /hub, got ${page.url()}`)
 
     await page.goto(`${BASE}/hub/loads`, { waitUntil: "networkidle2" })
-    await waitForText(page, "Search, filter, and manage every load.")
+    await waitForText(page, ANCHORS.loads)
     await waitForText(page, "THD-")
     // Collect load-detail hrefs and goto them directly — a synthetic click on
     // a Next <Link> doesn't reliably drive the client router from evaluate().

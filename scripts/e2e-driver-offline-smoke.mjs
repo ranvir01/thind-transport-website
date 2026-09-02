@@ -11,7 +11,7 @@
  * Requires: npm run dev (or start) on localhost:3000.
  */
 import { mkdirSync } from "node:fs"
-import {
+import { ANCHORS,
   launchBrowser, BASE, clickByText, waitForText, textAppears, textGone,
   makeShot, reseed, check, failures,
 } from "./e2e-lib.mjs"
@@ -54,7 +54,7 @@ async function main() {
   try {
     console.log("1. Login as demo driver, confirm dispatch (online)")
     await page.goto(`${BASE}/hub/login`, { waitUntil: "networkidle2" })
-    await waitForText(page, "One login for dispatch, drivers, and partners.")
+    await waitForText(page, ANCHORS.login)
     await page.type("#email", "driver@demo.thind")
     await page.type("#password", "ThindDemo1!")
     await Promise.all([
@@ -64,7 +64,7 @@ async function main() {
     if (!page.url().includes("/hub/driver")) throw new Error(`Expected /hub/driver, got ${page.url()}`)
     await waitForText(page, "THD-")
     await clickByText(page, "confirm this dispatch")
-    await waitForText(page, "Dispatch confirmed")
+    await waitForText(page, ANCHORS.toastDispatchConfirmed)
     await shot(page, "01-confirmed-online")
 
     console.log("2. Drop the network (CDP), then tap 'I'm here' at the pickup")
@@ -100,13 +100,13 @@ async function main() {
     check(drainedCount === 0, `IndexedDB queue is empty after replay (got ${drainedCount})`)
     const bannerCleared = await textGone(page, "No signal", 15000)
     check(bannerCleared, "offline banner clears once the queue drains")
-    const arrivalLanded = await textAppears(page, "Leaving now", 15000)
+    const arrivalLanded = await textAppears(page, ANCHORS.leavingNow, 15000)
     check(arrivalLanded, "pickup stop shows 'Leaving now' — the queued arrival replayed to the server")
     await shot(page, "05-replayed-arrival")
 
     console.log("7. Reload from a fresh navigation confirms the server, not just client state, has it")
     await page.reload({ waitUntil: "networkidle2" })
-    const survivesReload = await textAppears(page, "Leaving now", 10000)
+    const survivesReload = await textAppears(page, ANCHORS.leavingNow, 10000)
     check(survivesReload, "arrival persisted server-side (survives a full page reload)")
     await shot(page, "06-after-reload")
 

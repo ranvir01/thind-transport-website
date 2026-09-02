@@ -39,7 +39,7 @@ export default async function TrackPage({ params }: { params: Promise<{ token: s
     )
   }
 
-  const { load, stops, carrierName, latestPosition, eta } = tracked
+  const { load, stops, carrierName, latestPosition, eta, pickupVerified } = tracked
   const status = publicStatus(load.status)
   const cancelled = load.status === "cancelled"
   const live = !cancelled && status.index < PUBLIC_FLOW.length - 1
@@ -91,7 +91,7 @@ export default async function TrackPage({ params }: { params: Promise<{ token: s
           )}
 
           {/* Stops */}
-          <StopTimeline stops={stops} className="mt-6" />
+          <StopTimeline stops={stops} className="mt-6" pickupVerified={pickupVerified} />
 
           <p className="mt-6 border-t border-white/10 pt-4 text-body-xs text-steel-400">
             Live status page provided by {carrierName}. Updates appear as the driver moves.

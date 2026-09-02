@@ -48,6 +48,41 @@ import { loadEnvLocal } from "./env-local.mjs"
 
 export const BASE = process.env.E2E_BASE_URL ?? "http://localhost:3000"
 
+/**
+ * Page → always-rendered text, for every string that three or more smokes
+ * assert on. These used to be typed verbatim across ~55 scripts, so one
+ * redesigned subtitle was a seven-file edit that looked like seven product
+ * bugs (the 2026-08-14 Today/chrome redesign took the nightly rig to 43/55
+ * that way). Change the copy here and every smoke follows.
+ *
+ * Rules for adding one: the text must be on the page itself, never a word the
+ * sidebar or bottom nav renders (e2e-sweep.mjs's rule), and it must be
+ * present in every state the smoke can meet the page in.
+ */
+export const ANCHORS = Object.freeze({
+  // page subtitles
+  loads: "Search, filter, and manage every load.",
+  dispatch: "Every active load, booking to POD.",
+  fleet: "Trucks, trailers, and their paperwork.",
+  money: "receivables, invoices, and driver pay",
+  moneyRegister: "flow to the register automatically",
+  fuel: "Last 92 days across every card program.",
+  importFallback: "the CSV import path keeps working",
+  settlements: "Weekly driver pay",
+  advances: "Cash and EFS-code advances",
+  today: "Unconfirmed drivers",
+  login: "One login for dispatch, drivers, and partners.",
+  // driver-app buttons and toasts
+  leavingNow: "Leaving now",
+  toastDispatchConfirmed: "Dispatch confirmed",
+  toastStatusUpdated: "Status updated",
+  toastDepartureRecorded: "Departure recorded",
+  // money labels
+  netPay: "Net pay",
+  openBalance: "Open balance",
+  statusApproved: "Status: approved",
+})
+
 // Cloud QA rigs install with PUPPETEER_SKIP_DOWNLOAD=1 (the sandbox egress
 // proxy rejects puppeteer's postinstall Chrome download), so puppeteer has no
 // browser of its own and every smoke dies at launch with "Could not find

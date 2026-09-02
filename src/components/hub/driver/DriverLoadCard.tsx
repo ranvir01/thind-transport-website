@@ -10,19 +10,21 @@
 import { useRef, useState, useTransition } from "react"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
-import {
+import { ShieldCheck,
   Camera, Check, ChevronRight, Clock, Loader2, MapPin, MessageSquarePlus, Navigation,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import {
   driverAcknowledgeDispatch, driverAddFacilityNote, driverAdvanceStatus,
-  driverStopTimestamp, driverUploadDocument,
+  driverStopTimestamp, driverUploadDocument, driverVerifyPickup,
 } from "@/app/hub/_actions/driver"
 import { openThread } from "@/app/hub/_actions/messages"
 import { runOrQueue, type PendingIntent } from "@/components/hub/driver/offline-queue"
 import { FACILITY_NOTE_TAGS, fmtCentsExact, type Stop } from "@/lib/hub/types"
 
 interface LoadForDriver {
+  /** Newest pickup verification result (driver-app.ts). Hides the verify panel once verified. */
+  pickup_verification?: "verified" | "mismatch" | "unverified" | null
   id: string
   reference: string
   status: string
@@ -79,6 +81,53 @@ export function DriverLoadCard({
   const [osdFlag, setOsdFlag] = useState(false)
   const [receiptAmount, setReceiptAmount] = useState("")
   const fileRef = useRef<HTMLInputElement>(null)
+  // Pickup verification (#14): its own input and its own submit. Deliberately
+  // NOT routed through the offline queue — an offline "I'm here" must keep
+  // recording exactly as before; the evidence is simply absent until signal.
+  const verifyRef = useRef<HTMLInputElement>(null)
+  const [verifyingStop, setVerifyingStop] = useState<string | null>(null)
+  const [verifiedHere, setVerifiedHere] = useState<string | null>(null)
+
+  const readFix = () =>
+    new Promise<{ lat: number; lng: number } | null>((resolve) => {
+      if (typeof navigator === "undefined" || !navigator.geolocation) return resolve(null)
+      navigator.geolocation.getCurrentPosition(
+        (pos) => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+        () => resolve(null),
+        { enableHighAccuracy: true, timeout: 8000, maximumAge: 60_000 }
+      )
+    })
+
+  const verifyPickup = (stopId: string, file: File | undefined) => {
+    if (!file) return
+    startTransition(async () => {
+      const fix = await readFix()
+      const formData = new FormData()
+      formData.set("load_id", load.id)
+      formData.set("stop_id", stopId)
+      if (fix) {
+        formData.set("lat", String(fix.lat))
+        formData.set("lng", String(fix.lng))
+      }
+      formData.set("file", file)
+      const result = await driverVerifyPickup(formData)
+      if (result.ok) {
+        setVerifiedHere(stopId)
+        toast.success(
+          result.result === "verified"
+            ? "Pickup verified — dispatch can see it"
+            : result.result === "mismatch"
+              ? "Sent — the location did not match, dispatch has been told"
+              : fix
+                ? "Sent — photo saved"
+                : "Sent — no location on this phone, photo saved"
+        )
+        router.refresh()
+      } else toast.error(result.error ?? "Could not verify the pickup")
+      setVerifyingStop(null)
+      if (verifyRef.current) verifyRef.current.value = ""
+    })
+  }
   const [notingStop, setNotingStop] = useState<Stop | null>(null)
 
   // Every tap runs through the offline queue: no signal, no lost updates.
@@ -306,6 +355,39 @@ export function DriverLoadCard({
                   ) : null}
                 </div>
 
+                {/* Pickup verification: after "I'm here" at a pickup, one photo of
+                    the truck at the dock proves it is the truck that was dispatched. */}
+                {stop.type === "pickup" && stop.arrived_at && !stop.departed_at &&
+                 load.pickup_verification !== "verified" && verifiedHere !== stop.id ? (
+                  <div className="mt-2 rounded-xl border border-white/10 bg-white/[0.03] p-3" data-testid="verify-pickup">
+                    <p className="text-[11px] font-bold uppercase tracking-wider text-steel-400">Verify this pickup</p>
+                    <p className="mt-0.5 text-body-xs text-steel-300">
+                      Snap the truck at the dock. Proves to the shipper and the broker it was us.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setVerifyingStop(stop.id)
+                        verifyRef.current?.click()
+                      }}
+                      disabled={pending}
+                      data-testid="verify-pickup-button"
+                      className="mt-2 flex w-full min-h-[48px] items-center justify-center gap-2 rounded-xl border font-display text-sm font-bold uppercase tracking-[0.06em] text-[color:var(--driver-accent)] hover:bg-white/5 disabled:opacity-60"
+                      style={{
+                        borderColor: "color-mix(in srgb, var(--driver-accent) 50%, transparent)",
+                        backgroundColor: "color-mix(in srgb, var(--driver-accent) 10%, transparent)",
+                      }}
+                    >
+                      <ShieldCheck className="h-5 w-5 shrink-0" /> Snap the truck
+                    </button>
+                  </div>
+                ) : null}
+                {stop.type === "pickup" && (load.pickup_verification === "verified" || verifiedHere === stop.id) ? (
+                  <p className="mt-2 flex items-center gap-1.5 text-body-xs font-semibold text-emerald-300" data-testid="pickup-verified-driver">
+                    <ShieldCheck className="h-3.5 w-3.5" /> Pickup verified
+                  </p>
+                ) : null}
+
                 {/* Two-tap facility note after departure (E2) */}
                 {done && stop.facility_id ? (
                   <button
@@ -367,6 +449,17 @@ export function DriverLoadCard({
               capture="environment"
               className="hidden"
               onChange={(e) => upload(e.target.files?.[0])}
+            />
+            <input
+              ref={verifyRef}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              className="hidden"
+              data-testid="verify-pickup-file"
+              onChange={(e) => {
+                if (verifyingStop) verifyPickup(verifyingStop, e.target.files?.[0])
+              }}
             />
           </div>
           {uploadKind === "pod" ? (

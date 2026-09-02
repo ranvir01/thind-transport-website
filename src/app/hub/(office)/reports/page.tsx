@@ -4,11 +4,12 @@ import { redirect } from "next/navigation"
 import { Download } from "lucide-react"
 import {
   parseStoredPnlRange, pnlPresetRanges, resolvePnlRange, truckPnlRange, laneLeaderboardRange,
-  driverPayCentsForRange, REPORTS_RANGE_COOKIE,
+  driverPayCentsForRange, driverPnlRange, REPORTS_RANGE_COOKIE,
 } from "@/lib/hub/reports"
 import { applyReportRangeAction, resetReportRangeAction } from "./actions"
 import { computeFleetKpis } from "@/lib/hub/kpi"
 import { getDeadheadReport } from "@/lib/hub/deadhead"
+import { fmtPerMile, perMile as perMileOf } from "@/lib/hub/pnl-per-mile"
 import { HelpTip } from "@/components/hub/HelpTip"
 import { requirePermissionPage } from "@/lib/hub/session"
 import { fmtCents } from "@/lib/hub/types"
@@ -21,6 +22,7 @@ export const dynamic = "force-dynamic"
 const PNL_EXPORT_URL = "/api/hub/exports/pnl"
 const PNL_RANGE_EXPORT_URL = "/hub/reports/export"
 const LANES_RANGE_EXPORT_URL = "/hub/reports/export/lanes"
+const DRIVERS_RANGE_EXPORT_URL = "/hub/reports/export/drivers"
 
 export default async function ReportsPage({
   searchParams,
@@ -36,11 +38,12 @@ export default async function ReportsPage({
     if (stored) redirect(`/hub/reports?from=${stored.from}&to=${stored.to}`)
   }
   const range = resolvePnlRange(params.from, params.to)
-  const [pnl, lanes, driverPayCents, deadhead] = await Promise.all([
+  const [pnl, lanes, driverPayCents, deadhead, drivers] = await Promise.all([
     truckPnlRange(user.carrierId, range),
     laneLeaderboardRange(user.carrierId, range, 20),
     driverPayCentsForRange(user.carrierId, range),
     getDeadheadReport(user.carrierId, range),
+    driverPnlRange(user.carrierId, range),
   ])
   const totals = pnl.reduce(
     (acc, row) => ({
@@ -93,6 +96,7 @@ export default async function ReportsPage({
   // The lane leaderboard table is always range-scoped (unlike the P&L default
   // above), so its CSV always follows the same range — no separate all-time href.
   const lanesCsvHref = `${LANES_RANGE_EXPORT_URL}?from=${range.from}&to=${range.to}`
+  const driversCsvHref = `${DRIVERS_RANGE_EXPORT_URL}?from=${range.from}&to=${range.to}`
 
   return (
     <div>
@@ -334,12 +338,14 @@ export default async function ReportsPage({
               <th className="px-4 py-3 text-right">Tolls</th>
               <th className="px-4 py-3 text-right">Other</th>
               <th className="px-4 py-3 text-right">Net</th>
-              <th className="px-4 py-3 text-right">Net/mi</th>
+              <th className="px-4 py-3 text-right" title="Revenue per loaded mile">RPM</th>
+              <th className="px-4 py-3 text-right" title="Fuel, maintenance, tolls and other expenses per total mile — deadhead burns fuel too">Cost/mi</th>
+              <th className="px-4 py-3 text-right" title="RPM-basis margin per total mile, before driver pay">Margin/mi</th>
             </tr>
           </thead>
           <tbody>
             {pnl.map((row) => {
-              const miles = Number(row.loaded_miles ?? 0)
+              const pm = perMileOf(row)
               return (
                 <tr key={row.truck_id} className="border-b border-border">
                   <td className="px-4 py-2.5 font-bold text-fg">#{row.unit_number}</td>
@@ -351,12 +357,69 @@ export default async function ReportsPage({
                   <td className={`px-4 py-2.5 text-right font-semibold ${row.net_cents >= 0 ? "text-ok" : "text-bad"}`}>
                     {fmtCents(row.net_cents)}
                   </td>
-                  <td className="px-4 py-2.5 text-right text-fg-2">
-                    {miles > 0 ? `$${(row.net_cents / 100 / miles).toFixed(2)}` : "—"}
+                  <td className="px-4 py-2.5 text-right font-mono tabular-nums text-fg-2">{fmtPerMile(pm?.rpmCents ?? null)}</td>
+                  <td className="px-4 py-2.5 text-right font-mono tabular-nums text-fg-2">{pm ? fmtPerMile(pm.operatingCpmCents) : "—"}</td>
+                  <td className={`px-4 py-2.5 text-right font-mono tabular-nums font-semibold ${pm && pm.marginPerMileCents != null && pm.marginPerMileCents < 0 ? "text-bad" : "text-fg-2"}`}>
+                    {fmtPerMile(pm?.marginPerMileCents ?? null)}
                   </td>
                 </tr>
               )
             })}
+          </tbody>
+        </table>
+      </Panel>
+
+      {/* Per-driver rollup (#10): which driver earned what. Pay is null, not
+          $0, for a driver with no settlement in range — the same rule the
+          fleet card's driver-pay figure follows. */}
+      <div className="mt-6 flex items-center justify-between gap-2 mb-2">
+        <h2 className="text-base font-semibold text-fg">By driver, {rangeLabel}</h2>
+        <a
+          href={driversCsvHref}
+          className="inline-flex min-h-[40px] items-center gap-2 rounded-control border border-border-strong px-3 text-body-xs font-semibold text-fg-2 hover:bg-hover"
+        >
+          <Download className="h-3.5 w-3.5" /> Drivers CSV
+        </a>
+      </div>
+      <Panel className="overflow-x-auto" data-testid="driver-pnl">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-border text-left text-label text-fg-3 uppercase">
+              <th className="px-4 py-3">Driver</th>
+              <th className="px-4 py-3 text-right">Loads</th>
+              <th className="px-4 py-3 text-right">Revenue</th>
+              <th className="px-4 py-3 text-right">Loaded mi</th>
+              <th className="px-4 py-3 text-right" title="Revenue per loaded mile">RPM</th>
+              <th className="px-4 py-3 text-right" title="Settlement earnings with a period end in this range">Pay</th>
+              <th className="px-4 py-3 text-right" title="Pay per total mile">Pay/mi</th>
+              <th className="px-4 py-3 text-right" title="Revenue minus pay; blank until the driver has a settlement in range">After pay</th>
+            </tr>
+          </thead>
+          <tbody>
+            {drivers.map((row) => {
+              const pm = perMileOf(row)
+              const pay = row.pay_cents == null ? null : Number(row.pay_cents)
+              const revenue = Number(row.revenue_cents)
+              return (
+                <tr key={row.driver_id} className="border-b border-border">
+                  <td className="px-4 py-2.5 font-bold text-fg">{row.driver_name}</td>
+                  <td className="px-4 py-2.5 text-right font-mono tabular-nums text-fg-2">{row.loads}</td>
+                  <td className="px-4 py-2.5 text-right text-accent-text font-semibold">{fmtCents(revenue)}</td>
+                  <td className="px-4 py-2.5 text-right font-mono tabular-nums text-fg-2">{Number(row.loaded_miles ?? 0).toLocaleString()}</td>
+                  <td className="px-4 py-2.5 text-right font-mono tabular-nums text-fg-2">{fmtPerMile(pm?.rpmCents ?? null)}</td>
+                  <td className="px-4 py-2.5 text-right text-fg-2" title={pay == null ? "No settlement with a period end in this range" : undefined}>
+                    {pay == null ? "—" : fmtCents(pay)}
+                  </td>
+                  <td className="px-4 py-2.5 text-right font-mono tabular-nums text-fg-2">{fmtPerMile(pm?.payCpmCents ?? null)}</td>
+                  <td className={`px-4 py-2.5 text-right font-semibold ${pay != null && revenue - pay < 0 ? "text-bad" : "text-fg-2"}`}>
+                    {pay == null ? "—" : fmtCents(revenue - pay)}
+                  </td>
+                </tr>
+              )
+            })}
+            {drivers.length === 0 ? (
+              <tr><td colSpan={8} className="px-4 py-6 text-center text-body-sm text-fg-3">No active drivers.</td></tr>
+            ) : null}
           </tbody>
         </table>
       </Panel>

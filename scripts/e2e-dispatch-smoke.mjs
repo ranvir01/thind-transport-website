@@ -12,7 +12,7 @@
  * Usage: node scripts/e2e-dispatch-smoke.mjs [outputDir]
  */
 import { mkdirSync } from "node:fs"
-import { launchBrowser, BASE, failures, check, waitForText, login, makeShot, reseed, realConsoleErrors } from "./e2e-lib.mjs"
+import { ANCHORS, launchBrowser, BASE, failures, check, waitForText, login, makeShot, reseed, realConsoleErrors } from "./e2e-lib.mjs"
 
 const OUT = process.argv[2] ?? "e2e-shots-dispatch"
 mkdirSync(OUT, { recursive: true })
@@ -116,7 +116,7 @@ async function main() {
   console.log("1. Dispatcher opens the board")
   await login(page, "dispatch@demo.thind")
   await page.goto(`${BASE}/hub/dispatch`, { waitUntil: "networkidle2" })
-  await waitForText(page, "Every active load, booking to POD.")
+  await waitForText(page, ANCHORS.dispatch)
   await waitForText(page, "Dispatch Board")
   check((await findColumn(page, LEGAL)) === "Booked", `${LEGAL} load starts in Booked`)
   check((await findColumn(page, ILLEGAL)) === "Booked", `${ILLEGAL} load starts in Booked`)
@@ -130,7 +130,7 @@ async function main() {
   check(await clickAdvance(page, LEGAL), `clicked Advance on the ${LEGAL} card`)
   await waitForText(page, "Moved to Dispatched")
   await page.goto(`${BASE}/hub/dispatch`, { waitUntil: "networkidle2" })
-  await waitForText(page, "Every active load, booking to POD.")
+  await waitForText(page, ANCHORS.dispatch)
   check((await findColumn(page, LEGAL)) === "Dispatched", `${LEGAL} load is now in Dispatched`)
   await shot(page, "02-board-advanced")
 
@@ -139,7 +139,7 @@ async function main() {
   await waitForText(page, "medical card expired")
   check(await advanceButtonSettled(page, ILLEGAL), "Advance button re-enabled after the refused transition")
   await page.goto(`${BASE}/hub/dispatch`, { waitUntil: "networkidle2" })
-  await waitForText(page, "Every active load, booking to POD.")
+  await waitForText(page, ANCHORS.dispatch)
   check((await findColumn(page, ILLEGAL)) === "Booked", `${ILLEGAL} load stayed in Booked`)
   await shot(page, "03-board-refused")
 
@@ -153,7 +153,7 @@ async function main() {
   check(await clickByText(page, "Confirm cancel"), "confirmed the cancellation")
   await waitForText(page, "Load cancelled")
   await page.goto(`${BASE}/hub/dispatch`, { waitUntil: "networkidle2" })
-  await waitForText(page, "Every active load, booking to POD.")
+  await waitForText(page, ANCHORS.dispatch)
   await waitForText(page, "Dispatch Board")
   check((await findColumn(page, ILLEGAL)) === null, `${ILLEGAL} load left the active board`)
   await shot(page, "05-board-after-cancel")
@@ -168,14 +168,14 @@ async function main() {
   })
   await login(page2, "accounting@demo.thind")
   await page2.goto(`${BASE}/hub/dispatch`, { waitUntil: "networkidle2" })
-  await waitForText(page2, "Every active load, booking to POD.")
+  await waitForText(page2, ANCHORS.dispatch)
   await waitForText(page2, "Dispatch Board")
   const beforeCol = await findColumn(page2, LEGAL)
   check(await clickAdvance(page2, LEGAL), "accountant clicked Advance")
   await waitForText(page2, "Forbidden")
   check(await advanceButtonSettled(page2, LEGAL), "Advance button re-enabled after the forbidden transition")
   await page2.goto(`${BASE}/hub/dispatch`, { waitUntil: "networkidle2" })
-  await waitForText(page2, "Every active load, booking to POD.")
+  await waitForText(page2, ANCHORS.dispatch)
   check((await findColumn(page2, LEGAL)) === beforeCol, "load did not move for the accountant")
   await shot(page2, "06-board-accountant")
 

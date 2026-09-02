@@ -22,7 +22,7 @@
  */
 import pg from "pg"
 import { mkdirSync } from "node:fs"
-import { BASE, failures, check, waitForText, login, makeShot, reseed, clickByText, realConsoleErrors, launchBrowser, waitForLoadDetail} from "./e2e-lib.mjs"
+import { ANCHORS, BASE, failures, check, waitForText, login, makeShot, reseed, clickByText, realConsoleErrors, launchBrowser, waitForLoadDetail} from "./e2e-lib.mjs"
 
 // Fail fast on a fresh rig: the cron step authenticates with Bearer CRON_SECRET.
 // Against a localhost BASE, e2e-lib has already loaded .env.local into this
@@ -109,13 +109,13 @@ async function main() {
   console.log("1. Owner schedules two weekly lanes for today (carrier-local)")
   await login(page, "owner@demo.thind")
   await page.goto(`${BASE}/hub/loads?status=all&q=Pipe`, { waitUntil: "networkidle2" })
-  await waitForText(page, "Search, filter, and manage every load.")
+  await waitForText(page, ANCHORS.loads)
   await waitForText(page, "Sacramento")
   const pipe = (await listLoadLinks(page))[0]
   check(!!pipe, `healthy lane found (${pipe?.ref})`)
 
   await page.goto(`${BASE}/hub/loads?status=all`, { waitUntil: "networkidle2" })
-  await waitForText(page, "Search, filter, and manage every load.")
+  await waitForText(page, ANCHORS.loads)
   await waitForText(page, "THD-")
   const doomed = (await listLoadLinks(page)).find((l) => l.href !== pipe.href)
   check(!!doomed, `second lane found (${doomed?.ref})`)
@@ -125,7 +125,7 @@ async function main() {
 
   console.log("2. The loads page rolls both rules up before the first run")
   await page.goto(`${BASE}/hub/loads`, { waitUntil: "networkidle2" })
-  await waitForText(page, "Search, filter, and manage every load.")
+  await waitForText(page, ANCHORS.loads)
   await waitForText(page, "Recurring lanes")
   const before = await page.evaluate((day) => {
     const body = document.body.innerText
@@ -150,7 +150,7 @@ async function main() {
 
   console.log("4. The stopped lane is loud: roll-up row + reason, listed first")
   await page.goto(`${BASE}/hub/loads`, { waitUntil: "networkidle2" })
-  await waitForText(page, "Search, filter, and manage every load.")
+  await waitForText(page, ANCHORS.loads)
   await waitForText(page, "Recurring lanes")
   const after = await page.evaluate((refs) => {
     const items = [...document.querySelectorAll("section li")].map((li) => li.innerText.replace(/\n/g, " "))
@@ -188,7 +188,7 @@ async function main() {
   console.log("6. 390px: roll-up wraps, no horizontal body scroll")
   await page.setViewport({ width: 390, height: 844 })
   await page.goto(`${BASE}/hub/loads`, { waitUntil: "networkidle2" })
-  await waitForText(page, "Search, filter, and manage every load.")
+  await waitForText(page, ANCHORS.loads)
   await waitForText(page, "Recurring lanes")
   const mobile = await page.evaluate(() => ({
     scrollWidth: document.documentElement.scrollWidth,

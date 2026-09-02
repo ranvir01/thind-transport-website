@@ -24,7 +24,7 @@
  * Usage: node scripts/e2e-tenant-isolation-smoke.mjs [outputDir]
  */
 import { mkdirSync } from "node:fs"
-import { BASE, failures, check, waitForText, textAppears, waitForPath, login, makeShot, reseed, realConsoleErrors, launchBrowser } from "./e2e-lib.mjs"
+import { ANCHORS, BASE, failures, check, waitForText, textAppears, waitForPath, login, makeShot, reseed, realConsoleErrors, launchBrowser } from "./e2e-lib.mjs"
 
 const OUT = process.argv[2] ?? "e2e-shots-tenant-isolation"
 mkdirSync(OUT, { recursive: true })
@@ -98,7 +98,7 @@ async function main() {
   await login(thind, "owner@demo.thind")
 
   await thind.goto(`${BASE}/hub/loads`, { waitUntil: "networkidle2" })
-  await waitForText(thind, "Search, filter, and manage every load.")
+  await waitForText(thind, ANCHORS.loads)
   await waitForText(thind, "THD-")
   const thindLoadsWall = await bodyText(thind)
   check(!thindLoadsWall.includes("CAS-5"), "Thind loads list has no CAS- reference")
@@ -106,13 +106,13 @@ async function main() {
   check(Boolean(loadUrl), `got a Thind load detail URL (${loadUrl})`)
 
   await thind.goto(`${BASE}/hub/money`, { waitUntil: "networkidle2" })
-  await waitForText(thind, "receivables, invoices, and driver pay")
+  await waitForText(thind, ANCHORS.money)
   const invoiceUrl = await firstHref(thind, "/hub/money/invoices/")
   check(Boolean(invoiceUrl), `got a Thind invoice detail URL (${invoiceUrl})`)
   check(!(await bodyText(thind)).includes("CAS-INV"), "Thind money screen has no CAS-INV reference")
 
   await thind.goto(`${BASE}/hub/fleet`, { waitUntil: "networkidle2" })
-  await waitForText(thind, "Trucks, trailers, and their paperwork.")
+  await waitForText(thind, ANCHORS.fleet)
   // Fleet is an RSC list page — wait for a real unit number to render
   // (101–107) instead of a blind sleep after networkidle2.
   await thind.waitForFunction(() => /\b10[1-7]\b/.test(document.body.innerText), { timeout: 8000 }).catch(() => {})
@@ -139,14 +139,14 @@ async function main() {
   await login(cascade, "owner@cascademo.example")
 
   await cascade.goto(`${BASE}/hub/dispatch`, { waitUntil: "networkidle2" })
-  await waitForText(cascade, "Every active load, booking to POD.")
+  await waitForText(cascade, ANCHORS.dispatch)
   const cascadeDispatchWall = await bodyText(cascade)
   check(cascadeDispatchWall.includes("CAS-5001"), "Cascade dispatch shows its in-transit load CAS-5001")
   check(!cascadeDispatchWall.includes("THD-"), "Cascade dispatch has no THD- reference")
   await shot(cascade, "02-cascade-dispatch")
 
   await cascade.goto(`${BASE}/hub/fleet`, { waitUntil: "networkidle2" })
-  await waitForText(cascade, "Trucks, trailers, and their paperwork.")
+  await waitForText(cascade, ANCHORS.fleet)
   await cascade
     .waitForFunction(() => document.body.innerText.includes("C-01") && document.body.innerText.includes("C-02"), {
       timeout: 8000,
@@ -157,7 +157,7 @@ async function main() {
   check(!/\b10[1-7]\b|\b20[1-3]\b/.test(cascadeFleetWall), "Cascade fleet has no Thind unit numbers (101–107/201–203)")
 
   await cascade.goto(`${BASE}/hub/money`, { waitUntil: "networkidle2" })
-  await waitForText(cascade, "receivables, invoices, and driver pay")
+  await waitForText(cascade, ANCHORS.money)
   const cascadeMoneyWall = await bodyText(cascade)
   check(!cascadeMoneyWall.includes("THD-"), "Cascade money screen has no THD- reference")
   await shot(cascade, "03-cascade-money")
@@ -263,7 +263,7 @@ async function main() {
 
   await cascade.goto(`${BASE}/hub/dispatch`, { waitUntil: "networkidle2" })
   check(
-    await textAppears(cascade, "Every active load, booking to POD."),
+    await textAppears(cascade, ANCHORS.dispatch),
     "reactivated Cascade owner reaches /hub/dispatch again"
   )
 

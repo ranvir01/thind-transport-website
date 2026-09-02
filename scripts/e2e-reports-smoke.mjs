@@ -62,6 +62,29 @@ async function main() {
   check(/101/.test(pnlCsv.body), "P&L CSV includes seeded truck unit 101")
   check(/Revenue|Net/i.test(pnlCsv.body), "P&L CSV has expected column headers")
 
+  console.log("2b. Per-driver rollup (#10): table with pay-null rule, and its CSV")
+  const drivers = await page.evaluate(() => {
+    const panel = document.querySelector('[data-testid="driver-pnl"]')
+    const rows = [...(panel?.querySelectorAll("tbody tr") ?? [])]
+    return {
+      heading: document.body.innerText.toLowerCase().includes("by driver"),
+      names: rows.map((r) => r.querySelector("td")?.textContent.trim() ?? ""),
+      // a seeded driver with settlements shows dollars; one without shows the dash
+      payCells: rows.map((r) => r.querySelectorAll("td")[5]?.textContent.trim() ?? ""),
+    }
+  })
+  check(drivers.heading, "By driver section renders")
+  check(drivers.names.includes("Harpreet Singh"), `seeded driver in the driver table (${drivers.names.slice(0, 3).join(", ")})`)
+  check(drivers.payCells.some((c) => /^\$/.test(c)), "a settled driver shows pay in dollars")
+  check(drivers.payCells.some((c) => c === "—"), "a driver with no settlement in range shows — not $0")
+  const driversCsv = await page.evaluate(async () => {
+    const res = await fetch("/hub/reports/export/drivers")
+    return { status: res.status, type: res.headers.get("content-type"), body: await res.text() }
+  })
+  check(driversCsv.status === 200 && /csv/i.test(driversCsv.type ?? ""), `drivers CSV served (${driversCsv.status} ${driversCsv.type})`)
+  check(driversCsv.body.startsWith("Driver,Loads,Revenue,LoadedMiles"), "drivers CSV has the per-mile headers")
+  check(/Harpreet Singh/.test(driversCsv.body), "drivers CSV includes the seeded driver")
+
   console.log("3. Lanes CSV export stays graceful (empty seed is OK)")
   const lanesCsv = await fetchCsv(page, "lanes")
   check(lanesCsv.status === 200 && /csv/i.test(lanesCsv.type ?? ""), `lanes CSV served (${lanesCsv.status} ${lanesCsv.type})`)

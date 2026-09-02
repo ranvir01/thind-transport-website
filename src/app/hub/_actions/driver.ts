@@ -12,6 +12,8 @@ import {
 import { applyDetentionAccrual } from "@/lib/hub/detention"
 import { driverOwnsLoad, DRIVER_STATUS_FLOW } from "@/lib/hub/driver-app"
 import { saveDocument } from "@/lib/hub/documents"
+import { evaluatePickup } from "@/lib/hub/pickup-verification"
+import { recordPickupVerification } from "@/lib/hub/pickup-verifications"
 import { addFacilityNote } from "@/lib/hub/facilities"
 import { createTimeOffRequest, cancelTimeOff } from "@/lib/hub/timeoff"
 import { acknowledgeAnnouncement } from "@/lib/hub/announcements"
@@ -92,6 +94,90 @@ export async function driverStopTimestamp(
     return { ok: true }
   } catch (err) {
     return actionError(err, "Could not record the time")
+  }
+}
+
+/**
+ * Pickup verification — evidence at the dock that the truck that arrived is
+ * the one dispatched (pickup-verification.ts has the rules). Online-only and
+ * separate from the arrival tap on purpose: an offline "I'm here" must keep
+ * recording exactly as before, and a verification that fails must never undo
+ * an arrival. A mismatch alerts the office; it never blocks the driver.
+ */
+export async function driverVerifyPickup(formData: FormData): Promise<Result & { result?: string }> {
+  try {
+    const user = await requireDriverUser()
+    const loadId = String(formData.get("load_id") ?? "")
+    const stopId = String(formData.get("stop_id") ?? "")
+    const lat = Number(formData.get("lat"))
+    const lng = Number(formData.get("lng"))
+    const fix = Number.isFinite(lat) && Number.isFinite(lng) && formData.get("lat") !== null ? { lat, lng } : null
+
+    const load = await driverOwnsLoad(user.carrierId, user.driverId, loadId)
+    if (!load) return { ok: false, error: "That load isn't yours" }
+
+    const stop = await queryOne<{
+      id: string; type: string; lat: number | null; lng: number | null
+      appt_start: string | null; appt_end: string | null; fcfs: boolean; arrived_at: string | null
+    }>(
+      `SELECT id, type, lat, lng, appt_start, appt_end, fcfs, arrived_at FROM hub.stops
+       WHERE carrier_id = $1 AND id = $2 AND load_id = $3`,
+      [user.carrierId, stopId, loadId]
+    )
+    if (!stop || stop.type !== "pickup") return { ok: false, error: "That isn't a pickup stop on this load" }
+    if (!stop.arrived_at) return { ok: false, error: "Tap I'm here first" }
+
+    const dispatch = await queryOne<{ driver_id: string | null; truck_id: string | null; reference: string }>(
+      `SELECT driver_id, truck_id, reference FROM hub.loads WHERE carrier_id = $1 AND id = $2`,
+      [user.carrierId, loadId]
+    )
+
+    let photoDocumentId: string | null = null
+    const file = formData.get("file")
+    if (file instanceof File && file.size > 0) {
+      if (file.size > MAX_UPLOAD_BYTES) return { ok: false, error: "File is over the 15MB limit" }
+      const doc = await saveDocument({
+        carrierId: user.carrierId, entityType: "load", entityId: loadId,
+        kind: "pickup_photo", file, uploadedBy: user.id,
+      })
+      photoDocumentId = doc.id
+    }
+
+    const evaluation = evaluatePickup({
+      sessionDriverId: user.driverId,
+      loadDriverId: dispatch?.driver_id ?? null,
+      fix,
+      stop,
+      arrivedAt: stop.arrived_at,
+      hasPhoto: photoDocumentId !== null,
+    })
+
+    await recordPickupVerification({
+      carrierId: user.carrierId, loadId, stopId,
+      driverId: user.driverId, truckId: dispatch?.truck_id ?? null,
+      fix, distanceMiles: evaluation.distanceMiles, photoDocumentId,
+      result: evaluation.result, checks: evaluation.checks,
+    })
+    await addLoadEvent(user.carrierId, loadId, "check_call", {
+      type: "pickup_verification", result: evaluation.result,
+      distance_miles: evaluation.distanceMiles, by: "driver",
+    }, { id: user.id, name: user.name })
+
+    if (evaluation.result === "mismatch") {
+      const why = evaluation.checks.filter((c) => c.ok === false).map((c) => c.detail).join("; ")
+      await notifyRoles(user.carrierId, ["dispatcher", "owner"], {
+        kind: "pickup_mismatch",
+        title: `${dispatch?.reference ?? "Load"}: pickup did not verify`,
+        body: `${why}. Call the shipper before the freight moves.`,
+        link: `/hub/loads/${loadId}`,
+      }).catch(() => undefined)
+    }
+
+    revalidatePath("/hub/driver")
+    revalidatePath(`/hub/loads/${loadId}`)
+    return { ok: true, result: evaluation.result }
+  } catch (err) {
+    return actionError(err, "Could not verify the pickup")
   }
 }
 

@@ -472,9 +472,15 @@ Ordered — each enables the next:
    from the sandbox, never to a reserved domain, once per (load, stage) via a `message`
    load_event, silent when SMTP is unset. A slipping ETA notifies the OFFICE, not the
    broker — facts out, predictions in. Real mail still waits on the Gmail App Password.
-10. **Per-truck / per-driver profit rollup** — compose `lanes.ts` lane RPM with
-    `operating-cost.ts` CPM into a "which truck earned what this month" report view.
-    Mostly assembly of parts already built.
+10. ~~**Per-truck / per-driver profit rollup**~~ **DONE 2026-09-01.** The per-truck half
+    already existed (`truckPnlRange`); what it lacked was the per-mile view and the
+    per-driver half. Shipped: `lib/hub/pnl-per-mile.ts` (RPM per LOADED mile, cost per
+    TOTAL mile — deadhead burns fuel too — and margin/mile; null when a truck never
+    moved, never "∞"), three columns on the truck table, and `driverPnlRange` +
+    `driverPnlRangeCsv` ("which driver earned what": loads, revenue, miles, pay from
+    settlement earning lines with a period end in range, so it sums to the fleet card's
+    driver-pay figure; **pay is null, never $0, for a driver with no settlement**).
+    `/hub/reports` gets a "By driver" table + Drivers CSV. #11 is now unblocked.
 11. **Natural-language report picker** — NL → parameters over the typed functions in
     `reports.ts`. **Explicitly NOT text-to-SQL:** every hub query is `carrier_id = $n` by
     construction, and an LLM emitting raw SQL discards that guarantee — the cross-tenant
@@ -494,11 +500,18 @@ From the OSS-TMS + shell-UX review (`docs/research/2026-08b/oss-tms-and-shell-ux
     are untouched and a test pins that the view loses and duplicates nothing. Setup folds
     once the core checklist is done (the Today page's `gettingStartedState`), never hiding
     the page you are on.
-14. **Pickup verification** — mirror of the customer-side double-broker checklist in
-    `vetting.ts`, aimed at the fastest-growing loss in freight: confirm at pickup that the
-    driver and truck that arrived match the dispatch, using the driver PWA's existing photo
-    capture + geolocation. Concept validated by LoadPartner's "Truck Verify"; build it from
-    LoadOff's own primitives (their code is Fair Core licensed — ideas only, never source).
+14. ~~**Pickup verification**~~ **DONE 2026-09-01** — built from LoadOff's own primitives
+    (the "I'm here" tap, the camera input, the incident form's geolocation read); no
+    LoadPartner code, schema or copy. `lib/hub/pickup-verification.ts` (pure: driver
+    matches dispatch, device within 1 mi of the stop, appointment window advisory only,
+    photo present) + `hub.pickup_verifications` (migration 032, tenancy-tested) +
+    `driverVerifyPickup`. After "I'm here" at a pickup the card offers "Snap the truck";
+    the office gets a verified/mismatch pill on the load and the dispatch board, and the
+    public `/track` page shows "Pickup verified" — **positive only**. Two decisions: a
+    mismatch pages dispatch/owner and **never blocks the driver** (GPS drifts at docks),
+    and "unverified" (offline, no GPS permission) is a shrug, never a verdict. Online-only
+    by design: an offline arrival records exactly as before. `e2e-pickup-verify-smoke`
+    drives both the verified and the 20-miles-off paths at 390px.
 
 **Licensing note for anyone researching competitors:** Fleetbase is AGPL-3.0 and
 LoadPartner is Fair Core (source-available). Neither may be vendored into this repo under
@@ -520,28 +533,32 @@ and only treat it as a product bug if the affordance genuinely no longer exists 
 
 Per-smoke findings:
 
-15. **`e2e-sweep` + `e2e-users-smoke` + `e2e-office-smoke`** — all three assert the Today
+**Status 2026-09-01: items 15–19 are all fixed** (re-anchored 2026-08-30; the nightly
+rig has been 55/55 → 58/58 since). Kept below as archaeology for the next redesign.
+
+15. ~~**`e2e-sweep` + `e2e-users-smoke` + `e2e-office-smoke`**~~ — all three assert the Today
     page renders `"in one calm place"` (PRODUCT.tagline). The redesign removed that
     subtitle from `(office)/page.tsx` ("chrome that recedes"); the string still exists in
     `product.ts`/`setup-guide.ts`, so grep alone is misleading. Pick a new anchor from
     always-rendered Today content, and follow e2e-sweep.mjs's own rule: never a word the
     sidebar renders.
-16. **`e2e-qbo-iif-smoke`** — rewrite to open `ExportSheet` rather than visiting the deleted
+16. ~~**`e2e-qbo-iif-smoke`**~~ — rewrite to open `ExportSheet` rather than visiting the deleted
     export page. Assert the four `kind` values from `ExportSheet.tsx`.
-17. **`e2e-compliance-smoke`** — `readSummary()` returns null for all three tiles; the
+17. ~~**`e2e-compliance-smoke`**~~ — `readSummary()` returns null for all three tiles; the
     summary-tile markup changed (`font-display text-3xl font-extrabold` → `text-3xl
     font-semibold`). Re-anchor on something structural, not a font class.
-18. **`e2e-duplicate-load-smoke`** (8 checks null) and **`e2e-tasks-smoke`** (priority badge,
+18. ~~**`e2e-duplicate-load-smoke`**~~ (8 checks null) and **`e2e-tasks-smoke`** (priority badge,
     checklist) — load-detail and task-card markup drift. Same treatment.
-19. **`e2e-onboarding-smoke`, `e2e-planner-smoke`** — `waitForText` timeouts; anchors moved.
+19. ~~**`e2e-onboarding-smoke`, `e2e-planner-smoke`**~~ — `waitForText` timeouts; anchors moved.
 
 **Not in scope:** `e2e-driver-offline-smoke` and `e2e-dispatch-driver-notify-smoke` appeared
 in the CI failure list but pass locally and consistently — CI-side flake, already covered by
 the launch-crash retry in `e2e-run-all.mjs`.
 
-**Prevention worth considering:** these anchors are stringly-typed across ~55 scripts. A
-shared `ANCHORS` map in `e2e-lib.mjs` (page → text) would turn "redesign broke 7 smokes"
-into a one-file edit.
+~~**Prevention worth considering:**~~ **DONE 2026-09-01:** `ANCHORS` in `e2e-lib.mjs` — the
+page → always-rendered-text map for every string asserted in three or more smokes. The
+next subtitle edit is a one-line change there; a grep in the lib's header lists what is
+covered.
 
 ## Owner requests from the mobile screenshots (2026-08-14)
 

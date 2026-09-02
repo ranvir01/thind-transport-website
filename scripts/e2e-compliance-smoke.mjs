@@ -16,7 +16,7 @@
  */
 import { mkdirSync, writeFileSync } from "node:fs"
 import path from "node:path"
-import { launchBrowser, BASE, failures, check, waitForText, textAppears, textGone, login, makeShot, reseed, realConsoleErrors } from "./e2e-lib.mjs"
+import { ANCHORS, launchBrowser, BASE, failures, check, waitForText, textAppears, textGone, login, makeShot, reseed, realConsoleErrors } from "./e2e-lib.mjs"
 
 const OUT = process.argv[2] ?? "e2e-shots-compliance"
 mkdirSync(OUT, { recursive: true })
@@ -147,7 +147,7 @@ async function main() {
 
   console.log("5. Truck 102's detail page shows the same mileage-overdue PM")
   await page.goto(`${BASE}/hub/fleet`, { waitUntil: "networkidle2" })
-  await waitForText(page, "Trucks, trailers, and their paperwork.")
+  await waitForText(page, ANCHORS.fleet)
   const truckHref = await page.evaluate(
     () => [...document.querySelectorAll("a")].find((a) => a.textContent.includes("#102"))?.getAttribute("href")
   )

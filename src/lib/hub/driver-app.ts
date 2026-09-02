@@ -43,6 +43,8 @@ export interface DriverLoad {
   trailer_unit?: string | null
   doc_kinds?: string[] | null
   stops?: Stop[]
+  /** Newest pickup verification result, so the card stops asking once verified. */
+  pickup_verification?: "verified" | "mismatch" | "unverified" | null
 }
 
 /* ------------------------------ what it pays ------------------------------ */
@@ -199,7 +201,8 @@ export async function driverActiveLoads(carrierId: string, driverId: string): Pr
        l.acknowledged_at, l.created_at,
        c.name AS customer_name,
        t.unit_number AS truck_unit, tr.unit_number AS trailer_unit,
-       docs.kinds AS doc_kinds
+       docs.kinds AS doc_kinds,
+       pv.result AS pickup_verification
      FROM hub.loads l
      LEFT JOIN hub.customers c ON c.id = l.customer_id AND c.carrier_id = l.carrier_id
      LEFT JOIN hub.trucks t ON t.id = l.truck_id AND t.carrier_id = l.carrier_id
@@ -208,6 +211,11 @@ export async function driverActiveLoads(carrierId: string, driverId: string): Pr
        SELECT ARRAY_AGG(DISTINCT d.kind) AS kinds FROM hub.documents d
        WHERE d.entity_type = 'load' AND d.entity_id = l.id AND d.carrier_id = l.carrier_id
      ) docs ON TRUE
+     LEFT JOIN LATERAL (
+       SELECT v.result FROM hub.pickup_verifications v
+       WHERE v.load_id = l.id AND v.carrier_id = l.carrier_id
+       ORDER BY v.created_at DESC LIMIT 1
+     ) pv ON TRUE
      WHERE l.carrier_id = $1 AND l.driver_id = $2 AND l.deleted_at IS NULL
        AND l.status IN ('dispatched','at_pickup','in_transit','delivered')
      ORDER BY l.created_at ASC`,

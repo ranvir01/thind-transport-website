@@ -1,7 +1,7 @@
 import { CustomDetailsPanel } from "@/components/hub/CustomDetailsPanel"
 import Link from "next/link"
 import { notFound } from "next/navigation"
-import { Clock, Pencil, FileText, MapPin, MessageSquare, CloudLightning, Camera, StickyNote, AlertTriangle } from "lucide-react"
+import { ShieldCheck, ShieldAlert, Clock, Pencil, FileText, MapPin, MessageSquare, CloudLightning, Camera, StickyNote, AlertTriangle } from "lucide-react"
 import { getLoad, getLoadStops, getLoadEvents } from "@/lib/hub/loads"
 import { getOsdClaimForLoad } from "@/lib/hub/claims"
 import { fuelForLoad } from "@/lib/hub/fuel"
@@ -25,6 +25,8 @@ import { DetentionButton } from "@/components/hub/DetentionButton"
 import { detentionCents } from "@/lib/hub/money"
 import { getCarrierSettings } from "@/lib/hub/settings"
 import { loadEta } from "@/lib/hub/eta-load"
+import { latestPickupVerification } from "@/lib/hub/pickup-verifications"
+import { pickupPillLabel } from "@/lib/hub/pickup-verification"
 import { formatEta } from "@/lib/hub/eta"
 import { CreateInvoiceButton } from "@/components/hub/MoneyActions"
 import { LoadFuelPanel } from "@/components/hub/LoadFuelPanel"
@@ -81,7 +83,7 @@ export default async function LoadDetailPage({ params }: { params: Promise<{ id:
   if (!load) notFound()
 
   const settings = await getCarrierSettings(user.carrierId)
-  const [stops, events, documents, shareLinks, invoice, loadFuel, recurringRule, osdClaim, arrival] = await Promise.all([
+  const [stops, events, documents, shareLinks, invoice, loadFuel, recurringRule, osdClaim, arrival, pickupCheck] = await Promise.all([
     getLoadStops(user.carrierId, id),
     getLoadEvents(user.carrierId, id),
     listDocuments(user.carrierId, "load", id),
@@ -93,7 +95,11 @@ export default async function LoadDetailPage({ params }: { params: Promise<{ id:
     // Null when there is nothing trustworthy to say (no ping, stale ping,
     // ungeocoded stop) — the chip simply does not render.
     loadEta(user.carrierId, id).catch(() => null),
+    latestPickupVerification(user.carrierId, id).catch(() => null),
   ])
+  const pickupPill = pickupCheck
+    ? pickupPillLabel(pickupCheck.result, pickupCheck.distance_miles == null ? null : Number(pickupCheck.distance_miles))
+    : null
 
   const totalCents = loadTotalCents(load)
   const rpmCents = load.loaded_miles ? totalCents / load.loaded_miles : null
@@ -159,6 +165,20 @@ export default async function LoadDetailPage({ params }: { params: Promise<{ id:
               <Clock className="h-3.5 w-3.5" />
               {arrival.target.type === "pickup" ? "At pickup" : "Delivery"} {formatEta(arrival.eta)}
               {arrival.eta.lateMinutes > 60 ? ` · ${Math.round(arrival.eta.lateMinutes / 60)}h late` : ""}
+            </span>
+          ) : null}
+          {pickupPill ? (
+            <span
+              data-testid="pickup-pill"
+              title={pickupCheck!.checks.map((c) => `${c.ok === true ? "✓" : c.ok === false ? "✗" : "?"} ${c.label} — ${c.detail}`).join("\n")}
+              className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[11px] font-bold uppercase tracking-wider ${
+                pickupCheck!.result === "verified"
+                  ? "border-ok-soft bg-ok-soft text-ok"
+                  : "border-bad-soft bg-bad-soft text-bad"
+              }`}
+            >
+              {pickupCheck!.result === "verified" ? <ShieldCheck className="h-3.5 w-3.5" /> : <ShieldAlert className="h-3.5 w-3.5" />}
+              {pickupPill}
             </span>
           ) : null}
           {invoice ? (

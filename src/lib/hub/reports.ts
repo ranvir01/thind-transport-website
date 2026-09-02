@@ -365,6 +365,96 @@ export function truckPnlRangeCsv(rows: TruckPnl[], range: PnlRange): { filename:
 }
 
 /**
+ * Per-DRIVER P&L over the same window as truckPnlRange — "which driver earned
+ * what". Revenue and miles come from the loads dispatched to the driver; pay
+ * comes from settlement earning lines whose period_end falls in the range,
+ * the same window rule driverPayCentsForRange uses, so this column sums to
+ * the fleet card's driver-pay figure.
+ *
+ * `pay_cents` is NULL, not 0, for a driver with no settlement in range. "We
+ * have not paid this driver yet" must never render as "this driver cost
+ * nothing" — the exact reading driverPayCentsForRange's contract forbids.
+ */
+export interface DriverPnlRow {
+  driver_id: string
+  driver_name: string
+  loads: number
+  revenue_cents: string
+  loaded_miles: string | null
+  deadhead_miles: string | null
+  deadhead_missing_loads: number
+  settlements: number
+  pay_cents: string | null
+}
+
+export async function driverPnlRange(carrierId: string, range: PnlRange): Promise<DriverPnlRow[]> {
+  const rows = await query<DriverPnlRow>(
+    `SELECT d.id AS driver_id, d.first_name || ' ' || d.last_name AS driver_name,
+       (SELECT COUNT(*)::int FROM hub.loads l
+         WHERE l.driver_id = d.id AND l.carrier_id = d.carrier_id AND l.deleted_at IS NULL AND l.status <> 'cancelled'
+           AND l.created_at >= $2::date AND l.created_at < $3::date + 1) AS loads,
+       COALESCE((SELECT SUM(l.linehaul_cents + l.fuel_surcharge_cents) FROM hub.loads l
+         WHERE l.driver_id = d.id AND l.carrier_id = d.carrier_id AND l.deleted_at IS NULL AND l.status <> 'cancelled'
+           AND l.created_at >= $2::date AND l.created_at < $3::date + 1), 0) AS revenue_cents,
+       (SELECT SUM(l.loaded_miles) FROM hub.loads l
+         WHERE l.driver_id = d.id AND l.carrier_id = d.carrier_id AND l.deleted_at IS NULL AND l.status <> 'cancelled'
+           AND l.created_at >= $2::date AND l.created_at < $3::date + 1) AS loaded_miles,
+       (SELECT SUM(l.deadhead_miles) FROM hub.loads l
+         WHERE l.driver_id = d.id AND l.carrier_id = d.carrier_id AND l.deleted_at IS NULL AND l.status <> 'cancelled'
+           AND l.created_at >= $2::date AND l.created_at < $3::date + 1) AS deadhead_miles,
+       (SELECT COUNT(*)::int FROM hub.loads l
+         WHERE l.driver_id = d.id AND l.carrier_id = d.carrier_id AND l.deleted_at IS NULL AND l.status <> 'cancelled'
+           AND l.created_at >= $2::date AND l.created_at < $3::date + 1
+           AND l.deadhead_miles IS NULL) AS deadhead_missing_loads,
+       (SELECT COUNT(DISTINCT s.id)::int FROM hub.settlements s
+         WHERE s.driver_id = d.id AND s.carrier_id = d.carrier_id
+           AND s.period_end BETWEEN $2::date AND $3::date) AS settlements,
+       (SELECT SUM(sl.amount_cents) FILTER (WHERE sl.kind = 'earning')
+          FROM hub.settlements s
+          JOIN hub.settlement_lines sl ON sl.settlement_id = s.id
+         WHERE s.driver_id = d.id AND s.carrier_id = d.carrier_id
+           AND s.period_end BETWEEN $2::date AND $3::date) AS pay_cents
+     FROM hub.drivers d
+     WHERE d.carrier_id = $1 AND d.deleted_at IS NULL AND d.status = 'active'
+     ORDER BY d.last_name, d.first_name`,
+    [carrierId, range.from, range.to]
+  )
+  return rows.map((row) => ({
+    ...row,
+    loads: Number(row.loads ?? 0),
+    deadhead_missing_loads: Number(row.deadhead_missing_loads ?? 0),
+    settlements: Number(row.settlements ?? 0),
+    // No settlement in range ⇒ unknown, never zero.
+    pay_cents: Number(row.settlements ?? 0) === 0 ? null : (row.pay_cents ?? "0"),
+  }))
+}
+
+export function driverPnlRangeCsv(rows: DriverPnlRow[], range: PnlRange): { filename: string; csv: string } {
+  const headers = [
+    "Driver", "Loads", "Revenue", "LoadedMiles", "DeadheadMiles", "RevenuePerLoadedMile",
+    "Pay", "PayPerMile", "RevenueAfterPay",
+  ]
+  const body = rows.map((r) => {
+    const loaded = Number(r.loaded_miles ?? 0)
+    const total = loaded + Number(r.deadhead_miles ?? 0)
+    const revenue = Number(r.revenue_cents)
+    const pay = r.pay_cents == null ? null : Number(r.pay_cents)
+    return [
+      r.driver_name,
+      r.loads,
+      (revenue / 100).toFixed(2),
+      loaded,
+      Number(r.deadhead_miles ?? 0),
+      loaded > 0 ? (revenue / 100 / loaded).toFixed(2) : "",
+      pay == null ? "" : (pay / 100).toFixed(2),
+      pay == null || total <= 0 ? "" : (pay / 100 / total).toFixed(2),
+      pay == null ? "" : ((revenue - pay) / 100).toFixed(2),
+    ]
+  })
+  return { filename: `per-driver-pnl_${range.from}_${range.to}.csv`, csv: toCsv(headers, body) }
+}
+
+/**
  * Lane leaderboard (M10) — top lanes by margin over a date range, computed
  * live from load history via the same aggregation `recomputeLanes` uses
  * (lanes.ts's `aggregateLanes`). Live rather than reading `hub.lanes` because

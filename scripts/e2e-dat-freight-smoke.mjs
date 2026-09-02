@@ -18,7 +18,7 @@
  * Usage: node scripts/e2e-dat-freight-smoke.mjs [outputDir]
  */
 import { mkdirSync } from "node:fs"
-import { launchBrowser, BASE, failures, check, waitForText, login, makeShot, clickByText, reseed, sleep, realConsoleErrors } from "./e2e-lib.mjs"
+import { ANCHORS, launchBrowser, BASE, failures, check, waitForText, login, makeShot, clickByText, reseed, sleep, realConsoleErrors } from "./e2e-lib.mjs"
 
 /**
  * Waits for the DAT card to show a button with the given label. Used after a
@@ -115,7 +115,7 @@ async function main() {
     if (await clickInDatCard(heal, "Disconnect")) {
       console.log("   (stale DAT connection from a previous run — disconnecting first)")
       await clickInDatCard(heal, "Disconnect it", { retry: true })
-      await waitForText(heal, "the CSV import path keeps working")
+      await waitForText(heal, ANCHORS.importFallback)
       check(await waitForDatCardButton(heal, "Connect"), "DAT card shows Connect again after the self-heal disconnect")
     }
     await healCtx.close()
@@ -245,7 +245,7 @@ async function main() {
     check(armed, "cleanup found the DAT card's Disconnect button")
     const confirmed = await clickInDatCard(owner, "Disconnect it", { retry: true })
     check(confirmed, "cleanup confirmed with the DAT card's Disconnect it button")
-    await waitForText(owner, "the CSV import path keeps working")
+    await waitForText(owner, ANCHORS.importFallback)
   }
 
   const realErrors = realConsoleErrors(consoleErrors)

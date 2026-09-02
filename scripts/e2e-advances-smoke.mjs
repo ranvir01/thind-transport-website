@@ -15,7 +15,7 @@
  * Usage: node scripts/e2e-advances-smoke.mjs [outputDir]
  */
 import { mkdirSync } from "node:fs"
-import { launchBrowser, BASE, failures, check, waitForText, textAppears, login, makeShot, clickByText, reseed, realConsoleErrors } from "./e2e-lib.mjs"
+import { ANCHORS, launchBrowser, BASE, failures, check, waitForText, textAppears, login, makeShot, clickByText, reseed, realConsoleErrors } from "./e2e-lib.mjs"
 
 const OUT = process.argv[2] ?? "e2e-shots-advances"
 mkdirSync(OUT, { recursive: true })
@@ -121,7 +121,7 @@ async function main() {
   console.log("2. Owner reviews exposure on /hub/money/advances")
   await login(office, "owner@demo.thind")
   await office.goto(`${BASE}/hub/money/advances`, { waitUntil: "networkidle2" })
-  await waitForText(office, "Cash and EFS-code advances")
+  await waitForText(office, ANCHORS.advances)
   let body = await office.evaluate(() => document.body.innerText)
   check(body.includes(EXPOSURE_BOTH_PENDING), `Harpreet exposure ${EXPOSURE_BOTH_PENDING} with both requests pending`)
   check(body.includes(AWAITING_BOTH), `pending subtotal exact (${AWAITING_BOTH})`)
@@ -170,7 +170,7 @@ async function main() {
   await dispatch.setViewport({ width: 1440, height: 900 })
   await login(dispatch, "dispatch@demo.thind")
   await dispatch.goto(`${BASE}/hub/money/advances`, { waitUntil: "networkidle2" })
-  await waitForText(dispatch, "Cash and EFS-code advances")
+  await waitForText(dispatch, ANCHORS.advances)
   const dispatchView = await dispatch.evaluate(() => ({
     text: document.body.innerText,
     decideButtons: document.querySelectorAll('button[aria-label="Approve advance"], button[aria-label="Deny advance"]').length,
