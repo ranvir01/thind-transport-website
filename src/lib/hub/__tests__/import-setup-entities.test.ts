@@ -8,7 +8,9 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }))
 vi.mock("@/lib/hub/session", () => ({
-  requirePermission: vi.fn(async () => ({ id: "u1", name: "Owner", carrierId: "carrier-1" })),
+  // role matters now: the setup imports check the entity write on top of
+  // imports:run (import-entity-gates.test.ts), and an owner holds them all.
+  requirePermission: vi.fn(async () => ({ id: "u1", name: "Owner", carrierId: "carrier-1", role: "owner" })),
 }))
 vi.mock("@/lib/hub/loads", () => ({ createLoad: vi.fn() }))
 vi.mock("@/lib/hub/customers", () => ({

@@ -3,6 +3,7 @@
 import { createHash } from "crypto"
 import { revalidatePath } from "next/cache"
 import { requirePermission } from "@/lib/hub/session"
+import { can, type HubAction } from "@/lib/hub/permissions"
 import { createLoad } from "@/lib/hub/loads"
 import { findCustomerByName, createCustomer } from "@/lib/hub/customers"
 import { createTruck } from "@/lib/hub/fleet"
@@ -36,6 +37,20 @@ export interface ImportResult {
 }
 
 type GenericRow = Record<string, string>
+
+/**
+ * A CSV is a faster way to create rows, not a different permission. The
+ * setup imports (loads, trucks, drivers, customers) used to run on
+ * `imports:run` alone, which the accountant holds — so a seat the role
+ * matrix keeps out of the Add-driver, Add-truck, New-load and New-customer
+ * forms could create any number of each from a spreadsheet. Each of those
+ * imports now also needs the write the form needs. Fuel, tolls, positions
+ * and mileage stay on `imports:run`: they are the accountant's own work.
+ */
+function deniedImport(user: { role: Parameters<typeof can>[0] }, write: HubAction, what: string): ImportResult | null {
+  if (can(user.role, write)) return null
+  return { ok: false, imported: 0, failed: [{ row: 0, error: `Your role can't create ${what} — the same rule as the form` }] }
+}
 
 async function truckMap(carrierId: string): Promise<Map<string, string>> {
   const trucks = await query<{ id: string; unit_number: string }>(
@@ -100,6 +115,10 @@ export async function importLoadsAction(
     const denied = actionError(err, "Forbidden")
     return { ok: false, imported: 0, failed: [{ row: 0, error: denied.error }] }
   }
+  // Booking freight is loads:write; the import also creates customers it
+  // has not seen, so it needs that write too.
+  const denied = deniedImport(user, "loads:write", "loads") ?? deniedImport(user, "customers:write", "customers")
+  if (denied) return denied
   const failed: { row: number; error: string }[] = []
   let imported = 0
   let customersCreated = 0
@@ -197,6 +216,8 @@ export async function importTrucksAction(rows: GenericRow[]): Promise<ImportResu
     const denied = actionError(err, "Forbidden")
     return { ok: false, imported: 0, failed: [{ row: 0, error: denied.error }] }
   }
+  const denied = deniedImport(user, "fleet:write", "trucks")
+  if (denied) return denied
   const existing = await truckMap(user.carrierId)
   const failed: { row: number; error: string }[] = []
   const vinCache = new Map<string, VinDecodeResult | null>()
@@ -295,6 +316,8 @@ export async function importDriversAction(
     const denied = actionError(err, "Forbidden")
     return { ok: false, imported: 0, failed: [{ row: 0, error: denied.error }] }
   }
+  const denied = deniedImport(user, "drivers:write", "drivers")
+  if (denied) return denied
   const existing = await driverMap(user.carrierId)
   // Pay defaults come from the workspace settings the owner set in the signup
   // wizard — every imported driver starts on the standard company rate.
@@ -374,6 +397,8 @@ export async function importCustomersAction(rows: GenericRow[]): Promise<ImportR
     const denied = actionError(err, "Forbidden")
     return { ok: false, imported: 0, failed: [{ row: 0, error: denied.error }] }
   }
+  const denied = deniedImport(user, "customers:write", "customers")
+  if (denied) return denied
   const failed: { row: number; error: string }[] = []
   const seen = new Set<string>()
   let imported = 0

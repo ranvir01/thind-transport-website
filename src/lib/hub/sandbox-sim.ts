@@ -212,11 +212,15 @@ async function snapshotWorld(): Promise<WorldSnapshot> {
     driver_id: string | null
     truck_id: string | null
     player_driven: boolean
+    pod_on_file: boolean
     created_at: Date
     delivered_at: Date | null
   }>(
     `SELECT l.id, l.reference, l.status, l.loaded_miles, l.driver_id, l.truck_id, l.created_at, l.delivered_at,
-            (d.user_id IS NOT NULL) AS player_driven
+            (d.user_id IS NOT NULL) AS player_driven,
+            EXISTS (SELECT 1 FROM hub.documents doc
+                     WHERE doc.carrier_id = $1 AND doc.entity_type = 'load'
+                       AND doc.entity_id = l.id AND doc.kind = 'pod') AS pod_on_file
        FROM hub.loads l
        LEFT JOIN hub.drivers d ON d.id = l.driver_id AND d.carrier_id = $1
       WHERE l.carrier_id = $1 AND l.deleted_at IS NULL
@@ -336,6 +340,7 @@ async function snapshotWorld(): Promise<WorldSnapshot> {
         driverId: l.driver_id,
         truckId: l.truck_id,
         playerDriven: l.player_driven,
+        podOnFile: l.pod_on_file,
         createdAt: new Date(l.created_at),
         deliveredAt: l.delivered_at ? new Date(l.delivered_at) : null,
         pickup: toSimStop(pair.find((s) => s.type === "pickup")),

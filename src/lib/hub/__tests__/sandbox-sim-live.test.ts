@@ -129,9 +129,13 @@ suite("sandbox simulation, against a live world", () => {
     const started = Date.now()
     const r = await tickSandboxSim(null, new Date(Date.now() + (480 + 14 * 60) * MIN))
     expect(Date.now() - started, "catch-up must stay inside serverless limits").toBeLessThan(20_000)
-    if (r.advanced && typeof r.ops === "number") {
-      expect(r.ops, "op budget blown on a realistic overnight gap").toBeLessThanOrEqual(200)
-    }
+    // Unconditional. The tick swallows its own throws into reason:'error',
+    // so a guard of `if (r.advanced)` let an exploding catch-up pass this
+    // test as "quiet". Fourteen hours of gap on a world this size ALWAYS has
+    // work to do; a tick that did none is the failure.
+    expect(r, "catch-up did not run at all").toMatchObject({ advanced: true, catchUp: true })
+    expect(r.ops, "op budget blown on a realistic overnight gap").toBeLessThanOrEqual(200)
+    expect(r.violations ?? [], "catch-up broke a world invariant").toEqual([])
   }, 120_000)
 
   it("bounds MOVE when the whole fleet is rolling", async () => {
@@ -143,9 +147,8 @@ suite("sandbox simulation, against a live world", () => {
     )
     const started = Date.now()
     const r = await tickSandboxSim(null, new Date(Date.now() + 24 * 60 * MIN))
-    if (r.advanced && typeof r.ops === "number") {
-      expect(r.ops, "whole-fleet MOVE is unbounded again").toBeLessThanOrEqual(200)
-    }
+    expect(r, "the whole-fleet tick did not run").toMatchObject({ advanced: true })
+    expect(r.ops, "whole-fleet MOVE is unbounded again").toBeLessThanOrEqual(200)
     expect(Date.now() - started).toBeLessThan(20_000)
   }, 120_000)
 

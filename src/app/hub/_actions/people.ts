@@ -10,7 +10,7 @@ import { createHubUser, setHubUserActive } from "@/lib/hub/users"
 import { getCarrier } from "@/lib/hub/settings"
 import { createDriverInviteToken, hasDriverAppAccount, sendDriverInviteEmail } from "@/lib/hub/driver-invite"
 import { logAudit } from "@/lib/hub/audit"
-import { dollarsToCents } from "@/lib/hub/types"
+import { OFFICE_INVITE_ROLES, dollarsToCents } from "@/lib/hub/types"
 import { actionError } from "@/lib/hub/action-error"
 import { appPublicOrigin } from "@/lib/app-origin"
 import type { ActionResult } from "./fleet"
@@ -235,6 +235,15 @@ export async function createHubUserAction(values: Record<string, unknown>): Prom
   const parsed = hubUserSchema.safeParse(values)
   if (!parsed.success) return { ok: false, error: firstError(parsed.error) }
   if (parsed.data.role === "platform_admin") return { ok: false, error: "platform_admin is reserved" }
+  // The Users screen offers dispatcher and accountant, and that is the whole
+  // allowlist here too — the schema accepts every HubRole, so without this an
+  // owner could mint a second owner, or a driver/broker/shipper login with no
+  // driver or customer behind it, which requireDriverUser / requirePortalUser
+  // then refuse. Those accounts come from the driver-invite and portal
+  // invitation flows, which create the link the role needs.
+  if (!(OFFICE_INVITE_ROLES as readonly string[]).includes(parsed.data.role)) {
+    return { ok: false, error: "Office staff are dispatcher or accountant" }
+  }
 
   try {
     const passwordHash = await bcrypt.hash(parsed.data.password, 10)

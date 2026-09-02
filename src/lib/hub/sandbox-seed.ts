@@ -3,7 +3,10 @@ import { randomBytes, randomUUID } from "node:crypto"
 import bcrypt from "bcrypt"
 import type { PoolClient } from "pg"
 import { hubDb, query } from "./db"
+import { deleteStoredFile, storeGeneratedPdf } from "./documents"
+import { buildPodPdf } from "./pdf"
 import { computeDriverScores } from "./recruiting"
+import { ORIENTATION_TEMPLATE } from "./recruiting-shared"
 import { SANDBOX_CARRIER_ID, SANDBOX_CARRIER_NAME, SANDBOX_PASSWORD, SANDBOX_SEATS } from "./sandbox"
 import type { SafetyEventKind } from "./safety-score"
 import { interpolate, progressAt } from "./sandbox-sim-math"
@@ -178,6 +181,14 @@ export async function seedSandbox(): Promise<void> {
         },
       })]
     )
+    // The bytes behind the sandbox's documents — generated PODs and anything a
+    // player uploaded — would otherwise outlive their rows on every reset and
+    // pile up in the blob store. Best-effort, bounded, and before the rows go.
+    const staleDocs = await client.query<{ url: string; storage: string }>(
+      `SELECT url, storage FROM hub.documents WHERE carrier_id = $1 LIMIT 500`,
+      [C]
+    )
+    await Promise.all(staleDocs.rows.map((d) => deleteStoredFile(d.url, d.storage)))
     await wipe(client)
     await client.query(`DELETE FROM hub.accessorial_types WHERE carrier_id = $1`, [C])
     await client.query(
@@ -602,6 +613,63 @@ export async function seedSandbox(): Promise<void> {
     })
     await bulk(client, "hub.payments", ["carrier_id", "invoice_id", "amount_cents", "paid_on", "method", "reference"], paymentRows)
 
+    // ---- Signed PODs for the two outside seats' customers ----
+    // The broker's and shipper's whole tour is "open a POD" / "grab delivery
+    // proof", and until now the sandbox seeded no documents at all, so both
+    // steps dead-ended on the placeholder sentence. Two real PDFs per customer,
+    // stored the way a driver's upload is stored, on loads they can already
+    // see. Generated, not uploaded, so uploaded_by stays null.
+    {
+      const outside = [customerIds[0], customerIds[BROKERS.length]]
+      const podIdx: number[] = []
+      for (const cust of outside) {
+        let n = 0
+        plans.forEach((p, i) => {
+          if (n >= 2 || p.customer !== cust || p.driverIdx === null) return
+          if (!["pod_received", "invoiced", "paid"].includes(p.status)) return
+          podIdx.push(i)
+          n++
+        })
+      }
+      const podLoads = await client.query<{ id: string; reference: string; commodity: string | null; weight_lbs: number | null }>(
+        `SELECT id, reference, commodity, weight_lbs FROM hub.loads WHERE carrier_id = $1 AND id = ANY($2::uuid[])`,
+        [C, podIdx.map((i) => loadIds[i])]
+      )
+      const storage = process.env.BLOB_READ_WRITE_TOKEN ? "blob" : "local"
+      const docRows: unknown[][] = []
+      const docEvents: unknown[][] = []
+      for (const i of podIdx) {
+        const p = plans[i]
+        const row = podLoads.rows.find((r) => r.id === loadIds[i])
+        if (!row) continue
+        const meta = driverMeta[p.driverIdx!]
+        const o = CITIES[p.lane[0]]; const d = CITIES[p.lane[1]]
+        const stamp = (at: Date) => at.toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })
+        const deliveredAt = p.deliveredAt ?? p.pickupAt
+        const bytes = await buildPodPdf({
+          brand: { name: SANDBOX_CARRIER_NAME.replace(" (Sandbox)", ""), dot: "4102233", mc: "118822",
+            phone: "(509) 555-0400", address: "410 Freight Way, Wenatchee, WA 98801" },
+          loadReference: row.reference,
+          customerName: String(p.customer.name),
+          commodity: row.commodity ?? "Freight",
+          pickup: { facility: `${o.city} Distribution`, city: `${o.city}, ${o.state}`, at: stamp(p.pickupAt) },
+          delivery: { facility: `${d.city} Receiving`, city: `${d.city}, ${d.state}`, at: stamp(deliveredAt) },
+          driverName: `${meta.first} ${meta.last}`,
+          receivedBy: pick(["R. Alvarez, receiving lead", "T. Nguyen, dock supervisor", "M. Okafor, warehouse", "J. Patel, receiving"]),
+          pieces: row.weight_lbs ? `${Math.max(1, Math.round(row.weight_lbs / 1800))} pallets, ${row.weight_lbs.toLocaleString("en-US")} lbs` : "the shipment",
+        })
+        const fileName = `POD-${row.reference}.pdf`
+        const url = await storeGeneratedPdf(fileName, bytes)
+        docRows.push([C, "load", row.id, "pod", fileName, "application/pdf", bytes.length, storage, url, null])
+        docEvents.push([C, row.id, "document", `${meta.first} ${meta.last}`,
+          JSON.stringify({ kind: "pod", file: fileName, by: "driver" })])
+      }
+      await bulk(client, "hub.documents",
+        ["carrier_id", "entity_type", "entity_id", "kind", "file_name", "mime_type", "size_bytes", "storage", "url", "uploaded_by"],
+        docRows)
+      await bulk(client, "hub.load_events", ["carrier_id", "load_id", "kind", "actor_name", "payload"], docEvents)
+    }
+
     // ---- Settlements (weekly, from settled loads) + lines ----
     const weekOf = (d: Date) => {
       const monday = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()))
@@ -614,10 +682,19 @@ export async function seedSandbox(): Promise<void> {
         ? Math.round(p.linehaul * meta.rate) + p.fsc
         : p.loadedMiles * Math.round(meta.rate * 100)
     }
+    // Payroll has run every Friday for months: every load delivered before
+    // this week is on a PAID settlement, whether the customer side is still
+    // 'invoiced', already 'paid', or fully 'settled'. Earlier the last two
+    // groups were left with no settlement at all, so the driver app — which
+    // rightly counts any delivered load nobody has settled — told Jordan he
+    // was owed a month of back pay the office's own draft did not show.
+    const thisWeek = weekOf(now())
     const groups = new Map<string, { driverIdx: number; week: string; loads: number[] }>()
     plans.forEach((p, i) => {
-      if (p.status !== "settled" || p.driverIdx === null || !p.deliveredAt) return
+      if (p.driverIdx === null || !p.deliveredAt) return
+      if (!["settled", "paid", "invoiced"].includes(p.status)) return
       const week = weekOf(p.deliveredAt)
+      if (week >= thisWeek) return // this week's work is Friday's draft, not history
       const key = `${p.driverIdx}|${week}`
       const g = groups.get(key) ?? { driverIdx: p.driverIdx, week, loads: [] }
       g.loads.push(i)
@@ -643,8 +720,11 @@ export async function seedSandbox(): Promise<void> {
         return [settlementId, "earning", `BRH-${2001 + p.idx} · ${CITIES[p.lane[0]].city} → ${CITIES[p.lane[1]].city}`,
           driverPay(p), "load", loadIds[li]]
       })
-      if (meta.escrowWk > 0) lineRows.push([settlementId, "deduction", "Escrow", -meta.escrowWk, "escrow", null])
-      if (meta.insWk > 0) lineRows.push([settlementId, "deduction", "Insurance", -meta.insWk, "insurance", null])
+      // Deduction lines are stored POSITIVE — pay-rules.ts writes them that
+      // way and every renderer prefixes its own minus. Seeding them negative
+      // printed "−-$50.00" on the settlement page and the driver's phone.
+      if (meta.escrowWk > 0) lineRows.push([settlementId, "deduction", "Escrow", meta.escrowWk, "escrow", null])
+      if (meta.insWk > 0) lineRows.push([settlementId, "deduction", "Insurance", meta.insWk, "insurance", null])
       await bulk(client, "hub.settlement_lines",
         ["settlement_id", "kind", "label", "amount_cents", "source_type", "source_id"], lineRows)
       await client.query(`UPDATE hub.loads SET settlement_id = $1 WHERE carrier_id = $3 AND id = ANY($2::uuid[])`,
@@ -669,11 +749,23 @@ export async function seedSandbox(): Promise<void> {
         [C, driverIds[driverIdx], start, dateOnly(new Date(new Date(`${start}T00:00:00Z`).getTime() + 6 * DAY)),
           gross, deductions, gross - deductions]
       )
+      const draftId = res.rows[0].id as string
+      // The same lines the paid weeks carry. A draft whose totals showed a
+      // deduction its line list did not explain reconciled to nothing, and
+      // approving it posted no escrow (approveSettlement finds the escrow
+      // line, not the total) — so the seat whose blurb promises "escrow that
+      // adds up" watched $75 withheld and a ledger that never moved.
+      const draftLines: unknown[][] = loadIdxs.map((li) => [draftId, "earning",
+        `BRH-${2001 + plans[li].idx} · ${CITIES[plans[li].lane[0]].city} → ${CITIES[plans[li].lane[1]].city}`,
+        driverPay(plans[li]), "load", loadIds[li]])
+      if (meta.escrowWk > 0) draftLines.push([draftId, "deduction", "Escrow", meta.escrowWk, "escrow", null])
+      if (meta.insWk > 0) draftLines.push([draftId, "deduction", "Insurance", meta.insWk, "insurance", null])
       await bulk(client, "hub.settlement_lines",
-        ["settlement_id", "kind", "label", "amount_cents", "source_type", "source_id"],
-        loadIdxs.map((li) => [res.rows[0].id, "earning",
-          `BRH-${2001 + plans[li].idx} · ${CITIES[plans[li].lane[0]].city} → ${CITIES[plans[li].lane[1]].city}`,
-          driverPay(plans[li]), "load", loadIds[li]]))
+        ["settlement_id", "kind", "label", "amount_cents", "source_type", "source_id"], draftLines)
+      // Link the loads the way draftSettlements does, or next Friday's draft
+      // would pick the same loads up again and pay them twice.
+      await client.query(`UPDATE hub.loads SET settlement_id = $1 WHERE carrier_id = $3 AND id = ANY($2::uuid[])`,
+        [draftId, loadIdxs.map((li) => loadIds[li]), C])
     }
     // Advances + escrow motion for the owner-operator seat.
     await bulk(client, "hub.advances", ["carrier_id", "driver_id", "amount_cents", "issued_on", "reference", "status"],
@@ -699,20 +791,33 @@ export async function seedSandbox(): Promise<void> {
       const jurisdiction = pick(["WA", "WA", "OR", "CA", "ID", "NV", "UT", "AZ", "MT"])
       const price = jurisdiction === "CA" ? int(455, 520) : int(345, 425)
       fuelRows.push([C, "csv:EFS", `SBX-F-${String(fuelSeq++).padStart(5, "0")}`, "EFS", t.id, t.assigned_driver_id,
-        ts, pick(MERCHANTS), null, jurisdiction, gallons, "diesel", price, gallons * price, int(80000, 420000)])
+        ts, pick(MERCHANTS), null, jurisdiction, gallons, "diesel", price, gallons * price, int(80000, 420000), "tractor"])
     }
     // DEF + reefer fuel, and the 2:47am over-tank card-fraud txn the owner demo tells.
     const fraudTruck = activeTrucks[3]
     fuelRows.push([C, "csv:EFS", `SBX-F-${String(fuelSeq++).padStart(5, "0")}`, "EFS", fraudTruck.id, null,
-      daysAgo(1, 2), "Pilot #482", null, "NV", 285, "diesel", 415, 285 * 415, null])
+      daysAgo(1, 2), "Pilot #482", null, "NV", 285, "diesel", 415, 285 * 415, null, "tractor"])
+    // fuel_use is what IFTA reads: only 'tractor' gallons are taxable. DEF is
+    // 'other' and reefer diesel is 'reefer' — every seeded row used to fall to
+    // the column default and the DEF was taxed as if it had moved the truck,
+    // while the "reefer gallons handled" the handbook promised had no rows
+    // at all to handle.
     for (let i = 0; i < 3; i++) {
       const t = pick(activeTrucks)
+      const gal = int(8, 20)
       fuelRows.push([C, "csv:EFS", `SBX-F-${String(fuelSeq++).padStart(5, "0")}`, "EFS", t.id, t.assigned_driver_id,
-        daysAgo(int(1, 30), 12), pick(MERCHANTS), null, "WA", int(8, 20), "DEF", 389, int(8, 20) * 389, null])
+        daysAgo(int(1, 30), 12), pick(MERCHANTS), null, "WA", gal, "DEF", 389, gal * 389, null, "other"])
+    }
+    for (let i = 0; i < 5; i++) {
+      const t = pick(activeTrucks)
+      const gal = int(20, 60)
+      const jurisdiction = pick(["WA", "OR", "CA"])
+      fuelRows.push([C, "csv:EFS", `SBX-F-${String(fuelSeq++).padStart(5, "0")}`, "EFS", t.id, t.assigned_driver_id,
+        daysAgo(int(1, 60), int(6, 20)), pick(MERCHANTS), null, jurisdiction, gal, "diesel", int(345, 425), gal * 385, null, "reefer"])
     }
     await bulk(client, "hub.fuel_transactions",
       ["carrier_id", "source", "external_id", "card_program", "truck_id", "driver_id", "ts", "merchant", "city",
-        "jurisdiction", "gallons", "fuel_type", "unit_price_cents", "total_cents", "odometer"],
+        "jurisdiction", "gallons", "fuel_type", "unit_price_cents", "total_cents", "odometer", "fuel_use"],
       fuelRows)
 
     // ---- IFTA: jurisdiction miles + tax rates for the current quarter ----
@@ -747,7 +852,9 @@ export async function seedSandbox(): Promise<void> {
           const hasDefect = t === activeTrucks[6] && d === 1 && type === "post"
           dvirRows.push([C, t.id, t.assigned_driver_id, type,
             int(80000, 420000),
-            "[]", hasDefect ? JSON.stringify([{ item: "Brakes", note: "Soft pedal, pulls right" }]) : "[]",
+            // `label`, not `item` — the shape DvirPanel, the driver's DvirForm
+            // and the safety page's grounded list all read.
+            "[]", hasDefect ? JSON.stringify([{ label: "Service brakes", note: "Soft pedal, pulls right" }]) : "[]",
             !hasDefect, PNG_DOT, name,
             daysAgo(d, type === "pre" ? 6 : 18)])
         }
@@ -858,18 +965,34 @@ export async function seedSandbox(): Promise<void> {
       [C, "Schedule unit 105 out of shop", "Parts arrived; book the bay.", daysAhead(3, 8), "normal", "Marcus Webb"],
     ])
 
+    // Every applicant carries the orientation checklist createApplicant
+    // would have given them — the Hire button is gated on it being present
+    // AND complete, so a bare row could never be hired from this seat. Dale
+    // is one tick and one signature from a hire: his offer is out, and the
+    // checklist is four of five.
+    const orientation = (doneThrough: number) =>
+      JSON.stringify(ORIENTATION_TEMPLATE.map((item, i) => ({ ...item, done: i < doneThrough })))
     const applicantRows = await bulk(client, "hub.applicants",
-      ["carrier_id", "source", "first_name", "last_name", "phone", "years_experience", "stage"],
+      ["carrier_id", "source", "first_name", "last_name", "phone", "years_experience", "stage", "orientation"],
       [
-        [C, "public_site", "Terry", "Coleman", "(509) 555-7101", 6, "applied"],
-        [C, "public_site", "Maria", "Delgado", "(206) 555-7102", 3, "applied"],
-        [C, "referral", "Hank", "Osei", "(360) 555-7103", 11, "screened"],
-        [C, "manual", "Josh", "Whitfield", "(509) 555-7104", 2, "screened"],
-        [C, "public_site", "Priti", "Sharma", "(253) 555-7105", 8, "mvr_psp"],
-        [C, "referral", "Dale", "Norwood", "(509) 555-7106", 15, "offer"],
+        [C, "public_site", "Terry", "Coleman", "(509) 555-7101", 6, "applied", orientation(0)],
+        [C, "public_site", "Maria", "Delgado", "(206) 555-7102", 3, "applied", orientation(0)],
+        [C, "referral", "Hank", "Osei", "(360) 555-7103", 11, "screened", orientation(0)],
+        [C, "manual", "Josh", "Whitfield", "(509) 555-7104", 2, "screened", orientation(0)],
+        [C, "public_site", "Priti", "Sharma", "(253) 555-7105", 8, "mvr_psp", orientation(1)],
+        [C, "referral", "Dale", "Norwood", "(509) 555-7106", 15, "offer", orientation(ORIENTATION_TEMPLATE.length - 1)],
       ], "id")
     await bulk(client, "hub.applicant_events", ["carrier_id", "applicant_id", "to_stage", "actor_name"],
       applicantRows.map((a) => [C, a.id, "applied", "Grace Okafor"]))
+    await client.query(
+      `INSERT INTO hub.offers (carrier_id, applicant_id, pay_summary, start_date, body, status, created_by_name)
+       VALUES ($1, $2, $3, $4, $5, 'sent', 'Grace Okafor')`,
+      [C, applicantRows[5].id,
+        "$0.62 per loaded mile, $0.20 deadhead, $1,500 sign-on after 90 days",
+        dateOnly(daysAhead(10)),
+        "Dale — we'd like you on the Northwest regional board starting the 15th. Home weekends, " +
+        "2019 Cascadia, health after 60 days. Sign below and orientation is Monday at 8am."]
+    )
     await client.query(
       `INSERT INTO hub.referrals (carrier_id, referrer_driver_id, applicant_id, bonus_cents, milestone, status)
        VALUES ($1,$2,$3,150000,'hired','pending')`, [C, driverIds[0], applicantRows[2].id])
@@ -965,13 +1088,34 @@ export async function applySandboxScenario(scenario: "steady" | "crunch"): Promi
   try {
     await client.query("BEGIN")
     await client.query(`SELECT pg_advisory_xact_lock(hashtext('loadoff-sandbox-seed'))`)
-    // Two dispatched pickups now 4 hours late, nobody has arrived.
-    await client.query(
-      `UPDATE hub.stops SET appt_start = NOW() - interval '4 hours'
-        WHERE carrier_id = $1 AND type = 'pickup' AND arrived_at IS NULL
-          AND load_id IN (SELECT id FROM hub.loads WHERE carrier_id = $1 AND status = 'dispatched' LIMIT 2)`,
+    // Two pickups now 4 hours late with NO truck on them — the assigned
+    // trucks never showed. They go back to 'booked', unassigned, because a
+    // late load left 'dispatched' with a driver is erased by the autopilot's
+    // first tick: it converges NPC loads to what the clock says, stamps an
+    // arrival AT the appointment, and the lateness the scenario promised is
+    // gone before the dispatcher's page loads. Unassigned, the sim has no
+    // driver to move and leaves them exactly this wrong until a human puts a
+    // truck on them — which is the drill.
+    const late = await client.query<{ id: string }>(
+      `SELECT id FROM hub.loads
+        WHERE carrier_id = $1 AND status = 'dispatched' AND driver_id IS NOT NULL
+        ORDER BY reference LIMIT 2`,
       [C]
     )
+    const lateIds = late.rows.map((r) => r.id)
+    await client.query(
+      `UPDATE hub.loads SET status = 'booked', driver_id = NULL, truck_id = NULL, updated_at = NOW()
+        WHERE carrier_id = $1 AND id = ANY($2::uuid[])`,
+      [C, lateIds]
+    )
+    await client.query(
+      `UPDATE hub.stops SET appt_start = NOW() - interval '4 hours', arrived_at = NULL, departed_at = NULL
+        WHERE carrier_id = $1 AND type = 'pickup' AND load_id = ANY($2::uuid[])`,
+      [C, lateIds]
+    )
+    await bulk(client, "hub.load_events", ["carrier_id", "load_id", "kind", "actor_name", "payload"],
+      lateIds.map((id) => [C, id, "note", "Marcus Webb",
+        JSON.stringify({ text: "Driver no-show at the shipper. Truck pulled off the load — needs a new one now." })]))
     // Three booked loads suddenly due this afternoon.
     await client.query(
       `UPDATE hub.stops SET appt_start = NOW() + interval '3 hours'
@@ -984,7 +1128,7 @@ export async function applySandboxScenario(scenario: "steady" | "crunch"): Promi
       `INSERT INTO hub.dvirs (carrier_id, truck_id, driver_id, type, odometer, checklist, defects,
          safe_to_operate, signature, signed_name, created_at)
        SELECT t.carrier_id, t.id, t.assigned_driver_id, 'pre', 284511, '[]',
-         '[{"item":"Air lines","note":"Audible leak at the glad hands — will not hold pressure"}]',
+         '[{"label":"Coupling / fifth wheel","note":"Audible air leak at the glad hands — will not hold pressure"}]',
          FALSE, $2, d.first_name || ' ' || d.last_name, NOW()
          FROM hub.trucks t JOIN hub.drivers d ON d.id = t.assigned_driver_id AND d.carrier_id = t.carrier_id
         WHERE t.carrier_id = $1 AND t.status = 'active' AND t.assigned_driver_id IS NOT NULL
@@ -1026,14 +1170,25 @@ export async function applySandboxScenario(scenario: "steady" | "crunch"): Promi
   }
 }
 
-/** True when the sandbox looks fully seeded (all seats present + data volume). */
+/**
+ * True when the sandbox looks fully seeded: all seats present, data volume,
+ * AND the sim block the autopilot runs on. A world with every row but no
+ * `settings.sim.epoch` is one no heartbeat will ever advance — which is
+ * exactly what a test that deleted the settings row used to leave behind,
+ * and what ensureSandboxSeeded then declined to repair.
+ */
 export async function sandboxSeeded(): Promise<boolean> {
-  const rows = await query<{ users: number; loads: number }>(
+  const rows = await query<{ users: number; loads: number; epoch: string | null }>(
     `SELECT (SELECT COUNT(*)::int FROM hub.users WHERE carrier_id = $1) AS users,
-            (SELECT COUNT(*)::int FROM hub.loads WHERE carrier_id = $1) AS loads`,
+            (SELECT COUNT(*)::int FROM hub.loads WHERE carrier_id = $1) AS loads,
+            (SELECT settings->'sim'->>'epoch' FROM hub.carrier_settings WHERE carrier_id = $1) AS epoch`,
     [SANDBOX_CARRIER_ID]
   )
-  return (rows[0]?.users ?? 0) >= SANDBOX_SEATS.length && (rows[0]?.loads ?? 0) >= 200
+  return (
+    (rows[0]?.users ?? 0) >= SANDBOX_SEATS.length &&
+    (rows[0]?.loads ?? 0) >= 200 &&
+    Boolean(rows[0]?.epoch)
+  )
 }
 
 export async function ensureSandboxSeeded(): Promise<{ seeded: boolean }> {
