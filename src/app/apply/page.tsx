@@ -1,25 +1,17 @@
 import { Metadata } from "next"
 import Link from "next/link"
 import { ApplicationForm } from "@/components/application/ApplicationForm"
-import { COMPANY_INFO, PAY_RATES } from "@/lib/constants"
+import { COMPANY_INFO, PAY_RATES, SERVICES } from "@/lib/constants"
 import { parseAnnualRange } from "@/lib/job-posting"
 import { FAQAccordion } from "@/components/shared/FAQAccordion"
 import { PageBreadcrumb } from "@/components/shared/PageBreadcrumb"
-import {
-  BadgeCheck,
-  CheckCircle2,
-  ChevronRight,
-  Clock,
-  Headphones,
-  Phone,
-  Route,
-  Shield,
-  Truck,
-} from "lucide-react"
+import { AsphaltHero } from "@/components/shared/AsphaltHero"
+import { Reveal } from "@/components/ui/Reveal"
+import { BadgeCheck, CheckCircle2 } from "lucide-react"
 
 export const metadata: Metadata = {
   title: "Apply now",
-  description: `Apply for CDL Class A opportunities with ${COMPANY_INFO.name}. Learn about owner-operator and company driver options, experience requirements, and next steps with our Kent, WA team.`,
+  description: `Apply for CDL Class A opportunities with ${COMPANY_INFO.name}. Learn about owner-operator and company driver options, experience requirements, and next steps with our ${COMPANY_INFO.location} team.`,
   alternates: {
     canonical: "https://thindtransport.com/apply",
   },
@@ -100,6 +92,20 @@ const faqItems = [
   },
 ]
 
+/** What we can say about the work without inventing anything. */
+const workFacts = [
+  `${SERVICES.types.join(", ")} opportunities`,
+  "Local, regional, and OTR conversations",
+  "Weekly settlements and direct support",
+  `Based in ${COMPANY_INFO.location}`,
+]
+
+const beforeYouApply = [
+  "Valid CDL Class A license",
+  "Recent verifiable driving experience",
+  "Clean MVR and ability to meet DOT requirements",
+]
+
 export default function ApplyPage() {
   return (
     <>
@@ -108,89 +114,111 @@ export default function ApplyPage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jobPostingSchema) }}
       />
 
-      <div className="brand-page-shell min-h-screen overflow-x-hidden bg-navy-950">
-        <PageBreadcrumb pageName="Apply Now" category="Drivers" />
+      <div className="min-h-screen overflow-x-hidden bg-navy-950">
+        {/* omitApply alone already makes Call the band's filled action —
+            AsphaltHero's `callIsPrimary` is `primary === "call" || omitApply`,
+            so the band never ships without a red. `primary="call"` stays
+            explicit so the next reader does not "fix" it into a text link and
+            get the identical rendering. The second red this used to share the
+            phone viewport with — the wizard's pinned command bar — now waits
+            until the form is in view (ApplicationForm.tsx). */}
+        <AsphaltHero
+          breadcrumb={
+            /* The trail now lives INSIDE the asphalt band, so its own bar
+               chrome — opaque ground, blur, nav-clearance padding, centred
+               row and a second container gutter — is overridden here rather
+               than duplicated as a bar above the hero. */
+            <PageBreadcrumb
+              pageName="Apply Now"
+              category="Drivers"
+              className="!border-b-0 !bg-transparent !pb-0 !pt-4 !backdrop-blur-none [&>div]:px-0 [&_ol]:justify-start"
+            />
+          }
+          eyebrow="Apply"
+          title="Start the conversation. We'll take it from there."
+          description="Submit the short form and our team reviews your experience, route preferences, and whether a company driver or owner-operator seat is the better fit."
+          primary="call"
+          omitApply
+          extraLinks={[{ href: "#application", label: "Skip to the form" }]}
+        >
+          {/* Stacked on a phone: the eyebrows are display caps at wide
+              tracking, and two of them side by side at phone width is where
+              this band would first overflow. */}
+          <dl className="grid gap-4 sm:grid-cols-2">
+            <div className="rounded-m-3 border border-white/10 bg-white/5 p-5">
+              <dt className="font-display text-m-micro font-bold uppercase tracking-[0.15em] text-orange-300">
+                Owner operators
+              </dt>
+              <dd className="mt-2 font-mono text-m-h3 font-bold tabular-nums text-paper">
+                {PAY_RATES.ownerOperator.commission}
+              </dd>
+              <dd className="mt-1 text-m-body text-paper/70">of gross revenue</dd>
+            </div>
+            <div className="rounded-m-3 border border-white/10 bg-white/5 p-5">
+              <dt className="font-display text-m-micro font-bold uppercase tracking-[0.15em] text-orange-300">
+                Company drivers
+              </dt>
+              <dd className="mt-2 font-mono text-m-h3 font-bold tabular-nums text-paper">
+                {PAY_RATES.companyDriver.otr.perMile}
+              </dd>
+              <dd className="mt-1 text-m-body text-paper/70">
+                {`per mile, home ${PAY_RATES.companyDriver.local.homeTime.toLowerCase()}, ${PAY_RATES.companyDriver.regional.homeTime.toLowerCase()}, or OTR`}
+              </dd>
+            </div>
+          </dl>
+        </AsphaltHero>
 
-        <section className="border-b border-white/5 bg-navy-950 py-10 md:py-20">
+        <section
+          id="application"
+          aria-labelledby="application-heading"
+          className="scroll-mt-24 bg-navy-950 py-section"
+        >
           <div className="container">
-            <div className="grid items-start gap-8 lg:grid-cols-12 lg:gap-12">
-              <div className="lg:col-span-5 lg:sticky lg:top-24 space-y-6">
-                <div className="inline-flex items-center rounded-full border border-orange-500/30 bg-orange-600/10 px-4 py-2 text-sm font-bold text-orange-300">
-                  CDL Class A Opportunities
-                </div>
-
-                <div className="space-y-4">
-                  <h1 className="text-4xl font-black leading-tight tracking-tight text-white md:text-5xl lg:text-6xl">
-                    Start the Conversation.
-                    <span className="block text-orange-500">We&apos;ll Take It From There.</span>
-                  </h1>
-                  <p className="text-lg leading-relaxed text-slate-300">
-                    Submit the short form and our team will review your experience, route preferences, and whether a company driver or owner-operator opening is the better fit.
-                  </p>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="rounded-xl border border-orange-500/30 bg-[#17181B]/80 p-4">
-                    <p className="text-xs font-bold uppercase tracking-wider text-orange-400">
-                      Owner Operators
-                    </p>
-                    <p className="text-3xl font-black text-orange-400">{PAY_RATES.ownerOperator.commission}</p>
-                    <p className="text-sm text-slate-300">gross split</p>
+            <div className="grid items-start gap-10 lg:grid-cols-12 lg:gap-12">
+              {/* "Before you apply" and the work facts are DARK ROWS, one
+                  grammar for both — the form beside them is the page's single
+                  paper island, and two paper islands never touch. */}
+              <div className="space-y-6 lg:col-span-5 lg:sticky lg:top-24">
+                <Reveal>
+                  <div className="rounded-m-3 border border-white/10 bg-white/5 p-6">
+                    <h2 className="font-display text-m-h4 font-bold text-white">Before you apply</h2>
+                    <ul className="mt-4 list-none space-y-3">
+                      {beforeYouApply.map((item) => (
+                        <li key={item} className="flex items-start gap-3 text-m-body text-steel-200">
+                          <BadgeCheck className="mt-1 h-4 w-4 flex-shrink-0 text-signal-up" aria-hidden />
+                          <span>{item}</span>
+                        </li>
+                      ))}
+                    </ul>
                   </div>
-                  <div className="rounded-xl border border-orange-500/30 bg-[#17181B]/80 p-4">
-                    <p className="text-xs font-bold uppercase tracking-wider text-orange-400">
-                      Company Drivers
-                    </p>
-                    <p className="text-3xl font-black text-orange-400">{PAY_RATES.companyDriver.otr.perMile}</p>
-                    <p className="text-sm text-slate-300">OTR pay range</p>
-                  </div>
-                </div>
+                </Reveal>
 
-                <div className="grid gap-3 sm:grid-cols-2">
-                  {[
-                    "Flatbed, reefer, and dry van opportunities",
-                    "Local, regional, and OTR conversations",
-                    "Weekly settlements and direct support",
-                    "Based in Kent, WA",
-                  ].map((item) => (
-                    <div
-                      key={item}
-                      className="flex items-start gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-slate-200"
-                    >
-                      <CheckCircle2 className="mt-0.5 h-4 w-4 flex-shrink-0 text-green-400" />
-                      <span>{item}</span>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="rounded-2xl border border-white/10 bg-[#0B0C0E] p-6">
-                  <h2 className="mb-4 text-lg font-bold text-white">Before You Apply</h2>
-                  <div className="space-y-3 text-sm text-slate-300">
-                    <div className="flex items-start gap-3">
-                      <BadgeCheck className="mt-0.5 h-4 w-4 flex-shrink-0 text-green-400" />
-                      <span>Valid CDL Class A license</span>
-                    </div>
-                    <div className="flex items-start gap-3">
-                      <BadgeCheck className="mt-0.5 h-4 w-4 flex-shrink-0 text-green-400" />
-                      <span>Recent verifiable driving experience</span>
-                    </div>
-                    <div className="flex items-start gap-3">
-                      <BadgeCheck className="mt-0.5 h-4 w-4 flex-shrink-0 text-green-400" />
-                      <span>Clean MVR and ability to meet DOT requirements</span>
-                    </div>
+                <Reveal index={1}>
+                  <div className="rounded-m-3 border border-white/10 bg-white/5 p-6">
+                    <h2 className="font-display text-m-h4 font-bold text-white">What the work looks like</h2>
+                    <ul className="mt-4 list-none space-y-3">
+                      {workFacts.map((item) => (
+                        <li key={item} className="flex items-start gap-3 text-m-body text-steel-200">
+                          <CheckCircle2 className="mt-1 h-4 w-4 flex-shrink-0 text-signal-up" aria-hidden />
+                          <span>{item}</span>
+                        </li>
+                      ))}
+                    </ul>
                   </div>
-                </div>
+                </Reveal>
               </div>
 
-              <div className="lg:col-span-7 w-full" id="application-form">
-                <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl" data-light>
-                  <div className="border-b border-white/10 bg-[#131418] px-6 py-4">
-                    <h2 className="text-lg font-bold text-white">Start Your Application</h2>
-                    <p className="text-xs text-slate-300">
-                      Share your contact information and driving background. We&apos;ll follow up from there.
-                    </p>
-                  </div>
-                  <div className="p-4 md:p-8">
+              <div className="w-full lg:col-span-7" id="application-form">
+                <div className="rounded-m-3 border border-ink/15 bg-paper p-6 text-ink md:p-8">
+                  {/* "Start Your Application" is pinned verbatim by
+                      scripts/e2e-funnel-smoke.mjs and e2e-anchors.test.ts. */}
+                  <h2 id="application-heading" className="font-display text-m-h3 font-bold text-ink">
+                    Start Your Application
+                  </h2>
+                  <p className="mt-2 max-w-measure text-m-body text-ink-2">
+                    Share your contact information and driving background. We&apos;ll follow up from there.
+                  </p>
+                  <div className="mt-8">
                     <ApplicationForm />
                   </div>
                 </div>
@@ -199,116 +227,52 @@ export default function ApplyPage() {
           </div>
         </section>
 
-        <section className="border-t border-white/5 bg-[#0B0C0E] py-12 lg:py-16">
+        <section aria-labelledby="apply-faq-heading" className="bg-asphalt py-section">
           <div className="container">
-            <div className="grid gap-8 lg:grid-cols-3 lg:gap-12">
-              <div className="space-y-8 lg:col-span-2">
-                <div className="rounded-2xl border border-white/5 bg-navy-950 p-6 md:p-8">
-                  <h2 className="mb-6 text-2xl font-bold text-white">What To Expect</h2>
-                  <div className="grid gap-6 md:grid-cols-2">
-                    <div className="space-y-3">
-                      <h3 className="text-lg font-semibold text-orange-400">The Work</h3>
-                      <div className="space-y-3 text-sm text-slate-300">
-                        <div className="flex items-start gap-3">
-                          <Truck className="mt-0.5 h-4 w-4 flex-shrink-0 text-green-400" />
-                          <span>Flatbed, reefer, and dry van freight</span>
-                        </div>
-                        <div className="flex items-start gap-3">
-                          <Route className="mt-0.5 h-4 w-4 flex-shrink-0 text-green-400" />
-                          <span>Local, regional, and OTR discussions based on fit</span>
-                        </div>
-                        <div className="flex items-start gap-3">
-                          <Headphones className="mt-0.5 h-4 w-4 flex-shrink-0 text-green-400" />
-                          <span>Direct communication with dispatch and recruiting</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="space-y-3">
-                      <h3 className="text-lg font-semibold text-orange-400">The Process</h3>
-                      <div className="space-y-3 text-sm text-slate-300">
-                        <div className="flex items-start gap-3">
-                          <CheckCircle2 className="mt-0.5 h-4 w-4 flex-shrink-0 text-green-400" />
-                          <span>Submit the form with your basic information</span>
-                        </div>
-                        <div className="flex items-start gap-3">
-                          <Clock className="mt-0.5 h-4 w-4 flex-shrink-0 text-green-400" />
-                          <span>Our team reviews experience and current openings</span>
-                        </div>
-                        <div className="flex items-start gap-3">
-                          <Phone className="mt-0.5 h-4 w-4 flex-shrink-0 text-green-400" />
-                          <span>We follow up by phone or email if the fit looks strong</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="rounded-2xl border border-white/5 bg-[#0B0C0E] p-6 md:p-8">
-                  <h2 className="mb-6 text-2xl font-bold text-white">Frequently Asked Questions</h2>
-                  <FAQAccordion items={faqItems} darkBackground={true} gradientColor="#0B0C0E" />
-                </div>
-              </div>
-
-              <div className="space-y-6 lg:sticky lg:top-24">
-                <div className="rounded-2xl border border-white/5 bg-navy-950 p-6">
-                  <h3 className="mb-4 text-lg font-bold text-white">Application Notes</h3>
-                  <div className="space-y-4">
-                    {[
-                      {
-                        icon: Shield,
-                        title: "Secure Form",
-                        desc: "Your information is only used for recruiting follow-up.",
-                      },
-                      {
-                        icon: CheckCircle2,
-                        title: "No Pressure",
-                        desc: "Submitting the form starts a conversation. It does not lock you into anything.",
-                      },
-                      {
-                        icon: Headphones,
-                        title: "Direct Contact",
-                        desc: "You will hear from a real team member, not an automated workflow.",
-                      },
-                    ].map((item) => (
-                      <div key={item.title} className="flex items-start gap-3">
-                        <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-white/10">
-                          <item.icon className="h-5 w-5 text-orange-400" />
-                        </div>
-                        <div>
-                          <p className="text-sm font-semibold text-white">{item.title}</p>
-                          <p className="text-xs text-slate-400">{item.desc}</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="rounded-2xl bg-gradient-to-br from-orange-600 to-orange-700 p-6 text-center shadow-lg shadow-orange-900/30">
-                  <Phone className="mx-auto mb-3 h-8 w-8 text-white" />
-                  <p className="mb-2 text-sm text-white/90">Questions before you apply?</p>
-                  <Link
-                    href={`tel:${COMPANY_INFO.phoneFormatted}`}
-                    className="block text-2xl font-black text-white transition-colors hover:text-orange-200"
-                  >
-                    {COMPANY_INFO.phone}
-                  </Link>
-                  <p className="mt-2 text-xs text-orange-100">Call or submit the form and we&apos;ll follow up.</p>
-                </div>
-
-                <Link
-                  href="/pre-qualify"
-                  className="flex items-center justify-center gap-2 rounded-2xl border border-white/15 bg-[#17181B] px-6 py-4 font-bold text-white transition-all hover:bg-[#212226]"
-                >
-                  Not Ready Yet? Pre-Qualify
-                  <ChevronRight className="h-4 w-4" />
-                </Link>
+            <div className="mx-auto max-w-3xl">
+              <h2 id="apply-faq-heading" className="font-display text-m-h2 font-bold text-paper text-balance">
+                Questions before you apply
+              </h2>
+              <div className="mt-8">
+                <FAQAccordion items={faqItems} darkBackground />
               </div>
             </div>
           </div>
         </section>
-      </div>
 
+        {/* The page's ONE closing call block — the gradient phone card and the
+            duplicate "Application notes" rail it replaced were a second and
+            third CTA on a page whose CTA is the form above. */}
+        <section aria-labelledby="apply-call-heading" className="bg-navy-950 py-section-tight">
+          <div className="container">
+            <div className="mx-auto max-w-measure text-center">
+              <h2 id="apply-call-heading" className="font-display text-m-h3 font-bold text-white text-balance">
+                Rather talk it through first?
+              </h2>
+              <p className="mt-3 text-m-body text-steel-300">
+                Call the office and ask whatever you want before you fill anything in.
+              </p>
+              <p className="mt-5">
+                <a
+                  href={`tel:${COMPANY_INFO.phoneFormatted}`}
+                  className="inline-flex min-h-[48px] items-center gap-2 text-m-lede font-semibold text-white underline-offset-4 hover:text-signal-up hover:underline"
+                >
+                  <span>Call</span>
+                  <span className="font-mono tabular-nums">{COMPANY_INFO.phone}</span>
+                </a>
+              </p>
+              <p className="mt-2">
+                <Link
+                  href="/pre-qualify"
+                  className="inline-flex min-h-[48px] items-center text-m-body font-semibold text-steel-200 underline-offset-4 hover:text-white hover:underline"
+                >
+                  Not ready yet? Start with the pre-qualification
+                </Link>
+              </p>
+            </div>
+          </div>
+        </section>
+      </div>
     </>
   )
 }

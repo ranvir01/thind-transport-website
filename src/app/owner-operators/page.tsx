@@ -1,23 +1,32 @@
 import { Metadata } from "next"
 import Link from "next/link"
-import {
-  BadgeCheck, Calculator, FileText, Fuel, Phone,
-  Receipt, Wallet,
-} from "lucide-react"
-import { COMPANY_INFO, PAY_RATES, STATS } from "@/lib/constants"
+import { BENEFITS, COMPANY_INFO, PAY_RATES, STATS } from "@/lib/constants"
 import { PageBreadcrumb } from "@/components/shared/PageBreadcrumb"
 import { PersonaRemember } from "@/components/shared/PersonaRemember"
+import { AsphaltHero } from "@/components/shared/AsphaltHero"
 import { RelatedLinks } from "@/components/shared/RelatedLinks"
 import { driverLinks } from "@/components/shared/link-sets"
+import { Reveal } from "@/components/ui/Reveal"
+
+const OO = PAY_RATES.ownerOperator
 
 export const metadata: Metadata = {
-  title: "Owner Operators | 90% of the Linehaul, 100% of the Fuel Surcharge",
+  title: `Owner Operators | ${OO.commission} of the Linehaul, ${OO.fuelSurcharge} of the Fuel Surcharge`,
   description:
-    "Lease on with Thind Transport in Kent, WA. 90% of the linehaul, 100% of the fuel surcharge, and a settlement statement that shows every deduction line by line. No forced dispatch. USDOT 2523064, MC 876103.",
+    `Lease on with ${COMPANY_INFO.name} in ${COMPANY_INFO.location}. ${OO.commission} of the linehaul, ${OO.fuelSurcharge} of the fuel surcharge, and a settlement statement that shows every deduction line by line. No forced dispatch. USDOT ${COMPANY_INFO.dot}, MC ${COMPANY_INFO.mc}.`,
   alternates: { canonical: "/owner-operators" },
 }
 
-const OO = PAY_RATES.ownerOperator
+/**
+ * The no-forced-dispatch promise, read out of BENEFITS rather than retyped —
+ * it is the third fact in the hero and the first answer in the FAQ, and those
+ * two drifting apart is how a policy becomes a slogan.
+ */
+const NO_FORCED_DISPATCH =
+  BENEFITS.ownerOperator.find((benefit) => benefit.startsWith("No forced dispatch")) ?? "No forced dispatch"
+const NFD_PARTS = NO_FORCED_DISPATCH.split(" - ")
+const NFD_TERM = NFD_PARTS[0]
+const NFD_DETAIL = NFD_PARTS.slice(1).join(" - ")
 
 /**
  * Owner-operators are buying an arrangement, not a job — so the page leads
@@ -27,25 +36,21 @@ const OO = PAY_RATES.ownerOperator
  */
 const TERMS = [
   {
-    icon: Wallet,
     label: "Your split",
     value: OO.commission,
     detail: "of the linehaul on every load. You see the rate confirmation, so you can check the math on any load you haul.",
   },
   {
-    icon: Fuel,
     label: "Fuel surcharge",
     value: OO.fuelSurcharge,
     detail: "passes through to you. We don't keep a slice of FSC — it exists to cover your fuel, not to pad ours.",
   },
   {
-    icon: Calculator,
     label: "Typical gross",
     value: OO.annualGross,
     detail: `a year, working out to roughly ${OO.perMile} a mile depending on the lanes you take.`,
   },
   {
-    icon: BadgeCheck,
     label: "Sign-on",
     value: OO.signOnBonus,
     detail: "for owner-operators, paid on the schedule we'll put in writing before you sign anything.",
@@ -62,7 +67,7 @@ const DEDUCTIONS = [
 const FAQ = [
   {
     q: "Is there forced dispatch?",
-    a: "No. You see the load, the rate, and the lane before you accept it. Turning one down doesn't cost you your place in line — if it did, the 90% split wouldn't mean much.",
+    a: `No. You see the load, the rate, and the lane before you accept it. Turning one down doesn't cost you your place in line — if it did, the ${OO.commission} split wouldn't mean much.`,
   },
   {
     q: "How often do I get paid, and how fast?",
@@ -94,149 +99,176 @@ export default function OwnerOperatorsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-50">
+    <div className="min-h-screen overflow-x-hidden bg-navy-950">
       <PersonaRemember persona="owner-operators" />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />
-      <PageBreadcrumb pageName="Owner Operators" category="Drivers" />
 
-      {/* Hero */}
-      <div className="bg-navy-950 text-white">
-        <div className="container px-4 py-16 md:py-24">
-          <div className="max-w-3xl">
-            <span className="fleet-badge fleet-badge-gold mb-5">Lease on · Kent, WA</span>
-            <h1 className="text-4xl md:text-6xl font-black leading-tight mb-5">
-              {OO.commission} of the linehaul.{" "}
-              <span className="text-orange">A settlement you can audit.</span>
-            </h1>
-            <p className="text-lg md:text-xl text-white/85 leading-relaxed max-w-2xl">
-              You already know what a bad lease looks like — a good percentage on paper and a settlement
-              full of lines nobody will explain. Here is the split, here are every one of the deductions,
-              and here is the statement you&apos;ll get every week.
-            </p>
-            <div className="mt-8 flex flex-wrap gap-4">
-              <Link
-                href="/apply"
-                className="rounded-full bg-orange-600 px-6 py-3.5 font-bold uppercase tracking-wide text-white shadow-cta transition-all hover:bg-orange-500"
-              >
-                Start your application
-              </Link>
-              <a
-                href={`tel:${COMPANY_INFO.phoneFormatted}`}
-                className="flex items-center gap-2 rounded-full border border-white/30 px-6 py-3.5 font-semibold text-white transition-colors hover:bg-white/10"
-              >
-                <Phone className="h-4 w-4" aria-hidden /> {COMPANY_INFO.phone}
-              </a>
-            </div>
+      <AsphaltHero
+        breadcrumb={
+          /* The trail lives inside the asphalt band; its own bar chrome
+             (opaque ground, blur, nav-clearance padding, centred row, second
+             gutter) is overridden here rather than stacked above the hero. */
+          <PageBreadcrumb
+            pageName="Owner Operators"
+            category="Drivers"
+            className="!border-b-0 !bg-transparent !pb-0 !pt-4 !backdrop-blur-none [&>div]:px-0 [&_ol]:justify-start"
+          />
+        }
+        eyebrow={`Lease on · ${COMPANY_INFO.location}`}
+        title="The split, and every deduction, before you sign."
+        description="You already know what a bad lease looks like — a good percentage on paper and a settlement full of lines nobody will explain. Here is the split, here are every one of the deductions, and here is the statement you'll get every week."
+      >
+        {/* Three facts, one of them the size of the argument. */}
+        <dl className="rounded-m-3 border border-white/10 bg-white/5 p-6">
+          <dt className="font-display text-m-micro font-bold uppercase tracking-[0.15em] text-orange-300">
+            Your split
+          </dt>
+          <dd className="mt-1 font-mono text-m-display font-bold tabular-nums text-paper">{OO.commission}</dd>
+          <dd className="text-m-body text-paper/70">of the linehaul on every load</dd>
+
+          <dt className="mt-6 border-t border-white/10 pt-5 font-display text-m-micro font-bold uppercase tracking-[0.15em] text-orange-300">
+            Fuel surcharge
+          </dt>
+          <dd className="mt-1 font-mono text-m-h3 font-bold tabular-nums text-paper">{OO.fuelSurcharge}</dd>
+          <dd className="text-m-body text-paper/70">passes through to you</dd>
+
+          <dt className="mt-6 border-t border-white/10 pt-5 font-display text-m-micro font-bold uppercase tracking-[0.15em] text-orange-300">
+            {NFD_TERM}
+          </dt>
+          {NFD_DETAIL ? <dd className="mt-1 text-m-body text-paper/70">{NFD_DETAIL}</dd> : null}
+        </dl>
+      </AsphaltHero>
+
+      {/* The arrangement — four published numbers as mono rows, not four
+          gradient cards. */}
+      <section aria-labelledby="arrangement-heading" className="bg-navy-950 py-section">
+        <div className="container">
+          <div className="mx-auto max-w-4xl">
+            <Reveal>
+              <h2 id="arrangement-heading" className="font-display text-m-h2 font-bold text-white text-balance">
+                The arrangement
+              </h2>
+              <p className="mt-3 max-w-measure text-m-body text-steel-200">
+                Four numbers. If a recruiter anywhere else won&apos;t give you all four on the first call,
+                that is the answer.
+              </p>
+            </Reveal>
+
+            <dl className="mt-8 border-t border-white/10">
+              {TERMS.map(({ label, value, detail }, i) => (
+                <Reveal
+                  key={label}
+                  index={i}
+                  className="grid gap-x-6 gap-y-1 border-b border-white/10 py-5 sm:grid-cols-[8rem_14rem_1fr] sm:items-baseline"
+                >
+                  <dt className="font-display text-m-micro font-bold uppercase tracking-[0.15em] text-steel-300">
+                    {label}
+                  </dt>
+                  <dd className="font-mono text-m-h3 font-bold tabular-nums text-white">{value}</dd>
+                  <dd className="max-w-measure text-m-body text-steel-200">{detail}</dd>
+                </Reveal>
+              ))}
+            </dl>
           </div>
         </div>
-      </div>
+      </section>
 
-      {/* The terms */}
-      <div className="container px-4 py-12 md:py-16">
-        <h2 className="text-2xl md:text-3xl font-black text-gray-900 mb-2">The arrangement</h2>
-        <p className="text-gray-600 mb-8 max-w-2xl">
-          Four numbers. If a recruiter anywhere else won&apos;t give you all four on the first call, that
-          is the answer.
-        </p>
-        <div className="grid gap-5 sm:grid-cols-2">
-          {TERMS.map(({ icon: Icon, label, value, detail }) => (
-            <div key={label} className="rounded-2xl border border-gray-200 bg-white p-5">
-              <Icon className="h-6 w-6 text-orange-600 mb-3" aria-hidden />
-              <p className="text-xs font-semibold uppercase tracking-wide text-gray-600">{label}</p>
-              <p className="text-3xl font-black text-gray-900 my-1">{value}</p>
-              <p className="text-gray-600 text-sm leading-relaxed">{detail}</p>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Deductions — the trust lever */}
-      <div className="border-t border-gray-200 bg-white">
-        <div className="container px-4 py-12 md:py-16">
-          <div className="max-w-3xl">
-            <Receipt className="h-7 w-7 text-orange-600 mb-3" aria-hidden />
-            <h2 className="text-2xl md:text-3xl font-black text-gray-900 mb-2">
+      {/* The trust lever, on paper: the deductions are the dense data a driver
+          actually reads twice. The page's one paper island. */}
+      <section aria-labelledby="deductions-heading" className="bg-navy-950 pb-section">
+        <div className="container">
+          <Reveal className="mx-auto max-w-4xl rounded-m-3 border border-ink/15 bg-paper p-6 text-ink md:p-8">
+            <h2 id="deductions-heading" className="font-display text-m-h2 font-bold text-ink text-balance">
               Every deduction, before you sign
             </h2>
-            <p className="text-gray-600 mb-8">
+            <p className="mt-3 max-w-measure text-m-lede text-ink-2">
               This is the part most carriers make you find out about on your third settlement. There are
               four, and only the ones you actually use appear on your statement.
             </p>
-            <ul className="space-y-4">
+
+            <dl className="mt-8 border-t border-ink/15">
               {DEDUCTIONS.map((d) => (
-                <li key={d.name} className="rounded-2xl border border-gray-200 p-5">
-                  <p className="font-bold text-gray-900 mb-1">{d.name}</p>
-                  <p className="text-gray-600 text-sm leading-relaxed">{d.note}</p>
-                </li>
+                <div key={d.name} className="flex flex-col gap-1 border-b border-ink/15 py-4 sm:flex-row sm:gap-6">
+                  <dt className="font-mono text-m-body font-semibold text-ink sm:w-44 sm:shrink-0">{d.name}</dt>
+                  <dd className="max-w-measure text-m-body text-ink-2">{d.note}</dd>
+                </div>
               ))}
-            </ul>
-            <div className="mt-8 rounded-2xl border border-gray-200 bg-gray-50 p-5">
-              <FileText className="h-6 w-6 text-orange-600 mb-3" aria-hidden />
-              <p className="font-bold text-gray-900 mb-1">You get the same screen we do</p>
-              <p className="text-gray-600 text-sm leading-relaxed">
+            </dl>
+
+            <div className="mt-8 rounded-m-2 border border-ink/15 p-5">
+              <h3 className="font-display text-m-h4 font-bold text-ink">You get the same screen we do</h3>
+              <p className="mt-2 max-w-measure text-m-body text-ink-2">
                 Settlements run in our own system, LoadOff. Each one lists the loads, the linehaul, the
                 fuel surcharge, and every deduction as its own line — not one lump sum labelled
                 &ldquo;expenses.&rdquo; Your escrow balance is on there too, every week, so you always
                 know what you&apos;d get back.
               </p>
-              <Link
-                href="/pay-breakdown"
-                className="mt-3 inline-block text-sm font-semibold text-orange-600 hover:underline"
-              >
-                See how the pay breaks down →
-              </Link>
+              <p className="mt-3">
+                <Link
+                  href="/pay-breakdown"
+                  className="inline-flex min-h-[44px] items-center text-m-body font-semibold text-signal underline-offset-4 hover:underline"
+                >
+                  See how the pay breaks down
+                </Link>
+              </p>
+            </div>
+          </Reveal>
+        </div>
+      </section>
+
+      <section aria-labelledby="faq-heading" className="bg-asphalt py-section text-paper">
+        <div className="container">
+          <div className="mx-auto max-w-4xl">
+            <h2 id="faq-heading" className="font-display text-m-h2 font-bold text-paper text-balance">
+              Straight answers
+            </h2>
+            <div className="mt-8 grid gap-6 md:grid-cols-2">
+              {FAQ.map((item, i) => (
+                <Reveal key={item.q} index={i % 2}>
+                  <h3 className="font-display text-m-h4 font-bold text-paper">{item.q}</h3>
+                  <p className="mt-2 max-w-measure text-m-body text-paper/80">{item.a}</p>
+                </Reveal>
+              ))}
             </div>
           </div>
         </div>
-      </div>
+      </section>
 
-      {/* FAQ */}
-      <div className="border-t border-gray-200 bg-white">
-        <div className="container px-4 py-12 md:py-16">
-          <h2 className="text-2xl md:text-3xl font-black text-gray-900 mb-8">Straight answers</h2>
-          <div className="grid gap-5 md:grid-cols-2 max-w-5xl">
-            {FAQ.map((item) => (
-              <div key={item.q} className="rounded-2xl border border-gray-200 p-5">
-                <h3 className="font-bold text-gray-900 mb-2">{item.q}</h3>
-                <p className="text-gray-600 leading-relaxed">{item.a}</p>
-              </div>
-            ))}
+      {/* The page's ONE closing block. The hero carries the red Apply; this is
+          the phone number and the one link out — the second uppercase pill CTA
+          band that used to sit here was the same offer a screen later. */}
+      <section aria-labelledby="lease-on-heading" className="bg-navy-950 py-section-tight text-white">
+        <div className="container">
+          <div className="mx-auto max-w-measure text-center">
+            <h2 id="lease-on-heading" className="font-display text-m-h2 font-bold text-white text-balance">
+              {`Bring your truck. Keep ${OO.commission}.`}
+            </h2>
+            <p className="mt-4 text-m-body text-steel-200">
+              {`${STATS.trucksInFleet} trucks out of ${COMPANY_INFO.location}, family-owned since ${COMPANY_INFO.founded}. Call and ask us anything — including the questions this page didn't answer.`}
+            </p>
+            <p className="mt-8">
+              <a
+                href={`tel:${COMPANY_INFO.phoneFormatted}`}
+                className="inline-flex min-h-[48px] items-center gap-2 text-m-lede font-semibold text-white underline-offset-4 hover:text-signal-up hover:underline"
+              >
+                <span>Call</span>
+                <span className="font-mono tabular-nums">{COMPANY_INFO.phone}</span>
+              </a>
+            </p>
+            <p className="mt-2">
+              <Link
+                href="/drivers"
+                className="inline-flex min-h-[48px] items-center text-m-body font-semibold text-steel-200 underline-offset-4 hover:text-white hover:underline"
+              >
+                Company driver instead? See company driver pay
+              </Link>
+            </p>
           </div>
         </div>
-      </div>
-
-      {/* CTA */}
-      <div className="border-t border-gray-200 bg-navy-950 text-white">
-        <div className="container px-4 py-14 text-center">
-          <h2 className="text-2xl md:text-3xl font-black mb-3">Bring your truck. Keep {OO.commission}.</h2>
-          <p className="text-white/80 max-w-2xl mx-auto mb-7">
-            {STATS.trucksInFleet} trucks out of Kent, Washington, family-owned since {COMPANY_INFO.founded}.
-            Call and ask us anything — including the questions this page didn&apos;t answer.
-          </p>
-          <div className="flex flex-wrap justify-center gap-4">
-            <Link
-              href="/apply"
-              className="rounded-full bg-orange-600 px-7 py-3.5 font-bold uppercase tracking-wide text-white shadow-cta transition-all hover:bg-orange-500"
-            >
-              Start your application
-            </Link>
-            <a
-              href={`tel:${COMPANY_INFO.phoneFormatted}`}
-              className="flex items-center gap-2 rounded-full border border-white/30 px-7 py-3.5 font-semibold text-white transition-colors hover:bg-white/10"
-            >
-              <Phone className="h-4 w-4" aria-hidden /> {COMPANY_INFO.phone}
-            </a>
-          </div>
-          <p className="mt-6 text-sm text-white/60">
-            Company driver instead?{" "}
-            <Link href="/drivers" className="font-medium text-orange-400 hover:underline">
-              See company driver pay
-            </Link>
-          </p>
-        </div>
-      </div>
+      </section>
 
       <RelatedLinks
+        tone="dark"
         title="Run the numbers yourself"
         intro="Nothing on this page is a claim you can't check with a tool on this site."
         links={driverLinks(["/owner-operators"], 9)}

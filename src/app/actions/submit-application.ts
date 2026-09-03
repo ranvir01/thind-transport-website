@@ -33,20 +33,41 @@ export type ApplicationState = {
   errors?: Record<string, string[]>
 }
 
+/**
+ * Wire values → the words a recruiter reads.
+ *
+ * The lane label used to be a two-way ternary (`otr` or "Regional"), so when
+ * the form gained a Local option (apply-progress.ts / ApplicationForm.tsx) a
+ * driver who asked for home-daily work would have been emailed — and filed —
+ * as "Regional". Same trap on driver type: the label said "(Regional)" for
+ * every company driver. Maps, not ternaries, so the next option added to the
+ * form shows up here as a missing key instead of a silently wrong word.
+ */
+const DRIVER_TYPE_LABELS: Record<string, string> = {
+  "owner-operator-otr": "Owner Operator (OTR)",
+  "regional-company-driver": "Company Driver",
+}
+
+const ROUTE_TYPE_LABELS: Record<string, string> = {
+  local: "Local",
+  regional: "Regional",
+  otr: "OTR (Over The Road)",
+}
+
+const AVAILABILITY_LABELS: Record<string, string> = {
+  immediate: "Immediately",
+  "1week": "Within 1 week",
+  "2weeks": "Within 2 weeks",
+  "1month": "Within 1 month",
+}
+
+const labelFor = (map: Record<string, string>, value: string) => map[value] ?? value
+
 // Format application data into HTML email
 const formatApplicationEmail = (data: z.infer<typeof applicationSchema>) => {
-  const driverTypeLabel = data.driverType === "owner-operator-otr" 
-    ? "Owner Operator (OTR)" 
-    : "Company Driver (Regional)"
-
-  const availabilityLabel = {
-    immediate: "Immediately",
-    "1week": "Within 1 week",
-    "2weeks": "Within 2 weeks", 
-    "1month": "Within 1 month",
-  }[data.availability] || data.availability
-
-  const routeTypeLabel = data.routeType === "otr" ? "OTR (Over The Road)" : "Regional"
+  const driverTypeLabel = labelFor(DRIVER_TYPE_LABELS, data.driverType)
+  const availabilityLabel = labelFor(AVAILABILITY_LABELS, data.availability)
+  const routeTypeLabel = labelFor(ROUTE_TYPE_LABELS, data.routeType)
 
   return `
 <!DOCTYPE html>
@@ -205,9 +226,7 @@ const formatApplicationEmail = (data: z.infer<typeof applicationSchema>) => {
 
 // Plain text version for email clients that don't support HTML
 const formatPlainTextEmail = (data: z.infer<typeof applicationSchema>) => {
-  const driverTypeLabel = data.driverType === "owner-operator-otr" 
-    ? "Owner Operator (OTR)" 
-    : "Company Driver (Regional)"
+  const driverTypeLabel = labelFor(DRIVER_TYPE_LABELS, data.driverType)
 
   return `
 NEW DRIVER APPLICATION - THIND TRANSPORT
@@ -232,8 +251,8 @@ ${data.previousEmployer ? `Previous Employer: ${data.previousEmployer}` : ""}
 PREFERENCES
 -----------
 Position Type: ${driverTypeLabel}
-Route Type: ${data.routeType === "otr" ? "OTR" : "Regional"}
-Availability: ${data.availability}
+Route Type: ${labelFor(ROUTE_TYPE_LABELS, data.routeType)}
+Availability: ${labelFor(AVAILABILITY_LABELS, data.availability)}
 
 SAFETY RECORD (Last 3 Years)
 ----------------------------
@@ -325,7 +344,15 @@ export async function submitApplication(prevState: ApplicationState, formData: F
         email: data.email,
         phone: data.phone,
         driverType: data.driverType,
-        data: { ...data, attachmentNames: attachments.map((a) => a.filename) },
+        // Store the resolved labels alongside the wire values so the hub lead
+        // record reads "Local" rather than leaving the reader to decode "local".
+        data: {
+          ...data,
+          driverTypeLabel: labelFor(DRIVER_TYPE_LABELS, data.driverType),
+          routeTypeLabel: labelFor(ROUTE_TYPE_LABELS, data.routeType),
+          availabilityLabel: labelFor(AVAILABILITY_LABELS, data.availability),
+          attachmentNames: attachments.map((a) => a.filename),
+        },
         emailDelivered: false,
       })
       savedRecordId = saved.id

@@ -1,22 +1,20 @@
 import { Metadata } from "next"
 import { ProfitCalculator } from "@/components/features/ProfitCalculator"
-import { PayRateVisualizations } from "@/components/features/PayRateVisualizations"
+import { PayTable } from "@/components/features/PayTable"
 import { JobDetailsDialog } from "@/components/features/JobDetailsDialog"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { 
-  DollarSign, TrendingUp, Calendar, Shield, 
-  Fuel, Home, CheckCircle2, Percent
-} from "lucide-react"
 import { COMPANY_INFO, PAY_RATES } from "@/lib/constants"
 import { PageBreadcrumb } from "@/components/shared/PageBreadcrumb"
-import { PageHero } from "@/components/shared/PageHero"
+import { AsphaltHero } from "@/components/shared/AsphaltHero"
 import { RelatedLinks } from "@/components/shared/RelatedLinks"
 import { driverLinks } from "@/components/shared/link-sets"
+import { Reveal } from "@/components/ui/Reveal"
+
+const OO = PAY_RATES.ownerOperator
+const CD = PAY_RATES.companyDriver
 
 export const metadata: Metadata = {
-  title: `Pay rates — 90% owner-operator split, ${PAY_RATES.companyDriver.regional.perMile}/mile company`,
-  description: `Transparent trucking pay: Owner Operators keep 90% gross (${PAY_RATES.ownerOperator.annualGross}/year). Company Drivers ${PAY_RATES.companyDriver.regional.perMile}/mi (${PAY_RATES.companyDriver.regional.annual}/year). Weekly pay, no hidden fees.`,
+  title: `Pay rates — ${OO.commission} owner-operator split, ${CD.regional.perMile}/mile company`,
+  description: `Transparent trucking pay: Owner Operators keep ${OO.commission} gross (${OO.annualGross}/year). Company Drivers ${CD.regional.perMile}/mi (${CD.regional.annual}/year). Weekly pay, no hidden fees.`,
   keywords: [
     "truck driver pay rates",
     "owner operator commission",
@@ -29,210 +27,89 @@ export const metadata: Metadata = {
     "reefer driver pay",
   ],
   openGraph: {
-    title: `Truck Driver Pay Rates - 90% O/O | ${COMPANY_INFO.name}`,
-    description: `Owner Operators: 90% gross. Company Drivers: ${PAY_RATES.companyDriver.regional.perMile}/mi. No hidden fees. Weekly pay. See exactly what you'll earn.`,
+    title: `Truck Driver Pay Rates - ${OO.commission} O/O | ${COMPANY_INFO.name}`,
+    description: `Owner Operators: ${OO.commission} gross. Company Drivers: ${CD.regional.perMile}/mi. No hidden fees. Weekly pay. See exactly what you'll earn.`,
     url: "https://thindtransport.com/pay-rates",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
     title: `Truck Driver Pay Rates | ${COMPANY_INFO.name}`,
-    description: `90% commission for O/O • ${PAY_RATES.companyDriver.regional.perMile}/mi for company • Weekly pay • No hidden fees`,
+    description: `${OO.commission} commission for O/O • ${CD.regional.perMile}/mi for company • Weekly pay • No hidden fees`,
   },
   alternates: {
     canonical: "https://thindtransport.com/pay-rates",
   },
 }
 
+/**
+ * /pay-rates — the published rate, then the driver's own miles.
+ *
+ * Two instruments, in that order: PayTable is what we pay (static, straight
+ * out of PAY_RATES, readable in a yard on a phone), and ProfitCalculator is
+ * what a given week comes to. The four gradient position cards that used to
+ * sit between them published the same four numbers a third time in blue and
+ * amber, so they are gone; their JobDetailsDialog triggers survive as text
+ * links under the table, which is where a driver asks "what else is in this
+ * seat?". PayRateVisualizations went with them — four bar charts of the same
+ * ranges the table above already prints.
+ */
 export default function PayRatesPage() {
   return (
-    <div className="brand-page-shell min-h-screen">
-      <PageBreadcrumb pageName="Pay Rates" category="Drivers" />
-      
-      {/* Enhanced Hero Section */}
-      <PageHero
-        image="/images/generated/truck-night-highway.webp"
-        imageAlt="Illustration of a tractor-trailer running a night highway lane"
-        eyebrow="What We Actually Pay"
-        title={
-          <>
-            Transparent <span className="text-orange">Pay Rates</span>
-          </>
+    <div className="min-h-screen overflow-x-hidden bg-navy-950">
+      <AsphaltHero
+        breadcrumb={
+          /* The trail lives inside the asphalt band; its own bar chrome
+             (opaque ground, blur, nav-clearance padding, centred row, second
+             gutter) is overridden here rather than stacked above the hero. */
+          <PageBreadcrumb
+            pageName="Pay Rates"
+            category="Drivers"
+            className="!border-b-0 !bg-transparent !pb-0 !pt-4 !backdrop-blur-none [&>div]:px-0 [&_ol]:justify-start"
+          />
         }
-        description="No hidden fees. No surprises. Just straightforward, competitive pay — 90% split for owner-operators, $0.63/mile for company drivers."
-        primaryLabel="See What You'd Earn"
-        primaryHref="#calculator"
+        eyebrow="What we actually pay"
+        title="The published rate, then your own miles."
+        description={`${OO.commission} of the linehaul for owner-operators, ${CD.regional.perMile} a mile for company drivers. No hidden fees, no surprises at the first settlement.`}
+        extraLinks={[{ href: "#calculator", label: "Run your own numbers" }]}
       />
 
-      {/* Position Cards */}
-      <section className="py-16 -mt-8">
+      <section aria-labelledby="pay-by-lane-heading" className="bg-navy-950 py-section">
         <div className="container">
-          <div className="text-center mb-12">
-            <Badge className="mb-4 bg-[#17181B] text-white px-4 py-2 text-xs font-bold">
-              Open Positions
-            </Badge>
-            <h2 className="text-4xl font-black text-gray-900 mb-4">
-              Choose Your Driving Career Path
+          {/* The page's one paper island: dense published data, on paper, the
+              way a rate confirmation reads. The calculator below it is a dark
+              band, so no two paper islands touch. */}
+          <Reveal className="mx-auto max-w-4xl rounded-m-3 border border-ink/15 bg-paper p-6 text-ink md:p-8">
+            <h2
+              id="pay-by-lane-heading"
+              className="font-display text-m-h2 font-bold text-ink text-balance"
+            >
+              Pay by lane
             </h2>
-          </div>
+            <p className="mt-3 max-w-measure text-m-lede text-ink-2">
+              This table is the rate we publish; the calculator below is your miles.
+            </p>
 
-          <div className="grid md:grid-cols-2 gap-8 mb-12">
-            <Card className="hover:shadow-2xl transition-all duration-300 border-2 border-blue-100 group hover:border-blue-200 hover:-translate-y-1" data-light>
-              <CardHeader className="bg-gradient-to-br from-blue-50 via-indigo-50 to-blue-50 py-8 border-b-2 border-blue-100">
-                <CardTitle className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#17181B]/10 to-blue-600/10 flex items-center justify-center border border-blue-100">
-                      <Shield className="h-6 w-6 text-[#17181B]" />
-                    </div>
-                    <span className="text-xl font-black text-gray-900">Company Driver</span>
-                  </div>
-                  <Badge className="bg-[#17181B] text-white px-3 py-1 font-bold">Full-Time</Badge>
-                </CardTitle>
-                <CardDescription className="text-base text-gray-700 font-medium">
-                  $0.63/mile — the same rate local, regional or OTR
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="pt-6">
-                <div className="space-y-4 mb-6">
-                  <div className="flex items-center justify-between p-4 bg-gradient-to-r from-gray-50 to-blue-50 rounded-xl hover:from-blue-50 hover:to-indigo-50 transition-colors group/item">
-                    <div className="flex items-center gap-3">
-                      <DollarSign className="h-5 w-5 text-[#17181B]" />
-                      <span className="text-sm font-medium text-gray-700">Annual Salary</span>
-                    </div>
-                    <span className="font-black text-xl text-gray-900">{PAY_RATES.companyDriver.regional.annual}</span>
-                  </div>
-                  <div className="flex items-center justify-between p-4 bg-gradient-to-r from-gray-50 to-blue-50 rounded-xl hover:from-blue-50 hover:to-indigo-50 transition-colors group/item">
-                    <div className="flex items-center gap-3">
-                      <DollarSign className="h-5 w-5 text-[#17181B]" />
-                      <span className="text-sm font-medium text-gray-700">Per Mile</span>
-                    </div>
-                    <span className="font-black text-xl text-gray-900">{PAY_RATES.companyDriver.regional.perMile}</span>
-                  </div>
-                  <div className="flex items-center justify-between p-4 bg-gradient-to-r from-gray-50 to-blue-50 rounded-xl hover:from-blue-50 hover:to-indigo-50 transition-colors group/item">
-                    <div className="flex items-center gap-3">
-                      <Home className="h-5 w-5 text-[#17181B]" />
-                      <span className="text-sm font-medium text-gray-700">Home Time</span>
-                    </div>
-                    <span className="font-black text-xl text-gray-900">Flexible</span>
-                  </div>
-                  <div className="flex items-center justify-between p-4 bg-gradient-to-r from-gray-50 to-blue-50 rounded-xl hover:from-blue-50 hover:to-indigo-50 transition-colors group/item">
-                    <div className="flex items-center gap-3">
-                      <Calendar className="h-5 w-5 text-[#17181B]" />
-                      <span className="text-sm font-medium text-gray-700">Start Date</span>
-                    </div>
-                    <span className="font-black text-xl text-orange-400">Immediate</span>
-                  </div>
-                </div>
-
-                <div className="space-y-2 mb-6">
-                  <div className="flex items-center gap-2 text-sm">
-                    <CheckCircle2 className="h-4 w-4 text-green-600" />
-                    <span className="text-gray-800 font-medium">{PAY_RATES.companyDriver.signOnBonus}</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-sm">
-                    <CheckCircle2 className="h-4 w-4 text-green-600" />
-                    <span className="text-gray-800 font-medium">Weekly direct deposit - Every Friday</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-sm">
-                    <CheckCircle2 className="h-4 w-4 text-green-600" />
-                    <span className="text-gray-800 font-medium">Performance and referral bonuses</span>
-                  </div>
-                </div>
-
-                <JobDetailsDialog jobType="company" />
-              </CardContent>
-            </Card>
-
-            <Card className="hover:shadow-2xl transition-all duration-300 border-2 border-orange-100 group hover:border-orange-200 hover:-translate-y-1" data-light>
-              <CardHeader className="bg-gradient-to-br from-orange-50 via-amber-50 to-orange-50 py-8 border-b-2 border-orange-100">
-                <CardTitle className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500/10 to-amber-600/10 flex items-center justify-center border border-orange-100">
-                      <TrendingUp className="h-6 w-6 text-orange-600" />
-                    </div>
-                    <span className="text-xl font-black text-gray-900">Owner Operator</span>
-                  </div>
-                  <Badge className="bg-[#17181B] text-white px-3 py-1 font-bold">Independent</Badge>
-                </CardTitle>
-                <CardDescription className="text-base text-gray-700 font-medium">
-                  Highest earning potential with 90% commission
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="pt-6">
-                <div className="space-y-4 mb-6">
-                  <div className="flex items-center justify-between p-4 bg-gradient-to-r from-gray-50 to-orange-50 rounded-xl hover:from-orange-50 hover:to-amber-50 transition-colors group/item">
-                    <div className="flex items-center gap-3">
-                      <Percent className="h-5 w-5 text-orange-600" />
-                      <span className="text-sm font-medium text-gray-700">Commission</span>
-                    </div>
-                    <span className="font-black text-xl text-orange-700">{PAY_RATES.ownerOperator.commission}</span>
-                  </div>
-                  <div className="flex items-center justify-between p-4 bg-gradient-to-r from-gray-50 to-orange-50 rounded-xl hover:from-orange-50 hover:to-amber-50 transition-colors group/item">
-                    <div className="flex items-center gap-3">
-                      <DollarSign className="h-5 w-5 text-orange-600" />
-                      <span className="text-sm font-medium text-gray-700">Annual Potential</span>
-                    </div>
-                    <span className="font-black text-xl text-gray-900">{PAY_RATES.ownerOperator.annualGross}</span>
-                  </div>
-                  <div className="flex items-center justify-between p-4 bg-gradient-to-r from-gray-50 to-orange-50 rounded-xl hover:from-orange-50 hover:to-amber-50 transition-colors group/item">
-                    <div className="flex items-center gap-3">
-                      <DollarSign className="h-5 w-5 text-orange-600" />
-                      <span className="text-sm font-medium text-gray-700">Per Mile</span>
-                    </div>
-                    <span className="font-black text-xl text-gray-900">{PAY_RATES.ownerOperator.perMile}</span>
-                  </div>
-                  <div className="flex items-center justify-between p-4 bg-gradient-to-r from-gray-50 to-orange-50 rounded-xl hover:from-orange-50 hover:to-amber-50 transition-colors group/item">
-                    <div className="flex items-center gap-3">
-                      <Fuel className="h-5 w-5 text-orange-600" />
-                      <span className="text-sm font-medium text-gray-700">Fuel Surcharge</span>
-                    </div>
-                    <span className="font-black text-xl text-orange-700">{PAY_RATES.ownerOperator.fuelSurcharge}</span>
-                  </div>
-                </div>
-
-                <div className="space-y-2 mb-6">
-                  <div className="flex items-center gap-2 text-sm">
-                    <CheckCircle2 className="h-4 w-4 text-green-600" />
-                    <span className="text-gray-800 font-medium">Sign-on bonus: {PAY_RATES.ownerOperator.signOnBonus}</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-sm">
-                    <CheckCircle2 className="h-4 w-4 text-green-600" />
-                    <span className="text-gray-800 font-medium">No forced dispatch - choose your loads</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-sm">
-                    <CheckCircle2 className="h-4 w-4 text-green-600" />
-                    <span className="text-gray-800 font-medium">Weekly settlements - Every Friday</span>
-                  </div>
-                </div>
-
-                <JobDetailsDialog jobType="owner" />
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* One instrument site-wide: the same calculator the homepage and
-              /drivers render, reading the same constants. */}
-          <section id="calculator" className="mt-16 scroll-mt-20">
-            <ProfitCalculator />
-          </section>
-
-          {/* Pay Rate Visualizations */}
-          <section className="mb-16">
-            <div className="text-center mb-8">
-              <Badge className="mb-4 bg-[#17181B] text-white px-4 py-2 text-xs font-bold">
-                Visual Analytics
-              </Badge>
-              <h2 className="text-4xl font-black text-gray-900 mb-4">
-                See Your Earning Potential
-              </h2>
-              <p className="text-lg text-gray-700 max-w-2xl mx-auto font-medium">
-                Interactive charts and real-time calculations showing exactly what you can earn
-              </p>
+            <div className="mt-8">
+              <PayTable />
             </div>
-            <PayRateVisualizations />
-          </section>
+
+            {/* Everything else in each seat — requirements, benefits, route
+                options — behind the two dialogs, not a second card grid. */}
+            <div className="mx-auto mt-8 flex max-w-3xl flex-wrap items-center gap-x-8 gap-y-1 border-t border-ink/15 pt-4 text-ink">
+              <JobDetailsDialog jobType="company" />
+              <JobDetailsDialog jobType="owner" />
+            </div>
+          </Reveal>
         </div>
       </section>
+
+      {/* One instrument site-wide: the same calculator the homepage and
+          /drivers render, reading the same constants. It brings its own dark
+          band, heading and apply block, so this page adds neither. */}
+      <div id="calculator" className="scroll-mt-24">
+        <ProfitCalculator />
+      </div>
 
       <RelatedLinks
         tone="dark"

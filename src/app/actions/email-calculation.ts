@@ -1,7 +1,7 @@
 "use server"
 
 import { z } from "zod"
-import { COMPANY_INFO } from "@/lib/constants"
+import { COMPANY_INFO, PAY_RATES } from "@/lib/constants"
 import { createMailTransport, isEmailConfigured, mailFrom } from "@/lib/mailer"
 
 const calculationSchema = z.object({
@@ -43,15 +43,28 @@ export async function emailCalculation(input: z.infer<typeof calculationSchema>)
   try {
     const transporter = createMailTransport()
 
+    /**
+     * `weeklyDifference` is measured against the split the visitor typed into
+     * the calculator, not against an industry average — so the email names it
+     * that way, and reads the sign the same way the page does (the value is
+     * negative when their current split already pays more). Asserting what a
+     * "typical" carrier pays would be a claim about someone else's business
+     * that nothing on this site can back up.
+     */
+    const difference =
+      Math.abs(data.weeklyDifference) < 1
+        ? "about the same each week"
+        : `${formatUsd(Math.abs(data.weeklyDifference))}/week ${data.weeklyDifference >= 0 ? "more" : "less"}`
+
     const summaryLines = [
       `Equipment: ${data.equipment}`,
       `Miles per week: ${data.miles.toLocaleString()}`,
       `Linehaul rate: $${data.lineHaulRate.toFixed(2)}/mi`,
       `Diesel price: $${data.fuelPrice.toFixed(2)}/gal`,
       ``,
-      `Estimated weekly gross (90% split + 100% fuel surcharge): ${formatUsd(data.weeklyGross)}`,
+      `Estimated weekly gross (${PAY_RATES.ownerOperator.commission} split + ${PAY_RATES.ownerOperator.fuelSurcharge} fuel surcharge): ${formatUsd(data.weeklyGross)}`,
       `Estimated weekly net after expenses: ${formatUsd(data.weeklyNet)}`,
-      `Estimated extra vs. a typical 72% split: ${formatUsd(data.weeklyDifference)}/week`,
+      `Estimated difference vs. your current split: ${difference}`,
       `Estimated annual net (48 weeks): ${formatUsd(data.annualNet)}`,
     ]
 
@@ -70,7 +83,7 @@ export async function emailCalculation(input: z.infer<typeof calculationSchema>)
         `Questions? Call ${COMPANY_INFO.phone} or reply to this email.`,
         `Apply any time: https://thindtransport.com/apply`,
         ``,
-        `— The ${COMPANY_INFO.name} team, Kent, WA`,
+        `— The ${COMPANY_INFO.name} team, ${COMPANY_INFO.location}`,
       ].join("\n"),
     })
 

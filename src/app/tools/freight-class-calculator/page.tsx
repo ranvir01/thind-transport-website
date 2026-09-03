@@ -1,16 +1,46 @@
 import { Metadata } from "next"
 import Link from "next/link"
-import { Phone, Scale, ShieldCheck, Truck } from "lucide-react"
+import { Scale, ShieldCheck, Truck } from "lucide-react"
 import { COMPANY_INFO, STATS } from "@/lib/constants"
 import { PageBreadcrumb } from "@/components/shared/PageBreadcrumb"
+import { AsphaltHero } from "@/components/shared/AsphaltHero"
 import { FreightClassCalculator } from "@/components/features/FreightClassCalculator"
+import { Reveal } from "@/components/ui/Reveal"
 
 export const metadata: Metadata = {
   title: "Freight Class Calculator | NMFC Density Classes 50–500",
   description:
-    "Free LTL freight class calculator. Enter pallet dimensions and weight to get density in lb/ft³ and the NMFC density class, from class 50 to class 500 — plus how many pounds would move you to a cheaper class. Built by Thind Transport, an asset-based carrier in Kent, WA.",
+    `Free LTL freight class calculator. Enter pallet dimensions and weight to get density in lb/ft³ and the NMFC density class, from class 50 to class 500 — plus how many pounds would move you to a cheaper class. Built by Thind Transport, an asset-based carrier in ${COMPANY_INFO.location}.`,
   alternates: { canonical: "/tools/freight-class-calculator" },
 }
+
+/**
+ * The freight-class tool page.
+ *
+ * The tool is the page, so the hero states what it returns and then gets out
+ * of the way: no Apply on a shipper's tool page, and the one filled red in the
+ * band is the phone — a shipper stuck on a re-class wants a person, not a
+ * form. The calculator itself is the one paper island; everything around it is
+ * dark ground.
+ */
+
+const WHY = [
+  {
+    icon: Scale,
+    title: "Density does most of the work",
+    text: "Length × width × height ÷ 1,728 gives cubic feet. Weight ÷ cubic feet gives density. That number picks your class off the NMFTA table.",
+  },
+  {
+    icon: ShieldCheck,
+    title: "Getting it wrong costs real money",
+    text: "Carriers reweigh and remeasure at the terminal. An understated class comes back as a re-class plus an inspection fee, usually weeks later.",
+  },
+  {
+    icon: Truck,
+    title: "Sometimes truckload is cheaper",
+    text: "Multiple pallets of light, bulky freight can price out worse on LTL than a partial or full truckload. Worth a quote either way.",
+  },
+] as const
 
 const FAQ = [
   {
@@ -47,107 +77,116 @@ export default function FreightClassCalculatorPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-50">
+    <div className="brand-page-shell overflow-x-hidden">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
       />
-      <PageBreadcrumb pageName="Freight Class Calculator" category="Company" />
 
-      {/* Hero */}
-      <div className="bg-navy-950 text-white">
-        <div className="container px-4 py-14 md:py-20">
-          <div className="max-w-3xl">
-            <span className="fleet-badge fleet-badge-gold mb-5">Free tool · No signup</span>
-            <h1 className="text-4xl md:text-5xl font-black leading-tight mb-4">
-              Freight class calculator
-            </h1>
-            <p className="text-lg text-white/85 leading-relaxed">
-              Enter your pallet dimensions and weight. You get the density in pounds per cubic foot, the
-              NMFC density class, and how many pounds it would take to reach the next class down.
+      <AsphaltHero
+        breadcrumb={
+          <PageBreadcrumb
+            pageName="Freight Class Calculator"
+            category="Company"
+            className="!border-b-0 !bg-transparent !pb-0 !pt-4 !backdrop-blur-none [&>div]:px-0 [&_ol]:justify-start"
+          />
+        }
+        eyebrow="Free tool · No signup"
+        title="Freight class calculator"
+        description="Enter your pallet dimensions and weight. You get the density in pounds per cubic foot, the NMFC density class, and how many pounds it would take to reach the next class down."
+        primary="call"
+        omitApply
+        extraLinks={[{ href: "#calculator", label: "Jump to the calculator" }]}
+      />
+
+      <section id="calculator" aria-labelledby="calculator-heading" className="scroll-mt-24 py-section">
+        <div className="container">
+          <Reveal className="mx-auto max-w-measure text-center">
+            <h2
+              id="calculator-heading"
+              className="font-display text-m-h2 font-bold text-balance text-white"
+            >
+              Work out the class
+            </h2>
+          </Reveal>
+          <div className="mx-auto mt-8 max-w-5xl">
+            <FreightClassCalculator />
+          </div>
+        </div>
+      </section>
+
+      <section aria-labelledby="why-heading" className="brand-section-panel py-section">
+        <div className="container">
+          <Reveal className="mx-auto max-w-measure text-center">
+            <h2 id="why-heading" className="font-display text-m-h2 font-bold text-balance text-white">
+              Why the class matters
+            </h2>
+          </Reveal>
+          <ul className="mx-auto mt-8 grid max-w-5xl list-none gap-4 md:grid-cols-3">
+            {WHY.map(({ icon: Icon, title, text }, i) => (
+              <Reveal as="li" key={title} index={Math.min(i, 4)}>
+                <div className="h-full rounded-m-3 border border-white/10 bg-white/5 p-5">
+                  <Icon className="h-5 w-5 text-orange-300" aria-hidden />
+                  <h3 className="mt-3 font-display text-m-h4 font-bold text-white">{title}</h3>
+                  <p className="mt-2 max-w-measure text-m-body text-steel-300">{text}</p>
+                </div>
+              </Reveal>
+            ))}
+          </ul>
+        </div>
+      </section>
+
+      <section aria-labelledby="faq-heading" className="py-section">
+        <div className="container">
+          <Reveal className="mx-auto max-w-measure text-center">
+            <h2 id="faq-heading" className="font-display text-m-h2 font-bold text-balance text-white">
+              Freight class, answered
+            </h2>
+          </Reveal>
+          <ul className="mx-auto mt-8 grid max-w-5xl list-none gap-4 md:grid-cols-2">
+            {FAQ.map((item, i) => (
+              <Reveal as="li" key={item.q} index={Math.min(i, 4)}>
+                <div className="h-full rounded-m-3 border border-white/10 bg-white/5 p-5">
+                  <h3 className="font-display text-m-h4 font-bold text-white">{item.q}</h3>
+                  <p className="mt-2 max-w-measure text-m-body text-steel-300">{item.a}</p>
+                </div>
+              </Reveal>
+            ))}
+          </ul>
+        </div>
+      </section>
+
+      {/* The page's ONE closing block. */}
+      <section aria-labelledby="tool-cta-heading" className="bg-navy-950 py-section-tight">
+        <div className="container">
+          <div className="mx-auto max-w-measure text-center">
+            <h2
+              id="tool-cta-heading"
+              className="font-display text-m-h3 font-bold text-balance text-white"
+            >
+              Got the class. Need the truck?
+            </h2>
+            <p className="mt-3 text-m-body text-steel-300">
+              {`Thind Transport runs ${STATS.trucksInFleet} trucks — flatbed, reefer, and dry van — across all ${STATS.statesCovered} states out of ${COMPANY_INFO.location}. Live tracking links, POD the moment it's signed, and a dispatch desk that picks up.`}
             </p>
+            <div className="mt-6 flex flex-wrap items-center justify-center gap-4">
+              <Link
+                href="/shippers#quote"
+                className="inline-flex min-h-[48px] items-center gap-2 rounded-fleet bg-orange-600 px-7 text-m-body font-semibold text-white transition-colors duration-base ease-entrance hover:bg-orange-700 hover:text-white"
+              >
+                Get a quote
+              </Link>
+              <a
+                href={`tel:${COMPANY_INFO.phoneFormatted}`}
+                className="inline-flex min-h-[48px] items-center gap-2 text-m-body font-semibold text-white underline-offset-4 hover:text-orange-300 hover:underline"
+              >
+                <span>or call</span>
+                <span className="font-mono tabular-nums">{COMPANY_INFO.phone}</span>
+              </a>
+            </div>
           </div>
         </div>
-      </div>
-
-      {/* Calculator */}
-      <div className="container px-4 py-10 md:py-14">
-        <FreightClassCalculator />
-      </div>
-
-      {/* Why it matters */}
-      <div className="border-t border-gray-200 bg-white">
-        <div className="container px-4 py-12 md:py-16">
-          <div className="grid gap-6 md:grid-cols-3">
-            {[
-              {
-                icon: Scale,
-                title: "Density does most of the work",
-                text: "Length × width × height ÷ 1,728 gives cubic feet. Weight ÷ cubic feet gives density. That number picks your class off the NMFTA table.",
-              },
-              {
-                icon: ShieldCheck,
-                title: "Getting it wrong costs real money",
-                text: "Carriers reweigh and remeasure at the terminal. An understated class comes back as a re-class plus an inspection fee, usually weeks later.",
-              },
-              {
-                icon: Truck,
-                title: "Sometimes truckload is cheaper",
-                text: "Multiple pallets of light, bulky freight can price out worse on LTL than a partial or full truckload. Worth a quote either way.",
-              },
-            ].map(({ icon: Icon, title, text }) => (
-              <div key={title} className="rounded-2xl border border-gray-200 p-5">
-                <Icon className="h-6 w-6 text-orange-600 mb-3" aria-hidden />
-                <h3 className="font-bold text-gray-900 mb-1.5">{title}</h3>
-                <p className="text-gray-600 text-sm leading-relaxed">{text}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* FAQ */}
-      <div className="border-t border-gray-200">
-        <div className="container px-4 py-12 md:py-16">
-          <h2 className="text-2xl md:text-3xl font-black text-gray-900 mb-8">
-            Freight class, answered
-          </h2>
-          <div className="grid gap-5 md:grid-cols-2 max-w-5xl">
-            {FAQ.map((item) => (
-              <div key={item.q} className="rounded-2xl border border-gray-200 bg-white p-5">
-                <h3 className="font-bold text-gray-900 mb-2">{item.q}</h3>
-                <p className="text-gray-600 leading-relaxed">{item.a}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* CTA */}
-      <div className="border-t border-gray-200 bg-navy-950 text-white">
-        <div className="container px-4 py-14 text-center">
-          <h2 className="text-2xl md:text-3xl font-black mb-3">Got the class. Need the truck?</h2>
-          <p className="text-white/80 max-w-2xl mx-auto mb-7">
-            Thind Transport runs {STATS.trucksInFleet} trucks — flatbed, reefer, and dry van — across all{" "}
-            {STATS.statesCovered} states out of Kent, Washington. Live tracking links, POD the moment
-            it&apos;s signed, and a dispatch desk that picks up.
-          </p>
-          <div className="flex flex-wrap justify-center gap-4">
-            <Link
-              href="/shippers#quote"
-              className="rounded-full bg-orange-600 px-7 py-3.5 font-bold uppercase tracking-wide text-white shadow-cta transition-all hover:bg-orange-500"
-            >
-              Get a quote
-            </Link>
-            <a
-              href={`tel:${COMPANY_INFO.phoneFormatted}`}
-              className="flex items-center gap-2 rounded-full border border-white/30 px-7 py-3.5 font-semibold text-white transition-colors hover:bg-white/10"
-            >
-              <Phone className="h-4 w-4" aria-hidden /> {COMPANY_INFO.phone}
-            </a>
-          </div>
-        </div>
-      </div>
+      </section>
     </div>
   )
 }

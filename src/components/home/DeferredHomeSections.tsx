@@ -21,8 +21,16 @@ const ApplicationFormInner = dynamic(
 )
 
 export function DeferredProfitCalculator() {
+  // 1336px is the calculator's rendered height at 390px after the instrument
+  // re-skin (it was 2,663px): py-section 128 + the two .brand-section-panel
+  // hairlines 2 + heading block 128 + mt-8 32 + inputs 429 + statement 583 +
+  // the frame's own two hairlines 2 — which came to 1,280 while inputs and
+  // statement shared one bordered frame. Splitting them into two panels adds
+  // +17 (two more hairlines and the 16px gap that replaced the shared rule),
+  // the statement's paper-island padding adds +16 (p-4 → p-6), and the hedged
+  // methodology sentence wraps to one more 12.8px line, +20.
   return (
-    <LazyMount minHeight={1100} id="calculator" className="scroll-mt-20">
+    <LazyMount minHeight={1336} id="calculator" className="scroll-mt-20">
       <ProfitCalculatorInner />
     </LazyMount>
   )

@@ -6,13 +6,14 @@
  * Usage: node scripts/e2e-office-smoke.mjs [outputDir]
  */
 import { mkdirSync } from "node:fs"
-import { launchBrowser, BASE, clickByText, waitForText, textGone, login, makeShot } from "./e2e-lib.mjs"
+import { launchBrowser, BASE, clickByText, waitForText, textGone, login, makeShot, reseed } from "./e2e-lib.mjs"
 
 const OUT = process.argv[2] ?? "e2e-shots-office"
 mkdirSync(OUT, { recursive: true })
 const shot = makeShot(OUT)
 
 async function main() {
+  reseed()
   const browser = await launchBrowser()
 
   // ---- Office side (desktop) ----
@@ -65,13 +66,26 @@ async function main() {
     .catch(() => { throw new Error("task composer did not clear after create") })
   await shot(office, "03-task-created")
   // Complete OUR task specifically (automation tasks may sit above it).
-  await office.evaluate(() => {
-    const button = [...document.querySelectorAll('button[aria-label="Mark done"]')].find((b) =>
-      b.closest("div.rounded-card, div.rounded-xl")?.textContent?.includes("Morning ops huddle checklist")
+  // The refresh after create can still be swapping the card; a one-shot
+  // evaluate click on a missing/disabled button is a silent no-op, which
+  // is how CI timed out waiting for the recur toast.
+  const marked = await office
+    .waitForFunction(
+      () => {
+        const button = [...document.querySelectorAll('button[aria-label="Mark done"]')].find((b) => {
+          if (b.disabled) return false
+          return b.closest("div.rounded-card, div.rounded-xl")?.textContent?.includes("Morning ops huddle checklist")
+        })
+        if (!button) return false
+        button.click()
+        return true
+      },
+      { timeout: 20000 }
     )
-    button?.click()
-  })
-  await waitForText(office, "next one is already on the list")
+    .then(() => true)
+    .catch(() => false)
+  if (!marked) throw new Error("Mark done on Morning ops huddle checklist never became clickable")
+  await waitForText(office, "next one is already on the list", 20000)
   // Recurrence rolls a fresh task forward under the same title while the
   // completed one drops into "Recently done" — wait for both to render
   // instead of sleeping through the refresh (same check as e2e-tasks-smoke.mjs).

@@ -1,8 +1,9 @@
 import { Metadata } from "next"
 import Link from "next/link"
-import { CloudOff, Camera, Wallet, Bell, MessageSquare, ArrowRight } from "lucide-react"
+import { CloudOff, Camera, Wallet, Bell, MessageSquare } from "lucide-react"
 import { COMPANY_INFO } from "@/lib/constants"
 import { PageBreadcrumb } from "@/components/shared/PageBreadcrumb"
+import { AsphaltHero } from "@/components/shared/AsphaltHero"
 import { GetTheApp } from "@/components/features/GetTheApp"
 import { APP_ICONS } from "@/lib/site-icons"
 import { Reveal } from "@/components/ui/Reveal"
@@ -42,6 +43,11 @@ export const metadata: Metadata = {
  * updates arrive without anyone tapping "update". Drivers don't care what a PWA
  * is, so the page never says the word — it says "no app store" and shows the
  * two taps.
+ *
+ * It sits on the navy shell behind the shared <AsphaltHero> rather than on its
+ * own paper ground with a hand-rolled asphalt band on top. <GetTheApp> is the
+ * one paper island, and the one red on its screen is that island's button —
+ * the hero's red is the anchor that scrolls to it.
  */
 
 const FEATURES = [
@@ -74,88 +80,85 @@ const FEATURES = [
 
 export default function GetAppPage() {
   return (
-    <div className="bg-paper">
+    <div className="brand-page-shell overflow-x-hidden">
       {/* Next emits only the standardised `mobile-web-app-capable` from
           appleWebApp.capable; iOS keys standalone launch off the apple-prefixed
           name. React hoists this into <head>. */}
       <meta name="apple-mobile-web-app-capable" content="yes" />
-      <PageBreadcrumb pageName="Driver app" category="Drivers" />
 
-      <section className="bg-asphalt py-16 text-paper md:py-24">
-        <div className="container px-4">
-          <div className="grid items-start gap-10 lg:grid-cols-[7fr_5fr] lg:gap-16">
-            <Reveal>
-              <p className="font-display text-m-micro font-bold uppercase tracking-[0.2em] text-signal-up">
-                For our drivers
-              </p>
-              <h1 className="mt-4 font-display text-m-h1 font-bold">
-                Two taps and it&apos;s on your phone. No app store.
-              </h1>
-              <p className="mt-5 max-w-measure text-m-lede text-paper/80">
-                No account to create, no download to sit through on truck-stop wifi. Two taps and
-                it&apos;s on your home screen — and it keeps working when the bars run out.
-              </p>
-              <p className="mt-4 max-w-measure text-m-body text-paper/60">
-                Already drive for us? Add it now. Not with us yet?{" "}
-                <Link
-                  href="/apply"
-                  className="font-semibold text-signal-up underline-offset-4 hover:underline"
-                >
-                  Apply first
-                </Link>{" "}
-                — you&apos;ll get a login once you&apos;re on with us.
-              </p>
-            </Reveal>
+      <AsphaltHero
+        breadcrumb={
+          <PageBreadcrumb
+            pageName="Driver app"
+            category="Drivers"
+            className="!border-b-0 !bg-transparent !pb-0 !pt-4 !backdrop-blur-none [&>div]:px-0 [&_ol]:justify-start"
+          />
+        }
+        eyebrow="For our drivers"
+        title="Two taps and it's on your phone. No app store."
+        description="No account to create, no download to sit through on truck-stop wifi. Two taps and it's on your home screen — and it keeps working when the bars run out."
+        applyHref="#install"
+        applyLabel="Add it to your phone"
+      />
 
-            <Reveal index={1} className="rounded-m-4 bg-paper p-6 shadow-m-e4 md:p-8">
-              <h2 className="font-display text-m-h4 font-bold text-ink">Add it to your phone</h2>
-              <p className="mt-1.5 text-m-body text-ink-2">
+      <section id="install" aria-labelledby="install-heading" className="scroll-mt-24 py-section">
+        <div className="container">
+          <div className="mx-auto max-w-3xl">
+            <Reveal className="text-center">
+              <h2
+                id="install-heading"
+                className="font-display text-m-h2 font-bold text-balance text-white"
+              >
+                Add it to your phone
+              </h2>
+              <p className="mt-3 text-m-body text-steel-300">
                 We&apos;ll show the steps for the phone you&apos;re holding.
               </p>
-              <div className="mt-5">
-                <GetTheApp />
-              </div>
+              <p className="mt-3 text-m-body text-steel-300">
+                <span>Already drive for us? Add it now. Not with us yet? </span>
+                <Link
+                  href="/apply"
+                  className="font-semibold text-white underline-offset-4 hover:underline"
+                >
+                  Apply first
+                </Link>
+                <span> — you&apos;ll get a login once you&apos;re on with us.</span>
+              </p>
             </Reveal>
+
+            <div className="mt-8">
+              <GetTheApp />
+            </div>
           </div>
         </div>
       </section>
 
-      <section className="py-16 md:py-24">
-        <div className="container px-4">
+      <section aria-labelledby="features-heading" className="brand-section-panel py-section">
+        <div className="container">
           <Reveal className="mx-auto max-w-measure text-center">
-            <h2 className="font-display text-m-h2 font-bold text-ink">What it does</h2>
-            <p className="mt-3 text-m-body text-ink-2">
+            <h2
+              id="features-heading"
+              className="font-display text-m-h2 font-bold text-balance text-white"
+            >
+              What it does
+            </h2>
+            <p className="mt-3 text-m-body text-steel-300">
               Built for the cab, not for a desk. Big targets, dark screen at night, and it assumes
               you&apos;re holding it one-handed.
             </p>
           </Reveal>
 
-          <ul className="mx-auto mt-10 grid max-w-4xl list-none gap-x-10 gap-y-8 md:grid-cols-2">
+          <ul className="mx-auto mt-8 grid max-w-5xl list-none gap-4 md:grid-cols-2">
             {FEATURES.map((f, i) => (
               <Reveal as="li" key={f.title} index={Math.min(i, 4)}>
-                <f.icon className="h-5 w-5 text-signal" aria-hidden />
-                <h3 className="mt-3 font-display text-m-h4 font-bold text-ink">{f.title}</h3>
-                <p className="mt-2 max-w-measure text-m-body text-ink-2">{f.body}</p>
+                <div className="h-full rounded-m-3 border border-white/10 bg-white/5 p-5">
+                  <f.icon className="h-5 w-5 text-orange-300" aria-hidden />
+                  <h3 className="mt-3 font-display text-m-h4 font-bold text-white">{f.title}</h3>
+                  <p className="mt-2 max-w-measure text-m-body text-steel-300">{f.body}</p>
+                </div>
               </Reveal>
             ))}
           </ul>
-        </div>
-      </section>
-
-      <section className="border-t border-ink/10 py-12">
-        <div className="container px-4">
-          <Reveal className="mx-auto flex max-w-3xl flex-wrap items-center justify-between gap-4">
-            <p className="max-w-measure text-m-body text-ink-2">
-              Trouble installing it? Call the office and we&apos;ll walk you through it — it takes
-              a couple of screens.
-            </p>
-            <a
-              href={`tel:${COMPANY_INFO.phoneFormatted}`}
-              className="inline-flex min-h-[44px] items-center gap-2 font-display text-m-body font-bold uppercase tracking-wide text-signal underline-offset-4 transition-colors duration-base ease-entrance hover:text-ink hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-signal focus-visible:ring-offset-2 focus-visible:ring-offset-paper"
-            >
-              {COMPANY_INFO.phone} <ArrowRight className="h-4 w-4" />
-            </a>
-          </Reveal>
         </div>
       </section>
 
@@ -163,7 +166,32 @@ export default function GetAppPage() {
         title="Keep going"
         intro="The rest of what the site does for you."
         links={driverLinks(["/app"])}
+        tone="dark"
       />
+
+      {/* The page's ONE closing block: no second install button, just the desk. */}
+      <section aria-labelledby="app-help-heading" className="bg-navy-950 py-section-tight">
+        <div className="container">
+          <div className="mx-auto max-w-measure text-center">
+            <h2
+              id="app-help-heading"
+              className="font-display text-m-h3 font-bold text-balance text-white"
+            >
+              Stuck on the install?
+            </h2>
+            <p className="mt-3 text-m-body text-steel-300">
+              Call the office and we&apos;ll walk you through it — it takes a couple of screens.
+            </p>
+            <a
+              href={`tel:${COMPANY_INFO.phoneFormatted}`}
+              className="mt-6 inline-flex min-h-[48px] items-center gap-2 text-m-body font-semibold text-white underline-offset-4 hover:text-orange-300 hover:underline"
+            >
+              <span>Call</span>
+              <span className="font-mono tabular-nums">{COMPANY_INFO.phone}</span>
+            </a>
+          </div>
+        </div>
+      </section>
     </div>
   )
 }

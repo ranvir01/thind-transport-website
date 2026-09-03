@@ -1,23 +1,24 @@
 import { Metadata } from "next"
-import Image from "next/image"
 import Link from "next/link"
 import {
-  DollarSign, Shield, Truck, Calendar, Phone,
-  CheckCircle2, Star, Award, TrendingUp,
-  Calculator, Fuel, MapPin, Smartphone, BadgeCheck, ClipboardCheck,
+  ArrowRight, DollarSign, Shield, Truck, Calendar, CheckCircle2,
+  Calculator, Fuel, MapPin, Smartphone, BadgeCheck,
+  type LucideIcon,
 } from "lucide-react"
-import { Card } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { COMPANY_INFO, EQUIPMENT, PAY_RATES, SUPPORT } from "@/lib/constants"
+import { BENEFITS, COMPANY_INFO, EQUIPMENT, PAY_RATES, SUPPORT } from "@/lib/constants"
 import { PageBreadcrumb } from "@/components/shared/PageBreadcrumb"
-import { PageHero } from "@/components/shared/PageHero"
+import { AsphaltHero } from "@/components/shared/AsphaltHero"
 import { Reveal } from "@/components/ui/Reveal"
-import { CountUp } from "@/components/shared/CountUp"
 import { RelatedLinks } from "@/components/shared/RelatedLinks"
+
+const OO = PAY_RATES.ownerOperator
+const CD = PAY_RATES.companyDriver
+/** "$1,000 (First Year)" -> "$1,000" — the amount without its qualifier. */
+const CD_SIGN_ON = CD.signOnBonus.split(" ")[0]
 
 export const metadata: Metadata = {
   title: "Driver benefits — and what we don't offer",
-  description: "What Thind Transport actually offers CDL drivers: $0.63/mile, weekly direct deposit, a $1,000 first-year sign-on bonus, referral and performance bonuses, home time you pick, and late-model equipment. Plus a straight answer on what we don't offer yet.",
+  description: `What Thind Transport actually offers CDL drivers: ${CD.otr.perMile}/mile, weekly direct deposit, a ${CD_SIGN_ON} first-year sign-on bonus, referral and performance bonuses, home time you pick, and late-model equipment. Plus a straight answer on what we don't offer yet.`,
   keywords: [
     "truck driver benefits",
     "driver sign on bonus",
@@ -32,179 +33,44 @@ export const metadata: Metadata = {
 }
 
 /**
- * Only what we actually provide today.
+ * Only what we actually provide today — and now read straight out of
+ * `BENEFITS` in src/lib/constants.ts rather than retyped here.
  *
  * Health/dental/vision, life, disability and the 401(k) came off this page in
  * July 2026 — we do not carry those plans, and a benefit a driver first hears
  * is missing at orientation costs more than it ever won at the top of the
  * funnel. `NOT_YET` below states that outright instead of leaving a gap. If we
- * ever add a plan, it goes in `BENEFITS` in src/lib/constants.ts first.
+ * ever add a plan, it goes in `BENEFITS` first and appears here on its own.
  */
-const companyDriverBenefits = [
-  {
-    category: "Compensation",
-    icon: DollarSign,
-    color: "green",
-    items: [
-      {
-        title: `${PAY_RATES.companyDriver.otr.perMile} per mile`,
-        description: "Same rate local, regional or OTR",
-        highlight: true,
-      },
-      {
-        title: "Sign-On Bonus",
-        description: `${PAY_RATES.companyDriver.signOnBonus.replace(" (First Year)", "")} paid during your first year`,
-        highlight: true,
-      },
-      {
-        title: "Weekly Direct Deposit",
-        description: "Get paid every Friday, no exceptions",
-      },
-      {
-        title: "Performance Bonuses",
-        description: "Additional rewards for safety and efficiency",
-      },
-      {
-        title: "Referral Bonuses",
-        description: "Earn extra for bringing quality drivers",
-      },
-    ],
-  },
-  {
-    category: "Home Time",
-    icon: Calendar,
-    color: "orange",
-    items: [
-      {
-        title: "Flexible Home Time",
-        description: "Local, regional, or OTR — you choose",
-        highlight: true,
-      },
-      {
-        title: "Same Rate Either Way",
-        description: `${PAY_RATES.companyDriver.otr.perMile}/mile whichever you pick, so home time is not a pay cut`,
-      },
-    ],
-  },
-  {
-    category: "Equipment & Support",
-    icon: Truck,
-    color: "orange",
-    items: [
-      {
-        title: "Modern Equipment",
-        description: `${EQUIPMENT.modelYears} ${EQUIPMENT.makes}, ${EQUIPMENT.apu}`,
-        highlight: true,
-      },
-      {
-        title: SUPPORT.dispatch,
-        description: "Real people available whenever you need help",
-      },
-    ],
-  },
-]
+interface BenefitGroup {
+  id: string
+  icon: LucideIcon
+  heading: string
+  intro: string
+  items: readonly string[]
+}
 
-const ownerOperatorBenefits = [
+const BENEFIT_GROUPS: BenefitGroup[] = [
   {
-    category: "Earnings & Commission",
-    icon: TrendingUp,
-    color: "green",
-    items: [
-      {
-        title: "90% Gross Commission",
-        description: "You keep 90% of the linehaul on every load you haul",
-        highlight: true,
-      },
-      {
-        title: "$2,500 Sign-On Bonus",
-        description: "Substantial bonus to start your partnership",
-        highlight: true,
-      },
-      {
-        title: "100% Fuel Surcharge",
-        description: "All fuel surcharge passes directly to you",
-        highlight: true,
-      },
-      {
-        title: "Weekly Settlements",
-        description: "Transparent pay every Friday, no delays",
-      },
-      {
-        title: "No Hidden Fees",
-        description: "What we say is what you get - period",
-      },
-    ],
-  },
-  {
-    category: "Independence & Freedom",
+    id: "company-drivers",
     icon: Shield,
-    color: "orange",
-    items: [
-      {
-        title: "No Forced Dispatch",
-        description: "Choose your loads, lanes, and schedule",
-        highlight: true,
-      },
-      {
-        title: "Flexible Scheduling",
-        description: "Work when you want, rest when you need",
-      },
-      {
-        title: "Lane Selection",
-        description: "Pick the routes that work best for you",
-      },
-      {
-        title: "Time Off Freedom",
-        description: "Take time off without permission needed",
-      },
-    ],
+    heading: "Company drivers",
+    intro: `Every line below is something we provide today, at ${CD.otr.perMile} a mile whether you run local, regional or OTR.`,
+    items: BENEFITS.companyDriver,
   },
   {
-    category: "Business Support",
-    icon: DollarSign,
-    color: "orange",
-    items: [
-      {
-        title: "Fuel Card Programs",
-        description: "Discounts at major truck stop chains nationwide",
-      },
-      {
-        title: "Maintenance Discounts",
-        description: "Preferred pricing at partner service centers",
-      },
-      {
-        title: "Tire Programs",
-        description: "Discounted rates on tires and retreads",
-      },
-      {
-        title: "Insurance Assistance",
-        description: "Help navigating occupational accident coverage",
-      },
-      {
-        title: "Back Office Support",
-        description: "We handle the paperwork, you focus on driving",
-      },
-    ],
+    id: "home-time",
+    icon: Calendar,
+    heading: "Home time",
+    intro: "Pick the lane that fits your life. The rate does not change when you pick the one that gets you home.",
+    items: BENEFITS.homeTimeOptions,
   },
   {
-    category: "Freight & Operations",
+    id: "owner-operators",
     icon: Truck,
-    color: "orange",
-    items: [
-      {
-        title: "Year-Round Freight",
-        description: "Flatbed, reefer and dry van across all 48 states",
-        highlight: true,
-      },
-      {
-        title: "Diverse Freight Types",
-        description: "Flatbed, reefer, and dry van options",
-      },
-      {
-        title: "Quick Pay Option",
-        description: "Access funds faster when you need them",
-      },
-    ],
+    heading: "Owner operators",
+    intro: `${OO.commission} of gross, no forced dispatch, and ${OO.fuelSurcharge} of the fuel surcharge passed through.`,
+    items: BENEFITS.ownerOperator,
   },
 ]
 
@@ -212,15 +78,24 @@ const ownerOperatorBenefits = [
  *  numbers that used to sit there had no source and contradicted the second
  *  set on the homepage. */
 const termsData = [
-  { feature: "Commission rate (owner-operator)", thind: PAY_RATES.ownerOperator.commission },
-  { feature: "Fuel surcharge", thind: "100% to the driver" },
-  { feature: "Sign-on bonus (owner-operator)", thind: PAY_RATES.ownerOperator.signOnBonus },
-  { feature: "Sign-on bonus (company driver)", thind: PAY_RATES.companyDriver.signOnBonus },
-  { feature: "Company driver rate", thind: `${PAY_RATES.companyDriver.otr.perMile}/mile, local, regional or OTR` },
+  { feature: "Commission rate (owner-operator)", thind: OO.commission },
+  { feature: "Fuel surcharge", thind: `${OO.fuelSurcharge} to the driver` },
+  { feature: "Sign-on bonus (owner-operator)", thind: OO.signOnBonus },
+  { feature: "Sign-on bonus (company driver)", thind: CD.signOnBonus },
+  { feature: "Company driver rate", thind: `${CD.otr.perMile}/mile, local, regional or OTR` },
   { feature: "Forced dispatch", thind: "Never" },
   { feature: "Settlements", thind: "Every Friday" },
   { feature: "Deductions we take from the split", thind: "None" },
 ]
+
+/** The four published numbers, static mono text. They used to count up on
+ *  scroll; a rate and a percentage are identifiers, not a scoreboard. */
+const HERO_FACTS = [
+  { value: OO.commission, label: "Commission", note: "Owner operators" },
+  { value: CD.otr.perMile, label: "Per mile", note: "Company drivers" },
+  { value: OO.fuelSurcharge, label: "Fuel surcharge", note: "Passed through" },
+  { value: SUPPORT.hours, label: "Support", note: "Real people" },
+] as const
 
 /**
  * The other half of an honest benefits page. A driver comparing carriers is
@@ -290,270 +165,166 @@ const BENEFIT_LINKS = [
   },
 ]
 
-const colorClasses = {
-  green: "from-green-500/10 to-green-600/5 border-green-500/20 text-green-600",
-  orange: "from-orange-500/10 to-orange-600/5 border-orange-500/20 text-orange-600",
-}
-
 export default function BenefitsPage() {
   return (
-    <div className="brand-page-shell min-h-screen">
-      <PageBreadcrumb pageName="Benefits" category="Drivers" />
-      
-      {/* Hero Section */}
-      <PageHero
-        image="/images/generated/driver-cab-interior.webp"
-        imageAlt="Inside a Thind Transport sleeper cab — the equipment behind the benefits"
-        eyebrow="Driver Benefits"
-        title={
-          <>
-            What we offer — and <span className="text-orange">what we don&apos;t</span>
-          </>
+    <div className="min-h-screen overflow-x-hidden bg-navy-950">
+      <AsphaltHero
+        breadcrumb={
+          <PageBreadcrumb
+            pageName="Benefits"
+            category="Drivers"
+            className="!border-b-0 !bg-transparent !pb-0 !pt-4 !backdrop-blur-none [&>div]:px-0 [&_ol]:justify-start"
+          />
         }
+        eyebrow="Driver benefits"
+        title="What we offer — and what we don't"
         description="Weekly pay, home time you choose, late-model equipment — plus a straight list of what we don't offer yet, so nothing is a surprise at orientation."
-      />
+      >
+        <dl className="grid grid-cols-2 gap-4 rounded-m-3 border border-white/10 bg-white/5 p-6">
+          {HERO_FACTS.map((fact) => (
+            <div key={fact.label}>
+              <dt className="font-display text-m-micro font-bold uppercase tracking-[0.15em] text-orange-300">
+                {fact.label}
+              </dt>
+              <dd className="mt-1 font-mono text-m-h3 font-bold tabular-nums text-paper">
+                {fact.value}
+              </dd>
+              <dd className="text-m-body text-paper/70">{fact.note}</dd>
+            </div>
+          ))}
+        </dl>
+      </AsphaltHero>
 
-      {/* Quick Stats — the numbers count up once, on first view only */}
-      <section className="py-8 -mt-8 relative z-10">
-        <div className="container">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto">
-            {[
-              { value: 90, suffix: "%", label: "Commission", sublabel: "Owner Operators" },
-              { value: 0.63, prefix: "$", decimals: 2, label: "Per Mile", sublabel: "Company Drivers" },
-              { value: 100, suffix: "%", label: "Fuel Surcharge", sublabel: "Passed Through" },
-              { value: 24, suffix: "/7", label: "Support", sublabel: "Real People" },
-            ].map((stat, i) => (
-              <Reveal key={stat.label} index={Math.min(i, 4)}>
-                <div className="bg-white rounded-xl p-4 shadow-lg border border-gray-100 text-center transition-transform duration-fast ease-entrance motion-safe:hover:-translate-y-1">
-                  <div className="text-2xl md:text-3xl font-black text-orange">
-                    <CountUp
-                      value={stat.value}
-                      prefix={stat.prefix}
-                      suffix={stat.suffix}
-                      decimals={stat.decimals ?? 0}
-                    />
-                  </div>
-                  <div className="text-sm font-bold text-gray-900">{stat.label}</div>
-                  <div className="text-xs text-gray-500">{stat.sublabel}</div>
-                </div>
+      {BENEFIT_GROUPS.map((group, groupIndex) => (
+        <section
+          key={group.id}
+          aria-labelledby={`${group.id}-heading`}
+          className={groupIndex === 0 ? "bg-navy-950 py-section" : "bg-navy-950 pb-section"}
+        >
+          <div className="container">
+            <div className="mx-auto max-w-5xl">
+              <Reveal>
+                <h2
+                  id={`${group.id}-heading`}
+                  className="flex items-center gap-3 font-display text-m-h2 font-bold text-white text-balance"
+                >
+                  <group.icon className="h-6 w-6 shrink-0 text-orange-300" aria-hidden />
+                  <span>{group.heading}</span>
+                </h2>
+                <p className="mt-3 max-w-measure text-m-body text-steel-200">{group.intro}</p>
               </Reveal>
-            ))}
+
+              <ul className="mt-6 grid list-none gap-3 md:grid-cols-2">
+                {group.items.map((item, i) => (
+                  <Reveal as="li" key={item} index={Math.min(i, 4)}>
+                    <div className="flex h-full items-start gap-3 rounded-m-3 border border-white/10 bg-white/5 p-4">
+                      <CheckCircle2 className="mt-1 h-5 w-5 shrink-0 text-orange-300" aria-hidden />
+                      <span className="text-m-body text-steel-200">{item}</span>
+                    </div>
+                  </Reveal>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </section>
+      ))}
+
+      <section aria-labelledby="equipment-heading" className="bg-asphalt py-section text-paper">
+        <div className="container">
+          <div className="mx-auto max-w-4xl">
+            <h2
+              id="equipment-heading"
+              className="font-display text-m-h2 font-bold text-paper text-balance"
+            >
+              What you drive, and who answers
+            </h2>
+            <p className="mt-3 max-w-measure text-m-lede text-paper/80">
+              {`${EQUIPMENT.modelYears} ${EQUIPMENT.makes}, ${EQUIPMENT.apu.toLowerCase()}. ${SUPPORT.dispatch} — real people, ${SUPPORT.phrase}.`}
+            </p>
           </div>
         </div>
       </section>
 
-      {/* Company Driver Benefits */}
-      <section className="py-16">
+      {/* Dense data on paper: the terms table is the one thing on this page a
+          driver reads twice and screenshots. */}
+      <section aria-labelledby="terms-heading" className="bg-navy-950 py-section">
         <div className="container">
-          <div className="text-center mb-12">
-            <Badge className="mb-4 bg-navy text-white px-4 py-2 text-sm font-bold">
-              <Shield className="h-4 w-4 mr-1.5 inline" />
-              Company Drivers
-            </Badge>
-            <h2 className="text-3xl md:text-4xl font-black text-gray-900 mb-4">
-              What You Actually Get
+          <Reveal className="mx-auto max-w-4xl rounded-m-3 border border-ink/15 bg-paper p-6 text-ink md:p-8">
+            <h2 id="terms-heading" className="font-display text-m-h2 font-bold text-ink text-balance">
+              The terms, in writing
             </h2>
-            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              Every line below is something we provide today. The things we don&apos;t offer are
-              listed further down, in their own section, rather than left out.
+            <p className="mt-3 max-w-measure text-m-body text-ink-2">
+              Every figure below comes from the same file the calculators read. Ask any carrier
+              you&apos;re comparing us to for the same list.
             </p>
-          </div>
 
-          <div className="space-y-12">
-            {companyDriverBenefits.map((section) => {
-              const Icon = section.icon
-              const colorClass = colorClasses[section.color as keyof typeof colorClasses]
-              
-              return (
-                <div key={section.category}>
-                  <div className="flex items-center gap-3 mb-6">
-                    <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${colorClass} flex items-center justify-center border`}>
-                      <Icon className="h-5 w-5" />
-                    </div>
-                    <h3 className="text-xl font-bold text-gray-900">{section.category}</h3>
-                  </div>
-                  
-                  <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {section.items.map((item, i) => (
-                      <Reveal key={item.title} index={Math.min(i, 4)}>
-                        <div
-                          className={`h-full p-4 rounded-xl border transition-[transform,border-color,box-shadow] duration-fast ease-entrance motion-safe:hover:-translate-y-1 ${
-                            item.highlight
-                              ? 'bg-gradient-to-br from-orange/5 to-orange/10 border-orange/20 hover:border-orange/40'
-                              : 'bg-white border-gray-200 hover:border-gray-300 hover:shadow-md'
-                          }`}
-                        >
-                          <div className="flex items-start gap-3">
-                            <CheckCircle2 className={`h-5 w-5 mt-0.5 flex-shrink-0 ${item.highlight ? 'text-orange' : 'text-green-500'}`} />
-                            <div>
-                              <h4 className="font-bold text-gray-900">{item.title}</h4>
-                              <p className="text-sm text-gray-600">{item.description}</p>
-                            </div>
-                          </div>
-                        </div>
-                      </Reveal>
-                    ))}
-                  </div>
+            <dl className="mt-8 border-t border-ink/15">
+              {termsData.map((row) => (
+                <div
+                  key={row.feature}
+                  className="flex flex-col gap-1 border-b border-ink/15 py-4 sm:flex-row sm:items-baseline sm:gap-6"
+                >
+                  <dt className="text-m-body text-ink-2 sm:flex-1">{row.feature}</dt>
+                  <dd className="font-mono text-m-body font-semibold tabular-nums text-ink">
+                    {row.thind}
+                  </dd>
                 </div>
-              )
-            })}
-          </div>
+              ))}
+            </dl>
+          </Reveal>
         </div>
       </section>
 
       {/* What we don't offer — stated, not omitted */}
-      <section className="py-16 bg-gray-50 border-y border-gray-200">
+      <section aria-labelledby="not-yet-heading" className="bg-asphalt py-section text-paper">
         <div className="container">
-          <div className="max-w-4xl mx-auto">
-            <Reveal className="text-center mb-10">
-              <Badge className="mb-4 bg-gray-900 text-white px-4 py-2 text-sm font-bold">
-                <ClipboardCheck className="h-4 w-4 mr-1.5 inline" />
-                Straight answer
-              </Badge>
-              <h2 className="text-3xl md:text-4xl font-black text-gray-900 mb-4">
+          <div className="mx-auto max-w-4xl">
+            <Reveal>
+              <h2
+                id="not-yet-heading"
+                className="font-display text-m-h2 font-bold text-paper text-balance"
+              >
                 What we don&apos;t offer
               </h2>
-              <p className="text-lg text-gray-600">
+              <p className="mt-3 max-w-measure text-m-lede text-paper/80">
                 Three things a driver comparing carriers will ask about, and we&apos;d rather you
                 heard them here than in your second week.
               </p>
             </Reveal>
 
-            <ul className="grid gap-4 md:grid-cols-3 list-none">
+            <ul className="mt-8 grid list-none gap-4 md:grid-cols-3">
               {NOT_YET.map((item, i) => (
                 <Reveal as="li" key={item.title} index={Math.min(i, 4)}>
-                  <div className="h-full rounded-xl border border-gray-200 bg-white p-5">
-                    <h3 className="font-bold text-gray-900">{item.title}</h3>
-                    <p className="mt-2 text-sm leading-relaxed text-gray-600">{item.detail}</p>
+                  <div className="h-full rounded-m-3 border border-white/10 bg-white/5 p-5">
+                    <h3 className="font-display text-m-h4 font-bold text-paper">{item.title}</h3>
+                    <p className="mt-2 text-m-body text-paper/80">{item.detail}</p>
                   </div>
                 </Reveal>
               ))}
             </ul>
 
-            <Reveal className="mt-8 text-center">
-              <p className="text-gray-600">
-                Everything above is what we can offer instead: a higher take-home rate, weekly pay,
-                and no games about it.{" "}
-                <Link href="/pay-breakdown" className="font-semibold text-orange-600 hover:underline">
+            <Reveal className="mt-8">
+              <p className="max-w-measure text-m-body text-paper/80">
+                <span>
+                  Everything above is what we can offer instead: a higher take-home rate, weekly
+                  pay, and no games about it.{" "}
+                </span>
+                <Link
+                  href="/pay-breakdown"
+                  className="font-semibold text-paper underline-offset-4 hover:text-signal-up hover:underline"
+                >
                   See where every dollar goes
-                </Link>{" "}
-                or{" "}
+                </Link>
+                <span> or ask us directly at </span>
                 <a
                   href={`tel:${COMPANY_INFO.phoneFormatted}`}
-                  className="font-semibold text-orange-600 hover:underline"
+                  className="font-semibold text-paper underline-offset-4 hover:text-signal-up hover:underline"
                 >
-                  ask us directly at {COMPANY_INFO.phone}
+                  <span className="font-mono tabular-nums">{COMPANY_INFO.phone}</span>
                 </a>
-                .
+                <span>.</span>
               </p>
             </Reveal>
-          </div>
-        </div>
-      </section>
-
-      {/* Owner Operator Benefits */}
-      <section className="py-16 bg-gradient-to-b from-gray-50 to-white">
-        <div className="container">
-          <div className="text-center mb-12">
-            <Badge className="mb-4 bg-green-700 text-white px-4 py-2 text-sm font-bold">
-              <TrendingUp className="h-4 w-4 mr-1.5 inline" />
-              Owner Operators
-            </Badge>
-            <h2 className="text-3xl md:text-4xl font-black text-gray-900 mb-4">
-              90% of gross. No forced dispatch.
-            </h2>
-            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              Weekly settlements every Friday, and 100% of the fuel surcharge passed through.
-            </p>
-          </div>
-
-          <div className="space-y-12">
-            {ownerOperatorBenefits.map((section) => {
-              const Icon = section.icon
-              const colorClass = colorClasses[section.color as keyof typeof colorClasses]
-              
-              return (
-                <div key={section.category}>
-                  <div className="flex items-center gap-3 mb-6">
-                    <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${colorClass} flex items-center justify-center border`}>
-                      <Icon className="h-5 w-5" />
-                    </div>
-                    <h3 className="text-xl font-bold text-gray-900">{section.category}</h3>
-                  </div>
-                  
-                  <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {section.items.map((item, i) => (
-                      <Reveal key={item.title} index={Math.min(i, 4)}>
-                        <div
-                          className={`h-full p-4 rounded-xl border transition-[transform,border-color,box-shadow] duration-fast ease-entrance motion-safe:hover:-translate-y-1 ${
-                            item.highlight
-                              ? 'bg-gradient-to-br from-green-50 to-green-100/50 border-green-200 hover:border-green-300'
-                              : 'bg-white border-gray-200 hover:border-gray-300 hover:shadow-md'
-                          }`}
-                        >
-                          <div className="flex items-start gap-3">
-                            <CheckCircle2 className={`h-5 w-5 mt-0.5 flex-shrink-0 ${item.highlight ? 'text-green-600' : 'text-green-500'}`} />
-                            <div>
-                              <h4 className="font-bold text-gray-900">{item.title}</h4>
-                              <p className="text-sm text-gray-600">{item.description}</p>
-                            </div>
-                          </div>
-                        </div>
-                      </Reveal>
-                    ))}
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        </div>
-      </section>
-
-      {/* Comparison Table */}
-      <section className="py-16">
-        <div className="container">
-          <div className="max-w-4xl mx-auto">
-            <div className="text-center mb-12">
-              <Badge className="mb-4 bg-navy text-white px-4 py-2 text-sm font-bold">
-                <Award className="h-4 w-4 mr-1.5 inline" />
-                Side-by-Side Comparison
-              </Badge>
-              <h2 className="text-3xl md:text-4xl font-black text-gray-900 mb-4">
-                The terms, in writing
-              </h2>
-              <p className="text-lg text-gray-600">
-                Every figure below comes from the same file the calculators read. Ask any carrier
-                you&apos;re comparing us to for the same list.
-              </p>
-            </div>
-
-            <Card className="overflow-hidden border-2 border-white/10" data-light>
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="bg-navy text-white">
-                      <th className="px-6 py-4 text-left font-bold">What you&apos;re comparing</th>
-                      <th className="px-6 py-4 text-center font-bold bg-orange-600">
-                        <div className="flex flex-col items-center">
-                          <Star className="h-5 w-5 mb-1" />
-                          Thind Transport
-                        </div>
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-200">
-                    {termsData.map((row, idx) => (
-                      <tr key={row.feature} className={idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                        <td className="px-6 py-4 font-medium text-gray-900">{row.feature}</td>
-                        <td className="px-6 py-4 text-center font-bold text-green-700 bg-green-50/50">
-                          {row.thind}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </Card>
           </div>
         </div>
       </section>
@@ -565,39 +336,34 @@ export default function BenefitsPage() {
         links={BENEFIT_LINKS}
       />
 
-      {/* CTA Section */}
-      <section className="relative overflow-hidden py-16 md:py-24 bg-navy">
-        <Image
-          src="/images/generated/yard-morning-kent.webp"
-          alt=""
-          aria-hidden
-          fill
-          sizes="100vw"
-          className="object-cover"
-        />
-        <div className="absolute inset-0 bg-gradient-to-b from-navy/90 via-navy/70 to-navy/90" />
-        <div className="container relative">
-          <div className="max-w-3xl mx-auto text-center">
-            <h2 className="text-3xl md:text-4xl font-black text-white mb-4">
-              Ready to Experience These Benefits?
+      {/* The page's ONE closing block. The navy photo band that used to close
+          the page repeated the hero's Apply and its Call one screen later. */}
+      <section aria-labelledby="benefits-apply-heading" className="bg-navy-950 py-section-tight">
+        <div className="container">
+          <div className="mx-auto max-w-measure text-center">
+            <h2
+              id="benefits-apply-heading"
+              className="font-display text-m-h2 font-bold text-white text-balance"
+            >
+              Ready to run on these terms?
             </h2>
-            <p className="text-lg text-white/90 mb-8">
-              $0.63 a mile for company drivers, 90% of the linehaul for owner-operators,
-              and a real person on the phone in Kent. Apply today and hear back within 24 hours on business days.
+            <p className="mt-3 text-m-body text-steel-200">
+              {`${CD.otr.perMile} a mile for company drivers, ${OO.commission} of the linehaul for owner-operators, and a real person on the phone in ${COMPANY_INFO.location}.`}
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <div className="mt-6 flex flex-wrap items-center justify-center gap-4">
               <Link
                 href="/apply"
-                className="px-8 py-4 bg-orange-600 hover:bg-orange-500 text-white font-bold rounded-xl transition-colors"
+                className="inline-flex min-h-[48px] items-center gap-2 rounded-fleet bg-orange-600 px-7 text-m-body font-semibold text-white transition-colors duration-base ease-entrance hover:bg-orange-700 hover:text-white"
               >
-                Apply Now — Takes 2 Minutes
+                <span>Start your application</span>
+                <ArrowRight className="h-4 w-4" aria-hidden />
               </Link>
               <a
                 href={`tel:${COMPANY_INFO.phoneFormatted}`}
-                className="px-8 py-4 bg-white/10 border border-white/20 text-white font-bold rounded-xl hover:bg-white/20 transition-colors flex items-center justify-center gap-2"
+                className="inline-flex min-h-[48px] items-center gap-2 text-m-body font-semibold text-white underline-offset-4 hover:text-orange-300 hover:underline"
               >
-                <Phone className="h-5 w-5" />
-                Call {COMPANY_INFO.phone}
+                <span>or call</span>
+                <span className="font-mono tabular-nums">{COMPANY_INFO.phone}</span>
               </a>
             </div>
           </div>
@@ -606,4 +372,3 @@ export default function BenefitsPage() {
     </div>
   )
 }
-

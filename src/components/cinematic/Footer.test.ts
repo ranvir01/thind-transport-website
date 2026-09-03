@@ -67,3 +67,53 @@ describe("MobileCommandBar (source guard)", () => {
     expect(source).toContain('querySelectorAll<HTMLFormElement>("main form")')
   })
 })
+
+describe("CinematicFooter (source guard)", () => {
+  const footer = readFileSync(new URL("./Footer.tsx", import.meta.url), "utf-8")
+
+  it("prints the NAP from constants — name, address, phone as digits, email", () => {
+    expect(footer).toContain("{COMPANY_INFO.name}")
+    expect(footer).toContain("{COMPANY_INFO.address}")
+    expect(footer).toContain("mailto:${COMPANY_INFO.email}")
+    // The phone is readable as a number, not as a sentence.
+    expect(footer).toMatch(/font-mono tabular-nums">\{COMPANY_INFO\.phone\}/)
+  })
+
+  it("backs the authority line with the public record instead of a claim", () => {
+    expect(footer).toContain("FMCSA_LINKS.safer")
+    expect(footer).toContain("COMPANY_INFO.dot")
+    expect(footer).toContain("COMPANY_INFO.mc")
+    // "Licensed & Insured" asserted cover this repo cannot evidence.
+    expect(footer).not.toContain("Licensed & Insured")
+  })
+})
+
+// The header Apply and the command bar's Apply are both position:fixed and
+// both filled red. They used to overlap between sm and md — two reds pinned to
+// the viewport at once, whatever the page below did. The breakpoints are now
+// complementary, and this is the only place that can see both files at once.
+describe("one fixed red Apply at any width (Navbar + command bar)", () => {
+  const footer = readFileSync(new URL("./Footer.tsx", import.meta.url), "utf-8")
+  const navbar = readFileSync(new URL("./Navbar.tsx", import.meta.url), "utf-8")
+
+  it("hands the fixed Apply over at exactly one breakpoint", () => {
+    // The bar carries its own filled red below md...
+    expect(footer).toMatch(/z-\[90\][^"]*md:hidden/)
+    expect(footer).toMatch(/href="\/apply"[\s\S]{0,200}bg-orange-600/)
+    // ...and the header picks it up at md, never at sm.
+    expect(navbar).toContain('className="hidden md:flex min-h-[48px] items-center rounded-fleet bg-orange-600')
+    expect(navbar).not.toContain("hidden sm:flex min-h-[48px] items-center rounded-fleet bg-orange-600")
+  })
+
+  it("keeps the drawer's single filled red on its Apply CTA", () => {
+    // The /apply row's icon tile and "Start" chip are tints, not fills; a
+    // filled bg-orange-600 inside the drawer belongs to the CTA alone.
+    expect(navbar).not.toContain('? "bg-orange-600 text-white"')
+    expect(navbar).not.toContain("rounded-full bg-orange-600")
+  })
+
+  it("paints solid grounds — no backdrop-blur on either surface", () => {
+    expect(footer).not.toContain("backdrop-blur")
+    expect(navbar).not.toContain("backdrop-blur")
+  })
+})

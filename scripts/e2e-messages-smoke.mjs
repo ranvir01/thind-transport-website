@@ -15,11 +15,81 @@
  * Usage: node scripts/e2e-messages-smoke.mjs [outputDir]
  */
 import { mkdirSync } from "node:fs"
-import { launchBrowser, BASE, failures, check, waitForText, sendComposer, login, makeShot, reseed, realConsoleErrors } from "./e2e-lib.mjs"
+import { launchBrowser, BASE, failures, check, waitForText, login, makeShot, reseed, realConsoleErrors } from "./e2e-lib.mjs"
 
 const OUT = process.argv[2] ?? "e2e-shots-messages"
 mkdirSync(OUT, { recursive: true })
 const shot = makeShot(OUT, { fullPage: true })
+
+const COMPOSER = 'textarea[placeholder="Type a message…"]'
+const SEND_BTN = 'button[aria-label="Send"]'
+
+/** Native setter + input event so React's value tracker sees a real edit. */
+async function setComposer(page, value) {
+  await page.$eval(
+    COMPOSER,
+    (el, next) => {
+      const setter = Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, "value").set
+      setter.call(el, next)
+      el.dispatchEvent(new Event("input", { bubbles: true }))
+    },
+    value
+  )
+}
+
+/**
+ * Fill the ChatThread composer and press Send.
+ *
+ * The textarea is React-controlled (`value={body}`; Send is
+ * `disabled={pending || !body.trim()}`). After a template chip, React
+ * `body` is already non-empty so Send is already enabled. Setting the
+ * marker in the DOM and waiting for `ta.value === marker && !btn.disabled`
+ * can pass before onChange flushes — click then send()s the chip text,
+ * and waitForText(marker) times out. Empty first and wait until Send is
+ * disabled so the next "enabled" transition means React holds `text`.
+ */
+async function sendChat(page, text) {
+  await page.waitForSelector(COMPOSER)
+  await setComposer(page, "")
+  await page.waitForFunction(() => {
+    const ta = document.querySelector('textarea[placeholder="Type a message…"]')
+    const btn = document.querySelector('button[aria-label="Send"]')
+    return ta?.value === "" && btn?.disabled === true
+  }, { timeout: 8000 })
+  await setComposer(page, text)
+  await page.waitForFunction(
+    (expected) => {
+      const ta = document.querySelector('textarea[placeholder="Type a message…"]')
+      const btn = document.querySelector('button[aria-label="Send"]')
+      return ta?.value === expected && btn && !btn.disabled
+    },
+    { timeout: 8000 },
+    text
+  )
+  // Evaluate-click the Send control — Puppeteer's layout click can miss
+  // after a chip→body refresh. Enter is the same send() path (onKeyDown).
+  await page.evaluate((sel) => document.querySelector(sel)?.click(), SEND_BTN)
+  const landed = await page
+    .waitForFunction(
+      (t) => document.body.innerText.toLowerCase().includes(t.toLowerCase()),
+      { timeout: 8000 },
+      text
+    )
+    .then(() => true)
+    .catch(() => false)
+  if (!landed) {
+    await page.focus(COMPOSER)
+    await page.keyboard.press("Enter")
+    await waitForText(page, text, 15000)
+  }
+  await page
+    .waitForFunction(() => document.querySelector('textarea[placeholder="Type a message…"]')?.value === "", {
+      timeout: 20000,
+    })
+    .catch(() => {
+      throw new Error("composer did not clear after send")
+    })
+}
 
 async function main() {
   reseed()
@@ -92,7 +162,7 @@ async function main() {
     () => document.querySelector('textarea[placeholder="Type a message…"]')?.value ?? ""
   )
   check(composerValue.includes("ETA"), `ETA template fills the composer (got "${composerValue}")`)
-  await sendComposer(office, officeMarker)
+  await sendChat(office, officeMarker)
   const officeThread = await office.evaluate(() => document.body.innerText)
   check(officeThread.includes(officeMarker), "office marker message appears in the thread")
   await shot(office, "02-office-sent")
@@ -126,7 +196,7 @@ async function main() {
   check(driverThread.toLowerCase().includes("maya dhillon"), "office sender name shows on the driver bubble")
 
   console.log("4. Driver replies from the phone composer")
-  await sendComposer(driver, driverMarker)
+  await sendChat(driver, driverMarker)
   check(
     (await driver.evaluate(() => document.body.innerText)).includes(driverMarker),
     "driver reply appears in the thread"

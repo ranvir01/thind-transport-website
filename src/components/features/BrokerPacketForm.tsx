@@ -10,6 +10,14 @@
  * Submits through the same captureLead action as the driver and shipper forms,
  * so every request lands in hub.website_leads source-tagged and shows up on the
  * hub's Today screen and /hub/leads with tap-to-call.
+ *
+ * Every state of this widget (the form, its success card) renders as one paper
+ * island on the dark page ground, the same grammar as ShipperQuoteForm, so
+ * /brokers mounts it with no wrapper of its own. Fields go through the shared
+ * Input primitive — 16px on touch, rounded-fleet, one focus outline from
+ * globals.css — retinted for paper so nothing is left for the page shell to
+ * remap. No delivery-time promise appears anywhere: how fast the office
+ * actually sends a packet is not something this repo can substantiate.
  */
 import { useState } from "react"
 import { Loader2, FileDown } from "lucide-react"
@@ -19,6 +27,15 @@ import { ATTRIBUTION_FIELD } from "@/lib/attribution"
 import { AttributionField } from "@/components/shared/AttributionField"
 import { HoneypotField } from "@/components/shared/HoneypotField"
 import { HONEYPOT_FIELD } from "@/lib/honeypot"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+
+const ISLAND = "rounded-m-3 border border-ink/15 bg-paper p-6 text-ink"
+/** The Input primitive retinted for paper: twMerge swaps its neutral tokens
+ *  for ink, so no `bg-white` is left for the page shell to remap. shadow-none
+ *  because this island is border-led (DIRECTION.md §10). */
+const FIELD = "border-ink/20 bg-paper text-ink shadow-none placeholder:text-ink-3 hover:border-ink/40"
+const LABEL = "mb-1.5 block text-m-body font-semibold text-ink"
 
 export function BrokerPacketForm() {
   const [state, setState] = useState<"idle" | "sending" | "done" | "error">("idle")
@@ -65,95 +82,129 @@ export function BrokerPacketForm() {
 
   if (state === "done") {
     return (
-      <div className="rounded-m-3 border border-[rgba(30,107,79,0.3)] bg-[rgba(30,107,79,0.05)] p-6 text-center">
+      <div className={`${ISLAND} text-center`}>
         <p className="font-display text-m-h4 font-bold text-ink">Packet on its way.</p>
         <p className="mx-auto mt-2 max-w-measure text-m-body text-ink-2">
-          W-9, certificate of insurance and our authority are headed to your inbox. Need a truck
-          covered today rather than tomorrow? Call dispatch on{" "}
-          <a href={`tel:${COMPANY_INFO.phoneFormatted}`} className="font-semibold text-signal">
-            {COMPANY_INFO.phone}
+          <span>
+            W-9, certificate of insurance and our authority are headed to your inbox. Need a truck
+            covered today rather than tomorrow? Call dispatch on{" "}
+          </span>
+          <a
+            href={`tel:${COMPANY_INFO.phoneFormatted}`}
+            className="font-semibold text-signal underline-offset-4 hover:underline"
+          >
+            <span className="font-mono tabular-nums">{COMPANY_INFO.phone}</span>
           </a>
-          .
+          <span>.</span>
         </p>
       </div>
     )
   }
 
-  const field =
-    "mt-1.5 h-11 w-full rounded-m-2 border border-[rgba(20,22,24,0.2)] bg-white px-3 text-m-body text-ink " +
-    "transition-colors duration-fast ease-entrance placeholder:text-ink-3 " +
-    "focus:border-signal focus:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(196,40,32,0.3)]"
-  const label = "font-display text-m-micro font-bold uppercase tracking-[0.12em] text-ink-3"
-
   return (
-    <form onSubmit={onSubmit} className="grid gap-4 sm:grid-cols-2">
+    <form onSubmit={onSubmit} className={`${ISLAND} grid gap-4 sm:grid-cols-2`}>
       <HoneypotField />
       <AttributionField />
+
       <div className="sm:col-span-2">
-        <label className={label} htmlFor="brokerage">
+        <h3 className="font-display text-m-h4 font-bold text-ink">Full signed packet</h3>
+        <p className="mt-1.5 max-w-measure text-m-body text-ink-2">
+          W-9, certificate of insurance and the carrier agreement, sent to the address you give us.
+        </p>
+      </div>
+
+      <div className="sm:col-span-2">
+        <label className={LABEL} htmlFor="broker-brokerage">
           Brokerage
         </label>
-        <input id="brokerage" name="brokerage" required className={field} placeholder="Acme Logistics" />
+        <Input
+          id="broker-brokerage"
+          name="brokerage"
+          autoComplete="organization"
+          required
+          className={FIELD}
+          placeholder="Acme Logistics"
+        />
       </div>
 
       <div>
-        <label className={label} htmlFor="contact">
+        <label className={LABEL} htmlFor="broker-contact">
           Your name
         </label>
-        <input id="contact" name="contact" required className={field} placeholder="Jordan Reyes" />
+        <Input
+          id="broker-contact"
+          name="contact"
+          autoComplete="name"
+          required
+          className={FIELD}
+          placeholder="Jordan Reyes"
+        />
       </div>
 
       <div>
-        <label className={label} htmlFor="mc">
-          Your MC number <span className="font-normal normal-case tracking-normal">(optional)</span>
+        <label className={LABEL} htmlFor="broker-mc">
+          Your MC number (optional)
         </label>
-        <input id="mc" name="mc" className={field} placeholder="MC-123456" />
+        <Input id="broker-mc" name="mc" className={FIELD} placeholder="MC-123456" />
       </div>
 
       <div>
-        <label className={label} htmlFor="email">
+        <label className={LABEL} htmlFor="broker-email">
           Email for the packet
         </label>
-        <input id="email" name="email" type="email" required className={field} placeholder="you@brokerage.com" />
+        <Input
+          id="broker-email"
+          name="email"
+          type="email"
+          autoComplete="email"
+          required
+          className={FIELD}
+          placeholder="you@brokerage.com"
+        />
       </div>
 
       <div>
-        <label className={label} htmlFor="phone">
+        <label className={LABEL} htmlFor="broker-phone">
           Phone
         </label>
-        <input id="phone" name="phone" type="tel" required className={field} placeholder="(555) 555-5555" />
+        <Input
+          id="broker-phone"
+          name="phone"
+          type="tel"
+          inputMode="tel"
+          autoComplete="tel"
+          required
+          className={FIELD}
+          placeholder="(555) 555-5555"
+        />
       </div>
 
       <div className="sm:col-span-2">
-        <label className={label} htmlFor="lanes">
+        <label className={LABEL} htmlFor="broker-lanes">
           Lanes and equipment you need covered
         </label>
-        <input
-          id="lanes"
+        <Input
+          id="broker-lanes"
           name="lanes"
-          className={field}
+          className={FIELD}
           placeholder="PNW to CA, reefer — weekly"
         />
       </div>
 
       {state === "error" && (
-        <p role="alert" className="sm:col-span-2 text-m-body text-signal">
+        <p role="alert" className="text-m-body text-signal sm:col-span-2">
           {errorMsg || `That didn't send. Call or text ${COMPANY_INFO.phone} and we'll get the packet to you.`}
         </p>
       )}
 
-      <button
-        type="submit"
-        disabled={state === "sending"}
-        className="sm:col-span-2 inline-flex min-h-[44px] items-center justify-center gap-2 rounded-m-2 bg-signal px-6 py-3 font-display text-m-body font-bold uppercase tracking-wide text-paper transition-colors duration-base ease-entrance hover:bg-ink disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-signal focus-visible:ring-offset-2 focus-visible:ring-offset-paper"
-      >
+      <Button type="submit" size="lg" disabled={state === "sending"} className="w-full sm:col-span-2">
         {state === "sending" ? (
-          <Loader2 className="h-4 w-4 animate-spin" />
+          <Loader2 className="h-5 w-5 animate-spin" aria-hidden />
         ) : (
-          <FileDown className="h-4 w-4" />
+          <FileDown className="h-5 w-5" aria-hidden />
         )}
         Send me the carrier packet
-      </button>
+      </Button>
     </form>
   )
 }
