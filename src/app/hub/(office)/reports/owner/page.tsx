@@ -12,7 +12,7 @@ import { complianceEntries, summarize, type ComplianceColor, type ComplianceEntr
 import { requirePermissionPage } from "@/lib/hub/session"
 import { fmtCents } from "@/lib/hub/types"
 import { cn } from "@/lib/utils"
-import { Panel, PageHeader, ExpiryPill, type PillTone } from "@/components/hub/ui"
+import { Panel, PageHeader, ExpiryPill, moneyCls, tableHeadCls, type PillTone } from "@/components/hub/ui"
 
 export const dynamic = "force-dynamic"
 
@@ -28,15 +28,16 @@ function RevenueBars({ periods, labelFmt }: { periods: RevenuePeriod[]; labelFmt
     <div className="flex items-end gap-2 px-4 pb-4 pt-2" style={{ height: 160 }}>
       {periods.map((p) => (
         <div key={p.periodStart} className="flex flex-1 flex-col items-center gap-1.5">
-          <span className="text-[10.5px] font-medium text-fg-3 tabular-nums">
+          <span className={cn(moneyCls, "text-[11px] text-fg-3")}>
             {p.revenueCents > 0 ? `$${Math.round(p.revenueCents / 100 / 1000)}k` : ""}
           </span>
           <div
-            className="w-full rounded-t-md bg-accent"
+            data-testid="revenue-bar"
+            className="w-full rounded-t-control bg-accent"
             style={{ height: Math.max(2, Math.round((p.revenueCents / max) * 110)) }}
             title={fmtCents(p.revenueCents)}
           />
-          <span className="text-[10.5px] text-fg-3">{labelFmt(p.periodStart)}</span>
+          <span className="text-[11px] text-fg-3">{labelFmt(p.periodStart)}</span>
         </div>
       ))}
     </div>
@@ -66,11 +67,11 @@ function AgingTrendBars({ periods }: { periods: AgingTrendPeriod[] }) {
       <div className="flex items-end gap-2 px-4 pb-2 pt-2" style={{ height: 160 }}>
         {periods.map((p) => (
           <div key={p.periodStart} className="flex flex-1 flex-col items-center gap-1.5">
-            <span className="text-[10.5px] font-medium text-fg-3 tabular-nums">
+            <span className={cn(moneyCls, "text-[11px] text-fg-3")}>
               {p.totalOpenCents > 0 ? `$${Math.round(p.totalOpenCents / 100 / 1000)}k` : ""}
             </span>
             <div
-              className="flex w-full flex-col-reverse overflow-hidden rounded-t-md"
+              className="flex w-full flex-col-reverse overflow-hidden rounded-t-control"
               title={fmtCents(p.totalOpenCents)}
             >
               {AGING_SEGMENTS.map((seg) => {
@@ -85,14 +86,14 @@ function AgingTrendBars({ periods }: { periods: AgingTrendPeriod[] }) {
                 )
               })}
             </div>
-            <span className="text-[10.5px] text-fg-3">{weekLabel(p.periodStart)}</span>
+            <span className="text-[11px] text-fg-3">{weekLabel(p.periodStart)}</span>
           </div>
         ))}
       </div>
-      <div className="flex flex-wrap gap-x-3 gap-y-1 px-4 pb-4 text-[10.5px] text-fg-3">
+      <div className="flex flex-wrap gap-x-3 gap-y-1 px-4 pb-4 text-[11px] text-fg-3">
         {AGING_SEGMENTS.map((seg) => (
-          <span key={seg.key} className="inline-flex items-center gap-1">
-            <span className={`h-2 w-2 rounded-sm ${seg.className}`} /> {seg.label}
+          <span key={seg.key} className="inline-flex items-center gap-1.5">
+            <span data-testid="ar-legend-swatch" className={cn("h-2.5 w-2.5 shrink-0 rounded-full", seg.className)} /> {seg.label}
           </span>
         ))}
       </div>
@@ -111,9 +112,9 @@ function LaneLeaderboardPanel({ lanes, rangeLabel }: { lanes: LaneLeaderboardRow
 
   return (
     <div className="overflow-x-auto">
-      <table className="w-full text-sm">
+      <table className="hub-table w-full text-sm">
         <thead>
-          <tr className="border-b border-border text-left text-label text-fg-3 uppercase">
+          <tr className={tableHeadCls}>
             <th className="px-4 py-3">Lane</th>
             <th className="px-4 py-3 text-right">Loads</th>
             <th className="px-4 py-3 text-right">Revenue</th>
@@ -130,12 +131,12 @@ function LaneLeaderboardPanel({ lanes, rangeLabel }: { lanes: LaneLeaderboardRow
               <td className="max-w-[12rem] truncate px-4 py-2.5 font-semibold text-fg">
                 {lane.origin_city}, {lane.origin_state} → {lane.dest_city}, {lane.dest_state}
               </td>
-              <td className="px-4 py-2.5 text-right text-fg-2">{lane.loads_count}</td>
-              <td className="px-4 py-2.5 text-right font-semibold text-accent-text">{fmtCents(lane.revenue_cents)}</td>
-              <td className="px-4 py-2.5 text-right text-fg-2">
+              <td className={cn("px-4 py-2.5 text-right", moneyCls, "text-fg-2")}>{lane.loads_count}</td>
+              <td className={cn("px-4 py-2.5 text-right", moneyCls, "font-semibold text-accent-text")}>{fmtCents(lane.revenue_cents)}</td>
+              <td className={cn("px-4 py-2.5 text-right", moneyCls, "text-fg-2")}>
                 {lane.avg_rpm_cents ? `$${(lane.avg_rpm_cents / 100).toFixed(2)}` : "—"}
               </td>
-              <td className={`px-4 py-2.5 text-right font-semibold ${lane.margin_cents >= 0 ? "text-ok" : "text-bad"}`}>
+              <td className={cn("px-4 py-2.5 text-right", moneyCls, "font-semibold", lane.margin_cents >= 0 ? "text-ok" : "text-bad")}>
                 {fmtCents(lane.margin_cents)}
               </td>
             </tr>
@@ -189,28 +190,28 @@ function LoadedVsDeadheadPanel({
       <div className="grid grid-cols-2 gap-3 px-4 pt-4">
         <div>
           <span className="text-label text-fg-3 uppercase">Operating cost / mi</span>
-          <p className="mt-1 font-mono text-lg font-medium text-fg tabular-nums">{perMile(kpis.cpmCents)}</p>
+          <p className={cn(moneyCls, "mt-1 text-lg")}>{perMile(kpis.cpmCents)}</p>
         </div>
         <div>
           <span className="text-label text-fg-3 uppercase">Revenue / loaded mi</span>
-          <p className="mt-1 font-mono text-lg font-medium text-fg tabular-nums">{perMile(kpis.rpmCents)}</p>
+          <p className={cn(moneyCls, "mt-1 text-lg")}>{perMile(kpis.rpmCents)}</p>
         </div>
       </div>
 
       <div className="px-4 pt-4">
         {kpis.totalMiles > 0 ? (
-          <div className="h-3 w-full overflow-hidden rounded-full bg-bad-soft">
-            <div className="h-full rounded-full bg-accent" style={{ width: `${loadedPct}%` }} />
+          <div className="h-3 w-full overflow-hidden rounded-pill bg-bad-soft">
+            <div className="h-full rounded-pill bg-accent" style={{ width: `${loadedPct}%` }} />
           </div>
         ) : (
-          <div className="h-3 w-full rounded-full bg-surface-2" />
+          <div className="h-3 w-full rounded-pill bg-surface-2" />
         )}
         <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-fg-3">
           <span className="inline-flex items-center gap-1.5">
-            <span className="h-2 w-2 rounded-sm bg-accent" /> Loaded {loadedPct != null ? `${loadedPct}%` : "—"} ({kpis.loadedMiles.toLocaleString()} mi)
+            <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-accent" /> Loaded {loadedPct != null ? `${loadedPct}%` : "—"} ({kpis.loadedMiles.toLocaleString()} mi)
           </span>
           <span className="inline-flex items-center gap-1.5">
-            <span className="h-2 w-2 rounded-sm bg-bad-soft" /> Deadhead {deadheadLabel} ({kpis.deadheadMiles.toLocaleString()} mi)
+            <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-bad-soft" /> Deadhead {deadheadLabel} ({kpis.deadheadMiles.toLocaleString()} mi)
           </span>
         </div>
         {deadheadBlankLoads > 0 && (
@@ -226,7 +227,8 @@ function LoadedVsDeadheadPanel({
                 Fuel card says{" "}
                 <span
                   className={cn(
-                    "font-mono font-semibold tabular-nums",
+                    moneyCls,
+                    "font-semibold",
                     deadhead.fleet.measuredDeadheadPct > (deadhead.fleet.typedDeadheadPct ?? 0) + 3
                       ? "text-warn"
                       : "text-fg"
@@ -278,9 +280,9 @@ function TruckPerformancePanel({ pnl, emptyRangeLabel }: { pnl: Awaited<ReturnTy
 
   return (
     <div className="overflow-x-auto">
-      <table className="w-full text-sm">
+      <table className="hub-table w-full text-sm">
         <thead>
-          <tr className="border-b border-border text-left text-label text-fg-3 uppercase">
+          <tr className={tableHeadCls}>
             <th className="px-4 py-3">Truck</th>
             <th className="px-4 py-3 text-right">Net</th>
             <th className="px-4 py-3 text-right">Net / mi</th>
@@ -289,11 +291,11 @@ function TruckPerformancePanel({ pnl, emptyRangeLabel }: { pnl: Awaited<ReturnTy
         <tbody>
           {ranked.map((r) => (
             <tr key={r.truckId} className="border-b border-border last:border-b-0">
-              <td className="px-4 py-2.5 font-bold text-fg">#{r.unitNumber}</td>
-              <td className={`px-4 py-2.5 text-right font-semibold ${r.netCents >= 0 ? "text-ok" : "text-bad"}`}>
+              <td className={cn(moneyCls, "px-4 py-2.5 font-bold text-fg")}>#{r.unitNumber}</td>
+              <td className={cn("px-4 py-2.5 text-right", moneyCls, "font-semibold", r.netCents >= 0 ? "text-ok" : "text-bad")}>
                 {fmtCents(r.netCents)}
               </td>
-              <td className={`px-4 py-2.5 text-right font-semibold tabular-nums ${(r.netPerMileCents ?? 0) >= 0 ? "text-ok" : "text-bad"}`}>
+              <td className={cn("px-4 py-2.5 text-right", moneyCls, "font-semibold", (r.netPerMileCents ?? 0) >= 0 ? "text-ok" : "text-bad")}>
                 {r.netPerMileCents != null ? `$${(r.netPerMileCents / 100).toFixed(2)}` : "—"}
               </td>
             </tr>
@@ -308,13 +310,13 @@ function SettlementLiabilityPanel({ liability }: { liability: SettlementLiabilit
   return (
     <div className="px-4 py-4">
       <span className="text-label text-fg-3 uppercase">Owed to drivers</span>
-      <p className="mt-1 text-2xl font-semibold text-fg">{fmtCents(liability.totalCents)}</p>
+      <p className={cn(moneyCls, "mt-1 text-2xl font-semibold")}>{fmtCents(liability.totalCents)}</p>
       <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-fg-3">
         <span className="inline-flex items-center gap-1.5">
-          <span className="h-2 w-2 rounded-sm bg-warn" /> Approved, unpaid {fmtCents(liability.approvedCents)}
+          <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-warn" /> Approved, unpaid {fmtCents(liability.approvedCents)}
         </span>
         <span className="inline-flex items-center gap-1.5">
-          <span className="h-2 w-2 rounded-sm bg-surface-2" /> Draft {fmtCents(liability.draftCents)}
+          <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-surface-2" /> Draft {fmtCents(liability.draftCents)}
         </span>
       </div>
       <p className="mt-3 text-[11px] text-fg-3">
@@ -337,11 +339,11 @@ function FuelSpendPanel({ fuel }: { fuel: FuelSpendSummary }) {
       <div className="grid grid-cols-2 gap-3 px-4 pt-4">
         <div>
           <span className="text-label text-fg-3 uppercase">Month to date</span>
-          <p className="mt-1 text-2xl font-semibold text-fg">{fmtCents(fuel.monthCents)}</p>
+          <p className={cn(moneyCls, "mt-1 text-2xl font-semibold")}>{fmtCents(fuel.monthCents)}</p>
         </div>
         <div>
           <span className="text-label text-fg-3 uppercase">Week to date</span>
-          <p className="mt-1 text-2xl font-semibold text-fg">{fmtCents(fuel.weekCents)}</p>
+          <p className={cn(moneyCls, "mt-1 text-2xl font-semibold")}>{fmtCents(fuel.weekCents)}</p>
         </div>
       </div>
 
@@ -355,7 +357,7 @@ function FuelSpendPanel({ fuel }: { fuel: FuelSpendSummary }) {
           {fuel.topTrucks.map((t, i) => (
             <div key={t.truck_id ?? i} className="flex items-center justify-between gap-3 px-4 py-2.5">
               <span className="truncate text-sm font-semibold text-fg">{t.truck_unit ?? "Unassigned"}</span>
-              <span className="shrink-0 text-sm text-fg-2 tabular-nums">
+              <span className={cn(moneyCls, "shrink-0 text-sm text-fg-2")}>
                 {t.gallons.toLocaleString(undefined, { maximumFractionDigits: 0 })} gal · {fmtCents(t.total_cents)}
               </span>
             </div>
@@ -403,7 +405,7 @@ function ComplianceRedFlagsPanel({ entries }: { entries: ComplianceEntry[] }) {
           {worst.map((entry, i) => (
             <div key={i} className="flex items-center gap-3 px-4 py-2.5">
               <span
-                className={`h-2 w-2 shrink-0 rounded-full ${entry.color === "red" ? "bg-bad" : "bg-warn"}`}
+                className={cn("h-2.5 w-2.5 shrink-0 rounded-full", entry.color === "red" ? "bg-bad" : "bg-warn")}
               />
               <div className="min-w-0 flex-1">
                 {entry.manualItemId ? (

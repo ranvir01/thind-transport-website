@@ -80,7 +80,10 @@ async function registerCount(page) {
     const heading = [...document.querySelectorAll("h2")].find((h) =>
       (h.textContent ?? "").includes("DOT accident register")
     )
-    const badge = heading?.parentElement?.querySelector("span.rounded-full")
+    // rounded-pill is the <Pill> primitive's radius; rounded-full is the
+    // hand-rolled chip it replaced. Accept either so the count survives the
+    // remaining pill conversions.
+    const badge = heading?.parentElement?.querySelector("span.rounded-pill, span.rounded-full")
     return Number(badge?.textContent?.trim() ?? "NaN")
   })
 }

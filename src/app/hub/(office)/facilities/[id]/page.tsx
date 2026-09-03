@@ -45,7 +45,7 @@ export default async function FacilityDetailPage({ params }: { params: Promise<{
         {facility.avg_dwell_minutes != null ? (
           <span
             className={cn(
-              "inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm font-bold",
+              "inline-flex items-center gap-1.5 rounded-pill border px-3 py-1.5 text-sm font-semibold",
               risk === "high"
                 ? "border-bad-soft bg-bad-soft text-bad"
                 : risk === "warn"
@@ -58,17 +58,17 @@ export default async function FacilityDetailPage({ params }: { params: Promise<{
             {risk === "high" ? " — past your free time, price detention in" : ""}
           </span>
         ) : (
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-border-strong bg-surface-2 px-3 py-1.5 text-sm text-fg-3">
+          <span className="inline-flex items-center gap-1.5 rounded-pill border border-border-strong bg-surface-2 px-3 py-1.5 text-sm text-fg-3">
             <Clock className="h-4 w-4" /> No dwell history yet
           </span>
         )}
-        <span className="inline-flex items-center gap-1.5 rounded-full border border-border-strong bg-surface-2 px-3 py-1.5 text-sm text-fg-2">
+        <span className="inline-flex items-center gap-1.5 rounded-pill border border-border-strong bg-surface-2 px-3 py-1.5 text-sm text-fg-2">
           <Warehouse className="h-4 w-4" />
           {facility.type === "shipper" ? "Shipper" : facility.type === "receiver" ? "Receiver" : "Ships & receives"}
           {" · "}{facility.stop_count ?? 0} stops on record
         </span>
         {facility.overnight_parking != null ? (
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-border-strong bg-surface-2 px-3 py-1.5 text-sm text-fg-2">
+          <span className="inline-flex items-center gap-1.5 rounded-pill border border-border-strong bg-surface-2 px-3 py-1.5 text-sm text-fg-2">
             <MapPin className="h-4 w-4" />
             Overnight parking: {facility.overnight_parking ? "yes" : "no"}
           </span>
@@ -134,12 +134,12 @@ export default async function FacilityDetailPage({ params }: { params: Promise<{
                       : null
                   return (
                     <li key={i}>
-                      <Link href={`/hub/loads/${stop.load_id}`} className="flex items-center justify-between gap-2 py-2 px-2 -mx-2 rounded-lg hover:bg-hover">
+                      <Link href={`/hub/loads/${stop.load_id}`} className="flex items-center justify-between gap-2 py-2 px-2 -mx-2 rounded-control hover:bg-hover">
                         <span className="text-sm font-semibold text-fg">
                           {stop.reference}
                           <span className="font-normal text-fg-3"> · {stop.type === "pickup" ? "picked up" : "delivered"}</span>
                         </span>
-                        <span className={cn("shrink-0 text-body-xs", dwell != null && dwell >= freeMinutes ? "font-bold text-orange" : "text-fg-3")}>
+                        <span className={cn("shrink-0 text-body-xs", dwell != null && dwell >= freeMinutes ? "font-semibold text-warn" : "text-fg-3")}>
                           {dwell != null ? `${formatDwell(dwell)} dock time` : stop.appt_start ? new Date(stop.appt_start).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "—"}
                         </span>
                       </Link>

@@ -4,9 +4,10 @@ import { fuelStatsByTruck, fuelByProgram, fuelFraudFlags, listFuelTransactions, 
 import { requirePermissionPage } from "@/lib/hub/session"
 import { can } from "@/lib/hub/permissions"
 import { fmtCents, fmtCentsExact } from "@/lib/hub/types"
-import { Panel, PageHeader, EmptyState } from "@/components/hub/ui"
+import { Panel, PageHeader, EmptyState, moneyCls, tableHeadCls } from "@/components/hub/ui"
 import { FuelUseBadge } from "@/components/hub/FuelUseBadge"
 import { UnassignedFuelPanel } from "@/components/hub/UnassignedFuelPanel"
+import { cn } from "@/lib/utils"
 
 import { HelpTip } from "@/components/hub/HelpTip"
 
@@ -74,21 +75,21 @@ export default async function FuelPage() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
             <Panel className="p-4">
               <span className="text-label text-fg-3 uppercase">Fuel spend</span>
-              <p className="mt-2 font-mono text-2xl font-medium text-fg tabular-nums">{fmtCents(totalCents)}</p>
+              <p className={cn(moneyCls, "mt-2 text-2xl")}>{fmtCents(totalCents)}</p>
             </Panel>
             <Panel className="p-4">
               <span className="text-label text-fg-3 uppercase">Gallons</span>
-              <p className="mt-2 font-mono text-2xl font-medium text-fg tabular-nums">{Math.round(totalGallons).toLocaleString()}</p>
+              <p className={cn(moneyCls, "mt-2 text-2xl")}>{Math.round(totalGallons).toLocaleString()}</p>
             </Panel>
             <Panel className="p-4">
               <span className="text-label text-fg-3 uppercase">Fleet avg $/gal</span>
-              <p className="mt-2 font-mono text-2xl font-medium text-fg tabular-nums">
+              <p className={cn(moneyCls, "mt-2 text-2xl")}>
                 {totalGallons > 0 ? fmtCentsExact(Math.round(totalCents / totalGallons)) : "—"}
               </p>
             </Panel>
             <Panel className="p-4">
               <span className="text-label text-fg-3 uppercase">EIA weekly diesel</span>
-              <p className="mt-2 font-mono text-2xl font-medium text-fg tabular-nums">
+              <p className={cn(moneyCls, "mt-2 text-2xl")}>
                 {eiaCents ? fmtCentsExact(eiaCents) : "—"}
               </p>
               {!eiaCents ? <p className="text-body-xs text-fg-3">Set EIA_API_KEY (free) to compare</p> : null}
@@ -119,9 +120,9 @@ export default async function FuelPage() {
             {/* Per truck */}
             <Panel className="overflow-x-auto">
               <h2 className="text-[13.5px] font-semibold text-fg p-4 pb-2">Per truck</h2>
-              <table className="w-full text-sm">
+              <table className="hub-table w-full text-sm">
                 <thead>
-                  <tr className="border-b border-border text-left text-label text-fg-3 uppercase">
+                  <tr className={tableHeadCls}>
                     <th className="px-4 py-2">Truck</th>
                     <th className="px-4 py-2 text-right">Gallons</th>
                     <th className="px-4 py-2 text-right">Spend</th>
@@ -136,11 +137,11 @@ export default async function FuelPage() {
                     const tractorGallons = Number(row.tractor_gallons)
                     return (
                       <tr key={row.truck_id ?? "none"} className="border-b border-border">
-                        <td className="px-4 py-2 font-semibold text-fg">{row.truck_unit ? `#${row.truck_unit}` : "Unmatched"}</td>
-                        <td className="px-4 py-2 text-right text-fg-2">{Math.round(gallons).toLocaleString()}</td>
-                        <td className="px-4 py-2 text-right text-accent-text font-semibold">{fmtCents(Number(row.total_cents))}</td>
-                        <td className="px-4 py-2 text-right text-fg-2">{miles > 0 && tractorGallons > 0 ? (miles / tractorGallons).toFixed(1) : "—"}</td>
-                        <td className="px-4 py-2 text-right text-fg-2">{miles > 0 ? (Number(row.total_cents) / miles).toFixed(1) : "—"}</td>
+                        <td className={cn("px-4 py-2", moneyCls, "font-semibold")}>{row.truck_unit ? `#${row.truck_unit}` : "Unmatched"}</td>
+                        <td className={cn("px-4 py-2 text-right", moneyCls, "text-fg-2")}>{Math.round(gallons).toLocaleString()}</td>
+                        <td className={cn("px-4 py-2 text-right", moneyCls, "font-semibold text-accent-text")}>{fmtCents(Number(row.total_cents))}</td>
+                        <td className={cn("px-4 py-2 text-right", moneyCls, "text-fg-2")}>{miles > 0 && tractorGallons > 0 ? (miles / tractorGallons).toFixed(1) : "—"}</td>
+                        <td className={cn("px-4 py-2 text-right", moneyCls, "text-fg-2")}>{miles > 0 ? (Number(row.total_cents) / miles).toFixed(1) : "—"}</td>
                       </tr>
                     )
                   })}
@@ -154,9 +155,9 @@ export default async function FuelPage() {
             {/* By program */}
             <Panel className="overflow-x-auto">
               <h2 className="text-[13.5px] font-semibold text-fg p-4 pb-2">By card program</h2>
-              <table className="w-full text-sm">
+              <table className="hub-table w-full text-sm">
                 <thead>
-                  <tr className="border-b border-border text-left text-label text-fg-3 uppercase">
+                  <tr className={tableHeadCls}>
                     <th className="px-4 py-2">Program</th>
                     <th className="px-4 py-2 text-right">Gallons</th>
                     <th className="px-4 py-2 text-right">Spend</th>
@@ -167,9 +168,9 @@ export default async function FuelPage() {
                   {byProgram.map((row, i) => (
                     <tr key={i} className="border-b border-border">
                       <td className="px-4 py-2 font-semibold text-fg">{row.card_program ?? "Unknown"}</td>
-                      <td className="px-4 py-2 text-right text-fg-2">{Math.round(Number(row.gallons)).toLocaleString()}</td>
-                      <td className="px-4 py-2 text-right text-accent-text font-semibold">{fmtCents(Number(row.total_cents))}</td>
-                      <td className="px-4 py-2 text-right text-fg-2">{row.avg_price_cents ? fmtCentsExact(Number(row.avg_price_cents)) : "—"}</td>
+                      <td className={cn("px-4 py-2 text-right", moneyCls, "text-fg-2")}>{Math.round(Number(row.gallons)).toLocaleString()}</td>
+                      <td className={cn("px-4 py-2 text-right", moneyCls, "font-semibold text-accent-text")}>{fmtCents(Number(row.total_cents))}</td>
+                      <td className={cn("px-4 py-2 text-right", moneyCls, "text-fg-2")}>{row.avg_price_cents ? fmtCentsExact(Number(row.avg_price_cents)) : "—"}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -194,7 +195,7 @@ export default async function FuelPage() {
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
                   <FuelUseBadge id={tx.id} value={tx.fuel_use} />
-                  <span className="font-mono font-medium text-accent-text tabular-nums">{fmtCentsExact(tx.total_cents)}</span>
+                  <span className={cn(moneyCls, "text-accent-text")}>{fmtCentsExact(tx.total_cents)}</span>
                 </div>
               </div>
             ))}

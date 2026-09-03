@@ -6,9 +6,12 @@
  */
 import { useCallback, useEffect, useRef, useState } from "react"
 import Link from "next/link"
-import { Bell } from "lucide-react"
+import { Bell, BellOff } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { applyAppBadge } from "@/lib/hub/pwa"
+
+/** One copy, two variants — the office and driver empty states cannot drift. */
+const EMPTY_TEXT = "Nothing yet — alerts about dispatches, messages, and paperwork will show up here."
 
 interface FeedItem {
   id: number
@@ -63,12 +66,21 @@ export function NotificationsBell({
   }, [])
 
   useEffect(() => {
+    // Poll only while the tab is actually on screen: a backgrounded office
+    // tab used to keep hitting the feed every minute all day. The moment it
+    // comes back into view it refetches, so nothing is missed — just deferred.
+    const visible = () => typeof document === "undefined" || document.visibilityState === "visible"
+    const tick = () => {
+      if (visible()) refresh()
+    }
     // Defer the first fetch out of the effect body (no sync setState cascades).
-    const initial = setTimeout(refresh, 0)
-    const interval = setInterval(refresh, 60_000)
+    const initial = setTimeout(tick, 0)
+    const interval = setInterval(tick, 60_000)
+    document.addEventListener("visibilitychange", tick)
     return () => {
       clearTimeout(initial)
       clearInterval(interval)
+      document.removeEventListener("visibilitychange", tick)
     }
   }, [refresh])
 
@@ -129,7 +141,7 @@ export function NotificationsBell({
               "absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-pill px-1 font-bold tabular-nums",
               dark
                 ? "bg-[color:var(--driver-accent)] text-[11px] text-[color:var(--driver-accent-fg,#121316)]"
-                : "bg-accent text-[10px] text-accent-fg"
+                : "bg-accent text-[11px] text-accent-fg"
             )}
           >
             {unread > 9 ? "9+" : unread}
@@ -161,9 +173,18 @@ export function NotificationsBell({
           </p>
           <div className="max-h-[60vh] overflow-y-auto">
             {items.length === 0 ? (
-              <p className={cn("px-4 py-8 text-center text-body-sm", dark ? "text-steel-300" : "text-fg-3")}>
-                Nothing yet — alerts about dispatches, messages, and paperwork will show up here.
-              </p>
+              // The icon is an OFFICE-only addition: the driver panel keeps the
+              // single <p> it has always rendered (same element tree, same box
+              // model) so a restyle of the dark variant can't collide here. One
+              // copy string, so the two branches cannot drift.
+              dark ? (
+                <p className="px-4 py-8 text-center text-body-sm text-steel-300">{EMPTY_TEXT}</p>
+              ) : (
+                <div className="flex flex-col items-center gap-2 px-4 py-8 text-center text-body-sm text-fg-3">
+                  <BellOff className="h-5 w-5" aria-hidden />
+                  <p>{EMPTY_TEXT}</p>
+                </div>
+              )
             ) : (
               items.map((item) => (
                 <Link
@@ -173,6 +194,12 @@ export function NotificationsBell({
                   className={cn(
                     "block border-b px-4 py-3",
                     dark ? "border-white/10 hover:bg-white/5" : "border-border hover:bg-hover",
+                    // Unread is record status, so it takes the accent tint —
+                    // not --selected/--hover, which DESIGN.md reserves for
+                    // interaction (and which the palette already uses to mean
+                    // "keyboard-selected"). bg-selected here sat within ~3% of
+                    // a hovered read row, so a pointer resting in the list hid
+                    // the panel's only unread affordance.
                     !item.read_at && (dark ? "bg-white/[0.06]" : "bg-accent-soft")
                   )}
                 >

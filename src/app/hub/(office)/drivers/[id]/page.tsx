@@ -3,7 +3,8 @@ import { notFound } from "next/navigation"
 import { getDriver } from "@/lib/hub/drivers"
 import { listDocuments } from "@/lib/hub/documents"
 import { listLoads } from "@/lib/hub/loads"
-import { PageHeader, BackLink, Panel, StatusBadge } from "@/components/hub/ui"
+import { PageHeader, BackLink, Panel, StatusBadge, Pill, moneyCls, tableHeadCls } from "@/components/hub/ui"
+import { cn } from "@/lib/utils"
 import { DriverForm, type DriverFormState } from "@/components/hub/DriverForm"
 import { DocumentsPanel } from "@/components/hub/DocumentsPanel"
 import { requireOfficeUser } from "@/lib/hub/session"
@@ -79,9 +80,9 @@ export default async function DriverDetailPage({ params }: { params: Promise<{ i
                 <h2 className="text-[13.5px] font-semibold text-fg">
                   How {driver.first_name} gets paid
                 </h2>
-                <span className="rounded-full border border-accent-soft bg-accent-soft px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-accent-text">
+                <Pill tone="accent" size="xs" className="uppercase tracking-wider">
                   {payRules!.isAuto ? "Standard plan" : "Custom plan"}
-                </span>
+                </Pill>
               </div>
               <ul className="space-y-1.5">
                 {payDescription.earnings.map((line) => (
@@ -117,37 +118,39 @@ export default async function DriverDetailPage({ params }: { params: Promise<{ i
               <p className="text-body-xs text-fg-3 mb-3">
                 70% on-time + 30% MPG vs fleet, −15 per incident. Feeds the performance bonus pay rule.
               </p>
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-border text-left text-label text-fg-3 uppercase">
-                    <th className="py-1.5">Month</th>
-                    <th className="py-1.5 text-right">On-time</th>
-                    <th className="py-1.5 text-right">MPG</th>
-                    <th className="py-1.5 text-right">Incidents</th>
-                    <th className="py-1.5 text-right">Score</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {scores.map((score) => (
-                    <tr key={String(score.month)} className="border-b border-border">
-                      <td className="py-1.5 text-fg-2">
-                        {new Date(score.month).toLocaleDateString("en-US", { month: "short", year: "numeric" })}
-                      </td>
-                      <td className="py-1.5 text-right text-fg-2">
-                        {score.on_time_pct != null ? `${Number(score.on_time_pct).toFixed(0)}%` : "—"}
-                      </td>
-                      <td className="py-1.5 text-right text-fg-2">
-                        {score.mpg != null ? Number(score.mpg).toFixed(1) : "—"}
-                        {score.fleet_mpg != null ? <span className="text-fg-3"> / {Number(score.fleet_mpg).toFixed(1)}</span> : null}
-                      </td>
-                      <td className="py-1.5 text-right text-fg-2">{score.incidents}</td>
-                      <td className="py-1.5 text-right font-mono font-medium text-accent-text tabular-nums">
-                        {Number(score.composite).toFixed(0)}
-                      </td>
+              <div className="overflow-x-auto">
+                <table className="hub-table w-full text-sm">
+                  <thead>
+                    <tr className={tableHeadCls}>
+                      <th className="py-1.5">Month</th>
+                      <th className="py-1.5 text-right">On-time</th>
+                      <th className="py-1.5 text-right">MPG</th>
+                      <th className="py-1.5 text-right">Incidents</th>
+                      <th className="py-1.5 text-right">Score</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {scores.map((score) => (
+                      <tr key={String(score.month)} className="border-b border-border">
+                        <td className="py-1.5 text-fg-2">
+                          {new Date(score.month).toLocaleDateString("en-US", { month: "short", year: "numeric" })}
+                        </td>
+                        <td className={cn(moneyCls, "py-1.5 text-right font-normal text-fg-2")}>
+                          {score.on_time_pct != null ? `${Number(score.on_time_pct).toFixed(0)}%` : "—"}
+                        </td>
+                        <td className={cn(moneyCls, "py-1.5 text-right font-normal text-fg-2")}>
+                          {score.mpg != null ? Number(score.mpg).toFixed(1) : "—"}
+                          {score.fleet_mpg != null ? <span className="text-fg-3"> / {Number(score.fleet_mpg).toFixed(1)}</span> : null}
+                        </td>
+                        <td className={cn(moneyCls, "py-1.5 text-right font-normal text-fg-2")}>{score.incidents}</td>
+                        <td className={cn(moneyCls, "py-1.5 text-right text-accent-text")}>
+                          {Number(score.composite).toFixed(0)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </Panel>
           ) : null}
           <DocumentsPanel entityType="driver" entityId={id} documents={documents} />
@@ -161,7 +164,7 @@ export default async function DriverDetailPage({ params }: { params: Promise<{ i
               <ul className="divide-y divide-border">
                 {loads.slice(0, 8).map((load) => (
                   <li key={load.id}>
-                    <Link href={`/hub/loads/${load.id}`} className="flex items-center justify-between gap-2 py-2.5 hover:bg-hover rounded-lg px-2 -mx-2">
+                    <Link href={`/hub/loads/${load.id}`} className="flex items-center justify-between gap-2 py-2.5 hover:bg-hover rounded-control px-2 -mx-2">
                       <div className="min-w-0">
                         <p className="font-semibold text-fg">{load.reference}</p>
                         <p className="text-body-xs text-fg-3 truncate">
@@ -170,7 +173,7 @@ export default async function DriverDetailPage({ params }: { params: Promise<{ i
                       </div>
                       <div className="flex items-center gap-2 shrink-0">
                         <StatusBadge status={load.status} />
-                        <span className="font-mono font-medium text-accent-text tabular-nums text-sm">{fmtCents(loadTotalCents(load))}</span>
+                        <span className={cn(moneyCls, "text-sm text-accent-text")}>{fmtCents(loadTotalCents(load))}</span>
                       </div>
                     </Link>
                   </li>

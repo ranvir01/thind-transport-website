@@ -3,10 +3,15 @@ import { getIftaReport, listIftaRates, listIftaReports } from "@/lib/hub/ifta"
 import { quarterKey, lastCompletedQuarterKey, iftaDueDate, iftaFilingIsLate, staleRateJurisdictions, iftaRowFuelTaxCents, iftaWorksheetTotals } from "@/lib/hub/ifta-core"
 import { requirePermissionPage } from "@/lib/hub/session"
 import { fmtCentsExact, type IftaReportRow } from "@/lib/hub/types"
-import { Panel, PageHeader, BackLink, fieldCls, Pill } from "@/components/hub/ui"
+import { Panel, PageHeader, BackLink, fieldCls, Pill, moneyCls, tableHeadCls } from "@/components/hub/ui"
 import { IftaControls, IftaRatesImporter } from "@/components/hub/ComplianceForms"
+import { cn } from "@/lib/utils"
 
 const STATUS_TONE = { draft: "neutral", reviewed: "info", filed: "ok" } as const
+// Sentence case: the raw enum was rendered uppercase at 18px, which the type
+// scale reserves for 11-12px eyebrows only.
+const STATUS_LABELS: Record<string, string> = { draft: "Draft", reviewed: "Reviewed", filed: "Filed" }
+const MILEAGE_SOURCE_LABELS: Record<string, string> = { pings: "Pings", import: "Import", mixed: "Mixed" }
 // Most-recent-first (query is ORDER BY quarter DESC); caps the strip so a carrier
 // with years of filings doesn't get a wall of pills.
 const HISTORY_STRIP_LIMIT = 8
@@ -129,23 +134,25 @@ export default async function IftaPage({
           <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-4">
             <Panel className="p-4">
               <span className="text-label text-fg-3 uppercase">Status</span>
-              <p className="mt-1 font-semibold text-lg text-fg uppercase">{report.status}</p>
+              <p className="mt-1 text-lg font-semibold text-fg">{STATUS_LABELS[report.status] ?? report.status}</p>
             </Panel>
             <Panel className="p-4">
               <span className="text-label text-fg-3 uppercase">Mileage source</span>
-              <p className="mt-1 font-semibold text-lg text-fg uppercase">{report.mileage_source}</p>
+              <p className="mt-1 text-lg font-semibold text-fg">
+                {report.mileage_source ? MILEAGE_SOURCE_LABELS[report.mileage_source] ?? report.mileage_source : "—"}
+              </p>
             </Panel>
             <Panel className="p-4">
               <span className="text-label text-fg-3 uppercase">Fleet miles</span>
-              <p className="mt-1 font-semibold text-lg text-fg">{Number(report.fleet_miles).toLocaleString()}</p>
+              <p className={cn(moneyCls, "mt-1 text-lg font-semibold")}>{Number(report.fleet_miles).toLocaleString()}</p>
             </Panel>
             <Panel className="p-4">
               <span className="text-label text-fg-3 uppercase">Fleet MPG</span>
-              <p className="mt-1 font-semibold text-lg text-fg">{Number(report.mpg).toFixed(2)}</p>
+              <p className={cn(moneyCls, "mt-1 text-lg font-semibold")}>{Number(report.mpg).toFixed(2)}</p>
             </Panel>
             <Panel className="p-4">
               <span className="text-label text-fg-3 uppercase">Net tax</span>
-              <p className={`mt-1 text-lg font-semibold ${Number(report.net_tax_cents) > 0 ? "text-warn" : Number(report.net_tax_cents) < 0 ? "text-ok" : "text-fg"}`}>
+              <p className={cn(moneyCls, "mt-1 text-lg font-semibold", Number(report.net_tax_cents) > 0 ? "text-warn" : Number(report.net_tax_cents) < 0 ? "text-ok" : "text-fg")}>
                 {fmtCentsExact(Number(report.net_tax_cents))}
               </p>
             </Panel>
@@ -179,9 +186,9 @@ export default async function IftaPage({
           ) : null}
 
           <Panel className="overflow-x-auto mb-4">
-            <table className="w-full text-sm">
+            <table className="hub-table w-full text-sm">
               <thead>
-                <tr className="border-b border-border text-left text-label text-fg-3 uppercase">
+                <tr className={tableHeadCls}>
                   <th className="px-4 py-3">Jur</th>
                   <th className="px-4 py-3 text-right">Miles</th>
                   <th className="px-4 py-3 text-right">Taxable gal</th>
@@ -199,15 +206,15 @@ export default async function IftaPage({
                   const fuelTaxCents = iftaRowFuelTaxCents(row)
                   return (
                     <tr key={row.jurisdiction} className="border-b border-border">
-                      <td className="px-4 py-2.5 font-bold text-fg">{row.jurisdiction}</td>
-                      <td className="px-4 py-2.5 text-right text-fg-2">{row.miles.toLocaleString()}</td>
-                      <td className="px-4 py-2.5 text-right text-fg-2">{row.taxableGallons.toFixed(3)}</td>
-                      <td className="px-4 py-2.5 text-right text-fg-2">{row.taxPaidGallons.toFixed(3)}</td>
-                      <td className="px-4 py-2.5 text-right text-fg-2">{Number(row.rate).toFixed(4)}</td>
-                      <td className="px-4 py-2.5 text-right text-fg-2">{fmtCentsExact(fuelTaxCents)}</td>
-                      <td className="px-4 py-2.5 text-right text-fg-2">{row.surchargeRate ? Number(row.surchargeRate).toFixed(4) : "—"}</td>
-                      <td className="px-4 py-2.5 text-right text-fg-2">{surchargeCents ? fmtCentsExact(surchargeCents) : "—"}</td>
-                      <td className={`px-4 py-2.5 text-right font-semibold ${row.netCents > 0 ? "text-warn" : row.netCents < 0 ? "text-ok" : "text-fg-2"}`}>
+                      <td className={cn(moneyCls, "px-4 py-2.5 font-bold text-fg")}>{row.jurisdiction}</td>
+                      <td className={cn("px-4 py-2.5 text-right", moneyCls, "text-fg-2")}>{row.miles.toLocaleString()}</td>
+                      <td className={cn("px-4 py-2.5 text-right", moneyCls, "text-fg-2")}>{row.taxableGallons.toFixed(3)}</td>
+                      <td className={cn("px-4 py-2.5 text-right", moneyCls, "text-fg-2")}>{row.taxPaidGallons.toFixed(3)}</td>
+                      <td className={cn("px-4 py-2.5 text-right", moneyCls, "text-fg-2")}>{Number(row.rate).toFixed(4)}</td>
+                      <td className={cn("px-4 py-2.5 text-right", moneyCls, "text-fg-2")}>{fmtCentsExact(fuelTaxCents)}</td>
+                      <td className={cn("px-4 py-2.5 text-right", moneyCls, "text-fg-2")}>{row.surchargeRate ? Number(row.surchargeRate).toFixed(4) : "—"}</td>
+                      <td className={cn("px-4 py-2.5 text-right", moneyCls, "text-fg-2")}>{surchargeCents ? fmtCentsExact(surchargeCents) : "—"}</td>
+                      <td className={cn("px-4 py-2.5 text-right", moneyCls, "font-semibold", row.netCents > 0 ? "text-warn" : row.netCents < 0 ? "text-ok" : "text-fg-2")}>
                         {fmtCentsExact(row.netCents)}
                       </td>
                     </tr>
@@ -220,14 +227,14 @@ export default async function IftaPage({
                       gallons, tax-paid gallons, and tax as its own summary lines. */}
                   <tr className="border-t-2 border-border-strong font-semibold text-fg">
                     <td className="px-4 py-2.5">Total</td>
-                    <td className="px-4 py-2.5 text-right">{Math.round(totals.miles).toLocaleString()}</td>
-                    <td className="px-4 py-2.5 text-right">{totals.taxableGallons.toFixed(3)}</td>
-                    <td className="px-4 py-2.5 text-right">{totals.taxPaidGallons.toFixed(3)}</td>
+                    <td className={cn("px-4 py-2.5 text-right", moneyCls, "font-semibold")}>{Math.round(totals.miles).toLocaleString()}</td>
+                    <td className={cn("px-4 py-2.5 text-right", moneyCls, "font-semibold")}>{totals.taxableGallons.toFixed(3)}</td>
+                    <td className={cn("px-4 py-2.5 text-right", moneyCls, "font-semibold")}>{totals.taxPaidGallons.toFixed(3)}</td>
                     <td className="px-4 py-2.5" />
-                    <td className="px-4 py-2.5 text-right">{fmtCentsExact(totals.taxCents)}</td>
+                    <td className={cn("px-4 py-2.5 text-right", moneyCls, "font-semibold")}>{fmtCentsExact(totals.taxCents)}</td>
                     <td className="px-4 py-2.5" />
-                    <td className="px-4 py-2.5 text-right">{totals.surchargeCents ? fmtCentsExact(totals.surchargeCents) : "—"}</td>
-                    <td className={`px-4 py-2.5 text-right ${totals.netCents > 0 ? "text-warn" : totals.netCents < 0 ? "text-ok" : "text-fg-2"}`}>
+                    <td className={cn("px-4 py-2.5 text-right", moneyCls, "font-semibold")}>{totals.surchargeCents ? fmtCentsExact(totals.surchargeCents) : "—"}</td>
+                    <td className={cn("px-4 py-2.5 text-right", moneyCls, "font-semibold", totals.netCents > 0 ? "text-warn" : totals.netCents < 0 ? "text-ok" : "text-fg-2")}>
                       {fmtCentsExact(totals.netCents)}
                     </td>
                   </tr>
@@ -259,10 +266,10 @@ export default async function IftaPage({
           ) : (
             <div className="flex flex-wrap gap-1.5">
               {rates.map((rate) => (
-                <span key={rate.jurisdiction} className="rounded-full border border-border-strong bg-surface-2 px-2.5 py-1 text-[11px] font-semibold text-fg-2">
+                <Pill key={rate.jurisdiction} tone="neutral" size="xs" className={cn(moneyCls, "font-semibold text-fg-2")}>
                   {rate.jurisdiction} {Number(rate.rate).toFixed(4)}
                   {Number(rate.surcharge_rate) > 0 ? ` +${Number(rate.surcharge_rate).toFixed(4)}` : ""}
-                </span>
+                </Pill>
               ))}
             </div>
           )}

@@ -68,10 +68,19 @@ export function WorkbenchPanel() {
             <X className="h-4 w-4" aria-hidden /> Back to Toolbox
           </button>
         </div>
+        {/* No background class on purpose. Four of the framed resources are
+            third-party sites (wsdot, tripcheck, weather.gov, eia.gov); when an
+            embedded document leaves its own canvas transparent, the IFRAME
+            element's background is what paints, so an office surface token
+            would put those pages' near-black default text on the near-black
+            dark --surface. Letting the UA paint the iframe canvas honours
+            color-scheme and stays white under a light third-party document;
+            our own framed pages (/tools/*, /resources, /cdl-jobs) set an
+            explicit body background in globals.css, so they lose nothing. */}
         <iframe
           src={framed.url}
           title={framed.label}
-          className="h-[75vh] w-full border-0 bg-white"
+          className="h-[75vh] w-full border-0"
         />
       </Panel>
     )
@@ -97,7 +106,7 @@ export function WorkbenchPanel() {
                     type="button"
                     onClick={() => openResource(r)}
                     title="Opens inside LoadOff"
-                    className={cn("block w-full rounded-control text-left")}
+                    className="block w-full rounded-control text-left"
                   >
                     <LinkPreviewBody preview={previewFor(r)} density="row" />
                   </button>

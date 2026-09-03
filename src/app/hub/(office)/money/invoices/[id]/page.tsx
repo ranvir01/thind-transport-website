@@ -5,12 +5,23 @@ import { getInvoice, listInvoicePayments } from "@/lib/hub/invoices"
 import { hasCredentials } from "@/lib/hub/credentials"
 import { requirePermissionPage } from "@/lib/hub/session"
 import { can } from "@/lib/hub/permissions"
-import { fmtCentsExact } from "@/lib/hub/types"
+import { fmtCentsExact, type InvoiceStatus } from "@/lib/hub/types"
 import { formatHubDateShort } from "@/lib/hub/format-dates"
-import { Panel, PageHeader, BackLink } from "@/components/hub/ui"
+import { Panel, PageHeader, BackLink, moneyCls } from "@/components/hub/ui"
 import { RecordPaymentForm, InvoiceActions } from "@/components/hub/MoneyActions"
+import { cn } from "@/lib/utils"
 
 export const dynamic = "force-dynamic"
+
+/** Sentence-case labels — the raw enum shouted in uppercase at 14px. */
+const STATUS_LABELS: Record<InvoiceStatus, string> = {
+  draft: "Draft",
+  sent: "Sent",
+  partial: "Partial",
+  paid: "Paid",
+  overdue: "Overdue",
+  disputed: "Disputed",
+}
 
 export default async function InvoiceDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const user = await requirePermissionPage("money:read")
@@ -49,18 +60,18 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
           <Panel className="p-4 md:p-5">
             <h2 className="text-[13.5px] font-semibold text-fg mb-3">Summary</h2>
             <dl className="space-y-2 text-sm">
-              <div className="flex justify-between"><dt className="text-fg-2">Status</dt><dd className="text-fg font-semibold uppercase">{invoice.status}</dd></div>
+              <div className="flex justify-between"><dt className="text-fg-2">Status</dt><dd className="text-fg font-semibold">{STATUS_LABELS[invoice.status as InvoiceStatus] ?? invoice.status}</dd></div>
               <div className="flex justify-between"><dt className="text-fg-2">Issued</dt><dd className="text-fg font-semibold">{formatHubDateShort(invoice.issued_on)}</dd></div>
               <div className="flex justify-between"><dt className="text-fg-2">Due</dt><dd className="text-fg font-semibold">{formatHubDateShort(invoice.due_on)}</dd></div>
-              <div className="flex justify-between"><dt className="text-fg-2">Amount</dt><dd className="text-fg font-semibold">{fmtCentsExact(invoice.amount_cents)}</dd></div>
-              <div className="flex justify-between"><dt className="text-fg-2">Paid</dt><dd className="text-fg font-semibold">{fmtCentsExact(invoice.paid_cents ?? 0)}</dd></div>
+              <div className="flex justify-between"><dt className="text-fg-2">Amount</dt><dd className={cn(moneyCls, "font-semibold")}>{fmtCentsExact(invoice.amount_cents)}</dd></div>
+              <div className="flex justify-between"><dt className="text-fg-2">Paid</dt><dd className={cn(moneyCls, "font-semibold")}>{fmtCentsExact(invoice.paid_cents ?? 0)}</dd></div>
               <div className="flex justify-between border-t border-border pt-2">
                 <dt className="text-fg font-bold">Open balance</dt>
-                <dd className="text-accent-text font-semibold text-lg">{fmtCentsExact(openCents)}</dd>
+                <dd className={cn(moneyCls, "text-lg font-semibold text-accent-text")}>{fmtCentsExact(openCents)}</dd>
               </div>
             </dl>
             {invoice.remit_to ? (
-              <div className="mt-4 rounded-lg border border-border p-3">
+              <div className="mt-4 rounded-control border border-border p-3">
                 <p className="text-label text-fg-3 uppercase mb-1">
                   Remit to {invoice.factored ? "(factoring company — Notice of Assignment)" : ""}
                 </p>
@@ -121,7 +132,7 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
                       {payment.method ? ` · ${payment.method}` : ""}
                       {payment.reference ? ` · ${payment.reference}` : ""}
                     </span>
-                    <span className="font-semibold text-ok">{fmtCentsExact(payment.amount_cents)}</span>
+                    <span className={cn(moneyCls, "font-semibold text-ok")}>{fmtCentsExact(payment.amount_cents)}</span>
                   </li>
                 ))}
               </ul>

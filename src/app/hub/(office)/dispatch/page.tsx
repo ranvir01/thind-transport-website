@@ -12,10 +12,16 @@ import { requireOfficeUser } from "@/lib/hub/session"
 import {
   BOARD_STATUSES, STATUS_LABELS, fmtCents, loadTotalCents, type Load,
 } from "@/lib/hub/types"
-import { Panel, PageHeader, btnPrimaryCls, btnSecondaryCls } from "@/components/hub/ui"
+import { Panel, PageHeader, Pill, btnPrimaryCls, btnSecondaryCls, moneyCls } from "@/components/hub/ui"
 import { AdvanceStatusButton } from "@/components/hub/StatusActions"
+import { cn } from "@/lib/utils"
 
 export const dynamic = "force-dynamic"
+
+/** Raw invoice_status enum → sentence case: 12px uppercase sits off the type ladder. */
+function invoiceStatusLabel(status: string): string {
+  return status.charAt(0).toUpperCase() + status.slice(1).replace(/_/g, " ")
+}
 
 const DOC_CHECK: { kind: string; label: string }[] = [
   { kind: "rate_confirmation", label: "RC" },
@@ -85,7 +91,7 @@ export default async function DispatchBoardPage() {
 
       {/* Mobile: stacked sections. Desktop: horizontal columns — a visible scrollbar
           is the only hint that Delivered/POD Received sit past the fold. */}
-      <div className="flex flex-col lg:flex-row gap-4 lg:overflow-x-auto lg:pb-4 lg:[&::-webkit-scrollbar]:h-2 lg:[&::-webkit-scrollbar-track]:bg-surface-2 lg:[&::-webkit-scrollbar-track]:rounded-full lg:[&::-webkit-scrollbar-thumb]:bg-border lg:[&::-webkit-scrollbar-thumb]:rounded-full">
+      <div className="flex flex-col lg:flex-row gap-4 lg:overflow-x-auto lg:pb-4 lg:[&::-webkit-scrollbar]:h-2 lg:[&::-webkit-scrollbar-track]:bg-surface-2 lg:[&::-webkit-scrollbar-track]:rounded-full lg:[&::-webkit-scrollbar-thumb]:bg-border-control lg:[&::-webkit-scrollbar-thumb]:rounded-full">
         {BOARD_STATUSES.map((status) => {
           const column = byStatus.get(status) ?? []
           return (
@@ -94,13 +100,11 @@ export default async function DispatchBoardPage() {
                 <h2 className="text-[14px] font-semibold text-fg">
                   {STATUS_LABELS[status]}
                 </h2>
-                <span className="rounded-full bg-surface-2 px-2 py-0.5 text-[11px] font-bold text-fg-2">
-                  {column.length}
-                </span>
+                <Pill size="xs">{column.length}</Pill>
               </div>
               <div className="space-y-2">
                 {column.length === 0 ? (
-                  <div className="rounded-2xl border border-dashed border-border p-4 text-center text-body-xs text-fg-3">
+                  <div className="rounded-card border border-dashed border-border-control p-4 text-center text-body-xs text-fg-3">
                     Empty
                   </div>
                 ) : (
@@ -122,7 +126,7 @@ export default async function DispatchBoardPage() {
                             <span className="font-bold text-fg group-hover:text-accent-text transition-colors">
                               {load.reference}
                             </span>
-                            <span className="font-mono font-medium text-accent-text tabular-nums text-sm">
+                            <span className={cn(moneyCls, "text-sm text-accent-text")}>
                               {fmtCents(totalCents)}
                             </span>
                           </div>
@@ -142,21 +146,21 @@ export default async function DispatchBoardPage() {
                           ) : null}
                           {load.invoice_status ? (
                             <p className="text-body-xs text-fg-3 mt-0.5">
-                              Invoice: <span className="uppercase font-bold text-accent-text">{load.invoice_status}</span>
+                              Invoice: <span className="font-semibold text-accent-text">{invoiceStatusLabel(load.invoice_status)}</span>
                             </p>
                           ) : null}
                         </Link>
                         {!legality.legal ? (
-                          <p className="mt-2 flex items-center gap-1.5 rounded-lg bg-bad-soft border border-bad-soft px-2 py-1 text-[11px] font-semibold text-bad">
+                          <p className="mt-2 flex items-center gap-1.5 rounded-control bg-bad-soft border border-bad-soft px-2 py-1 text-[11px] font-semibold text-bad">
                             <AlertTriangle className="h-3.5 w-3.5 shrink-0" /> {legality.stops[0]}
                           </p>
                         ) : legality.warnings.length > 0 ? (
-                          <p className="mt-2 flex items-center gap-1.5 rounded-lg bg-warn-soft border border-warn-soft px-2 py-1 text-[11px] font-semibold text-warn">
+                          <p className="mt-2 flex items-center gap-1.5 rounded-control bg-warn-soft border border-warn-soft px-2 py-1 text-[11px] font-semibold text-warn">
                             <AlertTriangle className="h-3.5 w-3.5 shrink-0" /> {legality.warnings[0]}
                           </p>
                         ) : null}
                         {alert ? (
-                          <p className="mt-2 flex items-center gap-1.5 rounded-lg bg-warn-soft border border-warn-soft px-2 py-1 text-[11px] font-semibold text-warn">
+                          <p className="mt-2 flex items-center gap-1.5 rounded-control bg-warn-soft border border-warn-soft px-2 py-1 text-[11px] font-semibold text-warn">
                             <CloudLightning className="h-3.5 w-3.5 shrink-0" /> {alert.event} on route
                           </p>
                         ) : null}
@@ -168,7 +172,7 @@ export default async function DispatchBoardPage() {
                           return (
                             <Link
                               href={`/hub/loads/${load.id}`}
-                              className={`mt-2 flex items-center gap-1.5 rounded-lg border px-2 py-1 text-[11px] font-semibold hover:bg-hover ${
+                              className={`mt-2 flex items-center gap-1.5 rounded-control border px-2 py-1 text-[11px] font-semibold hover:bg-hover ${
                                 ok ? "bg-ok-soft border-ok-soft text-ok" : "bg-bad-soft border-bad-soft text-bad"
                               }`}
                             >
@@ -180,7 +184,7 @@ export default async function DispatchBoardPage() {
                         {dwell ? (
                           <Link
                             href={`/hub/loads/${load.id}`}
-                            className="mt-2 flex items-center gap-1.5 rounded-lg bg-warn-soft border border-warn-soft px-2 py-1 text-[11px] font-semibold text-warn hover:bg-hover"
+                            className="mt-2 flex items-center gap-1.5 rounded-control bg-warn-soft border border-warn-soft px-2 py-1 text-[11px] font-semibold text-warn hover:bg-hover"
                           >
                             <Clock className="h-3.5 w-3.5 shrink-0" />
                             Dwelling {dwell.hoursOver.toFixed(1)}h over free time (~{fmtCents(dwell.estimatedCents)}) — mark departed to bill it
@@ -189,16 +193,9 @@ export default async function DispatchBoardPage() {
                         <div className="mt-2.5 flex items-center justify-between gap-2">
                           <div className="flex gap-1">
                             {DOC_CHECK.map((doc) => (
-                              <span
-                                key={doc.kind}
-                                className={`rounded-md px-1.5 py-0.5 text-[10px] font-bold uppercase border ${
-                                  docKinds.includes(doc.kind)
-                                    ? "bg-ok-soft text-ok border-ok-soft"
-                                    : "bg-surface-2 text-fg-3 border-border"
-                                }`}
-                              >
+                              <Pill key={doc.kind} size="xs" tone={docKinds.includes(doc.kind) ? "ok" : "neutral"}>
                                 {doc.label}
-                              </span>
+                              </Pill>
                             ))}
                           </div>
                           <AdvanceStatusButton loadId={load.id} status={load.status} compact />

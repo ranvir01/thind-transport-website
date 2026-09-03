@@ -1,9 +1,8 @@
 import Link from "next/link"
 import { requireOfficeUser } from "@/lib/hub/session"
 import { listAnnouncements, audienceUserIds } from "@/lib/hub/announcements"
-import { PageHeader, BackLink, Panel, EmptyState } from "@/components/hub/ui"
+import { PageHeader, BackLink, Panel, EmptyState, Pill, btnPrimaryCls } from "@/components/hub/ui"
 import { AnnouncementComposer } from "@/components/hub/AnnouncementComposer"
-import { cn } from "@/lib/utils"
 
 export const dynamic = "force-dynamic"
 
@@ -26,10 +25,20 @@ export default async function AnnouncementsPage() {
         subtitle="Safety bulletins, policy changes, holiday schedules — with proof everyone saw them."
       />
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-        <AnnouncementComposer />
+        <div id="new-announcement">
+          <AnnouncementComposer />
+        </div>
         <div>
           {withTargets.length === 0 ? (
-            <EmptyState title="Nothing sent yet" hint="Your first announcement lands on every targeted phone with a push alert." />
+            <EmptyState
+              title="Nothing sent yet"
+              hint="Your first announcement lands on every targeted phone with a push alert."
+              action={
+                <a href="#new-announcement" className={btnPrimaryCls}>
+                  Write the first one
+                </a>
+              }
+            />
           ) : (
             <Panel className="divide-y divide-border">
               {withTargets.map((a) => {
@@ -39,20 +48,13 @@ export default async function AnnouncementsPage() {
                     <div className="flex items-center justify-between gap-2">
                       <p className="font-semibold text-fg truncate">{a.title}</p>
                       {a.requires_ack ? (
-                        <span
-                          className={cn(
-                            "shrink-0 rounded-full border px-2.5 py-0.5 text-[11px] font-bold",
-                            complete
-                              ? "border-ok-soft bg-ok-soft text-ok"
-                              : "border-warn-soft bg-warn-soft text-warn"
-                          )}
-                        >
+                        <Pill tone={complete ? "ok" : "warn"} size="xs" className="shrink-0">
                           {a.ack_count ?? 0}/{a.audience_count} signed
-                        </span>
+                        </Pill>
                       ) : (
-                        <span className="shrink-0 rounded-full border border-border-strong bg-surface-2 px-2.5 py-0.5 text-[11px] font-bold text-fg-3">
+                        <Pill tone="neutral" size="xs" className="shrink-0">
                           FYI only
-                        </span>
+                        </Pill>
                       )}
                     </div>
                     <p className="mt-0.5 text-body-xs text-fg-3 truncate">{a.body}</p>

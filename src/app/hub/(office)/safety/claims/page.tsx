@@ -3,7 +3,7 @@ import { Plus, CalendarClock } from "lucide-react"
 import { listClaims, daysToDeadline, type Claim } from "@/lib/hub/claims"
 import { fmtCents } from "@/lib/hub/types"
 import { requirePermissionPage } from "@/lib/hub/session"
-import { PageHeader, Panel, EmptyState, BackLink } from "@/components/hub/ui"
+import { PageHeader, Panel, EmptyState, BackLink, Pill, moneyCls, btnPrimaryCls } from "@/components/hub/ui"
 import { HelpTip } from "@/components/hub/HelpTip"
 import { cn } from "@/lib/utils"
 
@@ -58,8 +58,8 @@ export default async function ClaimsPage() {
           title="No claims on file"
           hint="Good. When freight gets damaged or a shipper comes after you, open the claim here so the filing deadline never sneaks past."
           action={
-            <Link href="/hub/safety/claims/new" className="inline-flex min-h-[44px] items-center rounded-control bg-accent px-5 font-semibold text-sm text-accent-fg hover:bg-accent-hover">
-              Open a claim
+            <Link href="/hub/safety/claims/new" className={btnPrimaryCls}>
+              <Plus className="h-4 w-4" /> Open a claim
             </Link>
           }
         />
@@ -112,7 +112,7 @@ function ClaimRow({ claim }: { claim: Claim }) {
           {KIND_LABEL[claim.kind]} claim
           {claim.load_reference ? ` — ${claim.load_reference}` : ""}
           {claim.amount_cents !== null ? (
-            <span className="ml-2 font-mono font-medium text-accent-text tabular-nums">
+            <span className={cn(moneyCls, "ml-2 text-accent-text")}>
               {fmtCents(claim.amount_cents)}
             </span>
           ) : null}
@@ -124,30 +124,18 @@ function ClaimRow({ claim }: { claim: Claim }) {
       </div>
       <div className="flex items-center gap-2 shrink-0">
         {days !== null && working ? (
-          <span
-            className={cn(
-              "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-bold",
-              urgent
-                ? days < 0
-                  ? "border-bad-soft bg-bad-soft text-bad"
-                  : "border-warn-soft bg-warn-soft text-warn"
-                : "border-border-strong bg-surface-2 text-fg-3"
-            )}
+          <Pill
+            tone={urgent ? (days < 0 ? "bad" : "warn") : "neutral"}
+            size="xs"
+            className="gap-1"
           >
             <CalendarClock className="h-3 w-3" />
             {days < 0 ? `${-days}d past deadline` : days === 0 ? "File TODAY" : `${days}d to file`}
-          </span>
+          </Pill>
         ) : null}
-        <span
-          className={cn(
-            "rounded-full border px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wider",
-            working
-              ? "border-warn-soft bg-warn-soft text-warn"
-              : "border-border-strong bg-surface-2 text-fg-3"
-          )}
-        >
+        <Pill tone={working ? "warn" : "neutral"} size="xs" className="uppercase tracking-wider">
           {STATUS_LABEL[claim.status]}
-        </span>
+        </Pill>
       </div>
     </Link>
   )

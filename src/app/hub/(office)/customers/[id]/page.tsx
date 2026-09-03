@@ -7,7 +7,8 @@ import { listLoads } from "@/lib/hub/loads"
 import { listDocuments } from "@/lib/hub/documents"
 import { requireOfficeUser } from "@/lib/hub/session"
 import { fmtCents, loadTotalCents } from "@/lib/hub/types"
-import { Panel, PageHeader, BackLink, StatusBadge } from "@/components/hub/ui"
+import { Panel, PageHeader, BackLink, StatusBadge, moneyCls } from "@/components/hub/ui"
+import { cn } from "@/lib/utils"
 import { ContactsPanel, CrmNotesPanel } from "@/components/hub/CustomerPanels"
 import { DocumentsPanel } from "@/components/hub/DocumentsPanel"
 import { VettingPanel } from "@/components/hub/VettingPanel"
@@ -65,15 +66,15 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
       <div className="grid grid-cols-3 gap-3 mb-4">
         <Panel className="p-4">
           <span className="text-label text-fg-3 uppercase">Loads</span>
-          <p className="mt-1 font-mono text-2xl font-medium text-fg tabular-nums">{loads.length}</p>
+          <p className={cn(moneyCls, "mt-1 text-2xl")}>{loads.length}</p>
         </Panel>
         <Panel className="p-4">
           <span className="text-label text-fg-3 uppercase">Revenue</span>
-          <p className="mt-1 font-mono text-2xl font-medium text-fg tabular-nums">{fmtCents(revenue)}</p>
+          <p className={cn(moneyCls, "mt-1 text-2xl")}>{fmtCents(revenue)}</p>
         </Panel>
         <Panel className="p-4">
           <span className="text-label text-fg-3 uppercase">Avg rate/mi</span>
-          <p className="mt-1 font-mono text-2xl font-medium text-fg tabular-nums">
+          <p className={cn(moneyCls, "mt-1 text-2xl")}>
             {avgRpm ? `$${avgRpm.toFixed(2)}` : "—"}
           </p>
         </Panel>
@@ -127,7 +128,7 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
             <ul className="divide-y divide-border">
               {loads.slice(0, 15).map((load) => (
                 <li key={load.id}>
-                  <Link href={`/hub/loads/${load.id}`} className="flex items-center justify-between gap-2 py-2.5 hover:bg-hover rounded-lg px-2 -mx-2">
+                  <Link href={`/hub/loads/${load.id}`} className="flex items-center justify-between gap-2 py-2.5 hover:bg-hover rounded-control px-2 -mx-2">
                     <div className="min-w-0">
                       <p className="font-semibold text-fg">{load.reference}</p>
                       <p className="text-body-xs text-fg-3 truncate">
@@ -136,7 +137,7 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
                       <StatusBadge status={load.status} />
-                      <span className="font-mono font-medium text-accent-text tabular-nums text-sm">{fmtCents(loadTotalCents(load))}</span>
+                      <span className={cn(moneyCls, "text-sm text-accent-text")}>{fmtCents(loadTotalCents(load))}</span>
                     </div>
                   </Link>
                 </li>

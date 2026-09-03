@@ -7,7 +7,7 @@ import { getDashboardStats } from "@/lib/hub/loads"
 import { todayData } from "@/lib/hub/today"
 import { countNewWebsiteLeads } from "@/lib/hub/website-leads"
 import { fmtCents } from "@/lib/hub/types"
-import { Panel } from "@/components/hub/ui"
+import { Panel, Pill, moneyCls } from "@/components/hub/ui"
 import { SetupGuide } from "@/components/hub/SetupGuide"
 import { SetupProgressCard } from "@/components/hub/SetupProgressCard"
 import { SandboxInvite } from "@/components/hub/SandboxInvite"
@@ -113,9 +113,7 @@ export default async function TodayPage() {
               Speed to lead wins drivers — the first carrier to call usually gets them.
             </p>
           </div>
-          <span className="shrink-0 rounded-pill bg-accent-soft px-2.5 py-1 text-[11.5px] font-semibold text-accent-text">
-            Call them →
-          </span>
+          <Pill tone="accent" className="shrink-0">Call them →</Pill>
         </Link>
       ) : null}
 
@@ -127,13 +125,11 @@ export default async function TodayPage() {
           <div className="min-w-0">
             <p className="font-semibold text-fg">
               {today.arOverdue.count} invoice{today.arOverdue.count === 1 ? "" : "s"} past due 30+ days ·{" "}
-              <span className="font-mono tabular-nums text-bad">{fmtCents(today.arOverdue.cents)}</span>
+              <span className={cn(moneyCls, "font-semibold text-bad")}>{fmtCents(today.arOverdue.cents)}</span>
             </p>
             <p className="text-body-xs text-fg-3">Follow up before the receivable ages further.</p>
           </div>
-          <span className="shrink-0 rounded-pill bg-bad-soft px-2.5 py-1 text-[11.5px] font-semibold text-bad">
-            Chase it →
-          </span>
+          <Pill tone="bad" className="shrink-0">Chase it →</Pill>
         </Link>
       ) : null}
 
@@ -164,7 +160,7 @@ export default async function TodayPage() {
                 const cd = countdown(stop.appt_start)
                 return (
                   <li key={stop.stop_id}>
-                    <Link href={`/hub/loads/${stop.load_id}`} className="flex items-center justify-between gap-2 py-2 px-2 -mx-2 rounded-lg hover:bg-hover">
+                    <Link href={`/hub/loads/${stop.load_id}`} className="flex items-center justify-between gap-2 py-2 px-2 -mx-2 rounded-control hover:bg-hover">
                       <div className="min-w-0">
                         <p className="font-semibold text-fg truncate">
                           {stop.type === "pickup" ? "PU" : "DEL"} · {stop.facility || `${stop.city}, ${stop.state}`}
@@ -173,18 +169,13 @@ export default async function TodayPage() {
                           {stop.reference} · {stop.driver_name ?? "no driver"}{stop.truck_unit ? ` · #${stop.truck_unit}` : ""}
                         </p>
                       </div>
-                      <span
-                        className={cn(
-                          "shrink-0 rounded-pill px-2.5 py-0.5 text-[11px] font-semibold",
-                          stop.arrived_at
-                            ? "bg-ok-soft text-ok"
-                            : cd.urgent
-                              ? "bg-bad-soft text-bad"
-                              : "bg-surface-2 text-fg-2"
-                        )}
+                      <Pill
+                        size="xs"
+                        tone={stop.arrived_at ? "ok" : cd.urgent ? "bad" : "neutral"}
+                        className="shrink-0"
                       >
                         {stop.arrived_at ? "arrived" : stop.fcfs ? "FCFS" : cd.label}
-                      </span>
+                      </Pill>
                     </Link>
                   </li>
                 )
@@ -202,7 +193,7 @@ export default async function TodayPage() {
             <ul className="divide-y divide-border">
               {today.unacked.map((load) => (
                 <li key={load.id}>
-                  <Link href={`/hub/loads/${load.id}`} className="flex items-center justify-between gap-2 py-2 px-2 -mx-2 rounded-lg hover:bg-hover">
+                  <Link href={`/hub/loads/${load.id}`} className="flex items-center justify-between gap-2 py-2 px-2 -mx-2 rounded-control hover:bg-hover">
                     <div className="min-w-0">
                       <p className="font-semibold text-fg truncate">
                         {load.reference} · {load.origin_city} → {load.dest_city}
@@ -239,14 +230,9 @@ export default async function TodayPage() {
                       {truck.where_city ? `${truck.where_city}, ${truck.where_state}` : "Location unknown"}
                     </p>
                   </div>
-                  <span
-                    className={cn(
-                      "shrink-0 rounded-pill px-2.5 py-0.5 text-[11px] font-semibold",
-                      truck.when === "now" ? "bg-bad-soft text-bad" : "bg-warn-soft text-warn"
-                    )}
-                  >
+                  <Pill size="xs" tone={truck.when === "now" ? "bad" : "warn"} className="shrink-0">
                     empty {truck.when}
-                  </span>
+                  </Pill>
                 </li>
               ))}
             </ul>
@@ -265,14 +251,14 @@ export default async function TodayPage() {
             <ul className="divide-y divide-border">
               {today.unbilled.map((load) => (
                 <li key={load.id}>
-                  <Link href={`/hub/loads/${load.id}`} className="flex items-center justify-between gap-2 py-2 px-2 -mx-2 rounded-lg hover:bg-hover">
+                  <Link href={`/hub/loads/${load.id}`} className="flex items-center justify-between gap-2 py-2 px-2 -mx-2 rounded-control hover:bg-hover">
                     <div className="min-w-0">
                       <p className="font-semibold text-fg truncate">{load.reference} · {load.customer_name}</p>
                       <p className="text-body-xs text-fg-3">
                         POD in hand{load.delivered_days_ago > 0 ? ` for ${load.delivered_days_ago} day${load.delivered_days_ago > 1 ? "s" : ""}` : ""} — one click to bill
                       </p>
                     </div>
-                    <span className="shrink-0 font-mono font-medium text-accent-text tabular-nums">{fmtCents(Number(load.total_cents))}</span>
+                    <span className={cn(moneyCls, "shrink-0 text-accent-text")}>{fmtCents(Number(load.total_cents))}</span>
                   </Link>
                 </li>
               ))}
@@ -289,14 +275,14 @@ export default async function TodayPage() {
             <ul className="divide-y divide-border">
               {today.redCompliance.slice(0, 8).map((entry, i) => (
                 <li key={i}>
-                  <Link href={entry.href ?? "/hub/compliance"} className="flex items-center justify-between gap-2 py-2 px-2 -mx-2 rounded-lg hover:bg-hover">
+                  <Link href={entry.href ?? "/hub/compliance"} className="flex items-center justify-between gap-2 py-2 px-2 -mx-2 rounded-control hover:bg-hover">
                     <p className="min-w-0 truncate text-sm">
                       <span className="font-semibold text-fg">{entry.name}</span>
                       <span className="text-fg-3"> — {entry.kind}</span>
                     </p>
-                    <span className="shrink-0 rounded-pill bg-bad-soft px-2.5 py-0.5 text-[11px] font-semibold text-bad">
+                    <Pill size="xs" tone="bad" className="shrink-0">
                       {entry.due ? new Date(entry.due).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "—"}
-                    </span>
+                    </Pill>
                   </Link>
                 </li>
               ))}
@@ -313,16 +299,11 @@ export default async function TodayPage() {
             <ul className="divide-y divide-border">
               {today.tasksDue.map((task) => (
                 <li key={task.id}>
-                  <Link href="/hub/tasks" className="flex items-center justify-between gap-2 py-2 px-2 -mx-2 rounded-lg hover:bg-hover">
+                  <Link href="/hub/tasks" className="flex items-center justify-between gap-2 py-2 px-2 -mx-2 rounded-control hover:bg-hover">
                     <p className="min-w-0 truncate text-sm font-semibold text-fg">{task.title}</p>
-                    <span
-                      className={cn(
-                        "shrink-0 rounded-pill px-2 py-0.5 text-[10px] font-semibold",
-                        task.priority === "urgent" ? "bg-bad-soft text-bad" : "bg-surface-2 text-fg-3"
-                      )}
-                    >
+                    <Pill size="xs" tone={task.priority === "urgent" ? "bad" : "neutral"} className="shrink-0">
                       {task.priority}
-                    </span>
+                    </Pill>
                   </Link>
                 </li>
               ))}
@@ -356,10 +337,10 @@ export default async function TodayPage() {
           <TruckIcon className="h-3.5 w-3.5" /> {stats.trucks_active}/{stats.trucks_total} trucks active
         </span>
         <span className="inline-flex items-center gap-1.5">
-          <DollarSign className="h-3.5 w-3.5" /> {fmtCents(Number(stats.revenue_week_cents))} booked this week
+          <DollarSign className="h-3.5 w-3.5" /> <span className={cn(moneyCls, "font-normal text-fg-3")}>{fmtCents(Number(stats.revenue_week_cents))}</span> booked this week
         </span>
         <Link href="/hub/money" className="inline-flex items-center gap-1.5 text-fg-3 hover:text-fg-2 hover:underline">
-          <Receipt className="h-3.5 w-3.5" /> {fmtCents(Number(stats.ar_open_cents))} owed to you
+          <Receipt className="h-3.5 w-3.5" /> <span className={cn(moneyCls, "font-normal text-inherit")}>{fmtCents(Number(stats.ar_open_cents))}</span> owed to you
         </Link>
         {today.openIncidents > 0 ? (
           <Link href="/hub/safety" className="inline-flex items-center gap-1.5 text-warn hover:underline">

@@ -2,23 +2,25 @@ import Link from "next/link"
 import { Plus } from "lucide-react"
 import { listTrucks, listTrailers } from "@/lib/hub/fleet"
 import { requireOfficeUser } from "@/lib/hub/session"
-import { Panel, PageHeader, ExpiryPill, EmptyState } from "@/components/hub/ui"
+import { Panel, PageHeader, ExpiryPill, EmptyState, Pill, btnPrimaryCls } from "@/components/hub/ui"
+import type { PillTone } from "@/components/hub/ui"
 import { cn } from "@/lib/utils"
 
 export const dynamic = "force-dynamic"
 
-const STATUS_PILL: Record<string, string> = {
-  active: "bg-ok-soft text-ok border-ok-soft",
-  shop: "bg-warn-soft text-warn border-warn-soft",
-  idle: "bg-surface-2 text-fg-3 border-border-strong",
-  retired: "bg-bad-soft text-bad border-bad-soft",
+/** Tone is data, not decoration: in service / in the shop / parked / gone. */
+const STATUS_TONE: Record<string, PillTone> = {
+  active: "ok",
+  shop: "warn",
+  idle: "neutral",
+  retired: "bad",
 }
 
 function StatusPill({ status }: { status: string }) {
   return (
-    <span className={cn("inline-flex rounded-full border px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wider", STATUS_PILL[status])}>
+    <Pill tone={STATUS_TONE[status] ?? "neutral"} size="xs" className="uppercase tracking-wider">
       {status}
-    </span>
+    </Pill>
   )
 }
 
@@ -71,7 +73,15 @@ export default async function FleetPage({
 
       {!showTrailers ? (
         trucks.length === 0 ? (
-          <EmptyState title="No trucks yet" hint="Add your first truck to start dispatching." />
+          <EmptyState
+            title="No trucks yet"
+            hint="Add your first truck to start dispatching."
+            action={
+              <Link href="/hub/fleet/trucks/new" className={btnPrimaryCls}>
+                <Plus className="h-4 w-4" /> Add truck
+              </Link>
+            }
+          />
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
             {trucks.map((truck) => (
@@ -98,7 +108,15 @@ export default async function FleetPage({
           </div>
         )
       ) : trailers.length === 0 ? (
-        <EmptyState title="No trailers yet" hint="Add trailers to assign them to loads." />
+        <EmptyState
+          title="No trailers yet"
+          hint="Add trailers to assign them to loads."
+          action={
+            <Link href="/hub/fleet/trailers/new" className={btnPrimaryCls}>
+              <Plus className="h-4 w-4" /> Add trailer
+            </Link>
+          }
+        />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
           {trailers.map((trailer) => (

@@ -3,19 +3,20 @@ import { listInvoices } from "@/lib/hub/invoices"
 import { requirePermissionPage } from "@/lib/hub/session"
 import { fmtCents, type InvoiceStatus } from "@/lib/hub/types"
 import { formatHubDateShort } from "@/lib/hub/format-dates"
-import { Panel, PageHeader, BackLink, EmptyState } from "@/components/hub/ui"
+import { Panel, PageHeader, BackLink, EmptyState, Pill, moneyCls, tableHeadCls, type PillTone } from "@/components/hub/ui"
 import { RowLink } from "@/components/hub/RowLink"
 import { cn } from "@/lib/utils"
 
 export const dynamic = "force-dynamic"
 
-const STATUS_PILL: Record<string, string> = {
-  draft: "bg-surface-2 text-fg-2 border-border-strong",
-  sent: "bg-info-soft text-info border-info-soft",
-  partial: "bg-warn-soft text-warn border-warn-soft",
-  paid: "bg-ok-soft text-ok border-ok-soft",
-  overdue: "bg-bad-soft text-bad border-bad-soft",
-  disputed: "bg-accent-soft text-accent-text border-accent-soft",
+/** Invoice status → Pill tone. Data-only colour: paid green, overdue red. */
+const STATUS_TONE: Record<InvoiceStatus, PillTone> = {
+  draft: "neutral",
+  sent: "info",
+  partial: "warn",
+  paid: "ok",
+  overdue: "bad",
+  disputed: "accent",
 }
 
 const FILTERS: { value: string; label: string }[] = [
@@ -67,13 +68,21 @@ export default async function InvoicesPage({
         <EmptyState
           title={status === "all" ? "No invoices yet" : `No ${status} invoices`}
           hint="Deliver a load, collect the POD, and invoice it in one click from the load page."
+          action={
+            <Link
+              href="/hub/loads"
+              className="inline-flex min-h-[44px] items-center rounded-control bg-accent px-5 text-sm font-semibold text-accent-fg hover:bg-accent-hover"
+            >
+              Go to loads
+            </Link>
+          }
         />
       ) : (
         <>
           <Panel className="hidden md:block overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="hub-table w-full text-sm">
               <thead>
-                <tr className="border-b border-border text-left text-label text-fg-3 uppercase">
+                <tr className={tableHeadCls}>
                   <th className="px-4 py-3">Invoice</th>
                   <th className="px-4 py-3">Customer</th>
                   <th className="px-4 py-3">Load</th>
@@ -94,22 +103,22 @@ export default async function InvoicesPage({
                       className="cursor-pointer border-b border-border hover:bg-hover"
                     >
                       <td className="px-4 py-3">
-                        <Link href={`/hub/money/invoices/${invoice.id}`} className="font-semibold text-accent-text hover:underline">
+                        <Link href={`/hub/money/invoices/${invoice.id}`} className={cn(moneyCls, "font-semibold text-accent-text hover:underline")}>
                           {invoice.number}
                         </Link>
-                        {invoice.factored ? <span className="ml-2 text-body-xs text-accent-text font-bold">FACTORED</span> : null}
+                        {invoice.factored ? <Pill tone="accent" size="xs" className="ml-2 tracking-wide">FACTORED</Pill> : null}
                       </td>
                       <td className="px-4 py-3 text-fg-2">{invoice.customer_name}</td>
                       <td className="px-4 py-3 text-fg-2">{invoice.load_reference}</td>
                       <td className="px-4 py-3 text-fg-2">{formatHubDateShort(invoice.issued_on)}</td>
                       <td className="px-4 py-3 text-fg-2">{formatHubDateShort(invoice.due_on)}</td>
                       <td className="px-4 py-3">
-                        <span className={cn("inline-flex rounded-full border px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wider", STATUS_PILL[invoice.status as InvoiceStatus])}>
+                        <Pill tone={STATUS_TONE[invoice.status as InvoiceStatus] ?? "neutral"} size="xs" className="uppercase tracking-wide">
                           {invoice.status}
-                        </span>
+                        </Pill>
                       </td>
-                      <td className="px-4 py-3 text-right font-mono font-medium text-fg-2 tabular-nums">{fmtCents(invoice.amount_cents)}</td>
-                      <td className="px-4 py-3 text-right font-mono font-medium text-accent-text tabular-nums">
+                      <td className={cn("px-4 py-3 text-right", moneyCls, "text-fg-2")}>{fmtCents(invoice.amount_cents)}</td>
+                      <td className={cn("px-4 py-3 text-right", moneyCls, "text-accent-text")}>
                         {invoice.status === "paid" ? "—" : fmtCents(openCents)}
                       </td>
                     </RowLink>
@@ -125,17 +134,17 @@ export default async function InvoicesPage({
                 <Link key={invoice.id} href={`/hub/money/invoices/${invoice.id}`} className="block">
                   <Panel className="p-3.5">
                     <div className="flex items-center justify-between gap-2">
-                      <span className="font-bold text-fg">{invoice.number}</span>
-                      <span className={cn("inline-flex rounded-full border px-2.5 py-0.5 text-[11px] font-bold uppercase", STATUS_PILL[invoice.status as InvoiceStatus])}>
+                      <span className={cn(moneyCls, "font-semibold")}>{invoice.number}</span>
+                      <Pill tone={STATUS_TONE[invoice.status as InvoiceStatus] ?? "neutral"} size="xs" className="uppercase tracking-wide">
                         {invoice.status}
-                      </span>
+                      </Pill>
                     </div>
                     <p className="text-body-sm text-fg-2 mt-1 truncate">
                       {invoice.customer_name} · {invoice.load_reference} · due {formatHubDateShort(invoice.due_on)}
                     </p>
                     <div className="mt-1.5 flex items-center justify-between">
                       <span className="text-body-xs text-fg-3">{fmtCents(invoice.amount_cents)}</span>
-                      <span className="font-mono font-medium text-accent-text tabular-nums">
+                      <span className={cn(moneyCls, "text-accent-text")}>
                         {invoice.status === "paid" ? "settled" : `${fmtCents(openCents)} open`}
                       </span>
                     </div>
