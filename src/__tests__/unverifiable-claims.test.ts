@@ -96,6 +96,26 @@ const BANNED_CONCEPTS: { concept: string; pattern: RegExp; verifiedBy: string }[
     pattern: /\bcover all (costs|repairs|expenses)\b/i,
     verifiedBy: "a written breakdown-cost policy, including its exclusions",
   },
+
+  // Fourth sweep, 2026-09-02. Two claims the redesign pass could reintroduce.
+  // Both belong here rather than in the literal list above: nothing on the site
+  // has ever said either one, so there is no verbatim string to copy — a
+  // hand-typed regression would arrive title-cased in a heading, hyphenated in
+  // a headline, or wrapped around different nouns, and an exact-case
+  // `.includes()` would wave all of it through.
+  {
+    concept: "a founding year that is not COMPANY_INFO.founded",
+    // Every honest mention interpolates `${COMPANY_INFO.founded}` (the dot in
+    // the expression ends the [^.\n] window), so only a hand-typed year lands
+    // near the word — and 2014, the real one, is excused.
+    pattern: /\bfounded\b[^.\n]{0,15}\b(?!2014\b)(?:19|20)\d{2}\b/i,
+    verifiedBy: "COMPANY_INFO.founded — the company was founded in 2014",
+  },
+  {
+    concept: "we pay more than anyone",
+    pattern: /\bhighest[- ]paying\b/i,
+    verifiedBy: "a published wage survey",
+  },
 ]
 
 /**

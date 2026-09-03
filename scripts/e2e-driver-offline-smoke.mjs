@@ -65,6 +65,12 @@ async function main() {
     await waitForText(page, "THD-")
     await clickByText(page, "confirm this dispatch")
     await waitForText(page, ANCHORS.toastDispatchConfirmed)
+    // Same settle as e2e-driver-smoke: confirm and I'm here share one
+    // useTransition `pending`. Going offline (or tapping I'm here) while
+    // that flag is still up is a silent no-op on a disabled button.
+    if (!(await textGone(page, "confirm this dispatch"))) {
+      throw new Error("confirm banner did not clear after acknowledge")
+    }
     await shot(page, "01-confirmed-online")
 
     console.log("2. Drop the network (CDP), then tap 'I'm here' at the pickup")
