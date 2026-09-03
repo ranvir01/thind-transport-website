@@ -3,7 +3,8 @@ import { headers } from "next/headers"
 import { BellRing, MonitorSmartphone, Smartphone, Truck, WifiOff } from "lucide-react"
 import { requireOfficeUser } from "@/lib/hub/session"
 import { PRODUCT } from "@/lib/hub/product"
-import { PageHeader, Panel } from "@/components/hub/ui"
+import { PageHeader, Panel, moneyCls } from "@/components/hub/ui"
+import { cn } from "@/lib/utils"
 import { InstallAppButton } from "@/components/hub/InstallAppButton"
 import { PushManager } from "@/components/hub/PushManager"
 import { QrCode } from "@/components/hub/QrCode"
@@ -53,7 +54,7 @@ export default async function TeamAppPage() {
               <QrCode
                 value={`${host.startsWith("localhost") || host.startsWith("127.") ? "http" : "https"}://${host}/hub/get-app`}
                 label="Opens the install page on your phone"
-                className="h-28 w-28 shrink-0 rounded-md"
+                className="h-28 w-28 shrink-0 rounded-control"
               />
               <p className="text-body-xs text-fg-2">
                 <span className="block font-semibold text-fg">Reading this on a computer?</span>
@@ -65,7 +66,7 @@ export default async function TeamAppPage() {
               <MonitorSmartphone className="mt-0.5 h-3.5 w-3.5 shrink-0" />
               <span>
                 On a computer? Open{" "}
-                <span className="font-mono font-medium text-fg-2">{host}/hub</span>{" "}
+                <span className={cn(moneyCls, "text-fg-2")}>{host}/hub</span>{" "}
                 in your phone&apos;s browser and sign in with the same account.
               </span>
             </p>

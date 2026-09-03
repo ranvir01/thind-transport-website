@@ -50,7 +50,7 @@ export function OutreachImport({ audience }: { audience: Audience }) {
         onChange={(e) => setText(e.target.value)}
         rows={6}
         placeholder={"name, company, email, phone, lane\nJane Doe, ACME Logistics, jane@acme.com, 555-1212, PNW ↔ CA"}
-        className="w-full rounded-lg border border-border-strong bg-surface-2 p-2 font-mono text-body-xs text-fg placeholder:text-fg-3 focus:border-accent focus:outline-none"
+        className="w-full rounded-control border border-border-strong bg-surface-2 p-2 font-mono text-body-xs text-fg placeholder:text-fg-3 focus:border-accent"
       />
       <div className="mt-2 flex items-center gap-2">
         <Button onClick={submit} disabled={pending || !text.trim()}>

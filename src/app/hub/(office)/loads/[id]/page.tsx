@@ -11,9 +11,10 @@ import { getInvoiceForLoad } from "@/lib/hub/invoices"
 import { requireOfficeUser } from "@/lib/hub/session"
 import { can } from "@/lib/hub/permissions"
 import {
-  STATUS_LABELS, fmtCents, fmtCentsExact, loadTotalCents, type LoadEvent,
+  STATUS_LABELS, fmtCents, fmtCentsExact, loadTotalCents, type Load, type LoadEvent,
 } from "@/lib/hub/types"
-import { Panel, PageHeader, StatusBadge, BackLink } from "@/components/hub/ui"
+import { Panel, PageHeader, Pill, StatusBadge, BackLink, moneyCls } from "@/components/hub/ui"
+import { cn } from "@/lib/utils"
 import { AdvanceStatusButton, CancelLoadButton, StopTimestampButton, CheckCallButton } from "@/components/hub/StatusActions"
 import { DocumentsPanel } from "@/components/hub/DocumentsPanel"
 import { ShareLinkPanel } from "@/components/hub/ShareLinkPanel"
@@ -33,6 +34,20 @@ import { LoadFuelPanel } from "@/components/hub/LoadFuelPanel"
 import { SuggestMilesButton } from "@/components/hub/SuggestMilesButton"
 
 export const dynamic = "force-dynamic"
+
+/** Booking source → label. Sentence case: the old 14px `uppercase` sat off the type ladder. */
+const SOURCE_LABELS: Record<Load["source"], string> = {
+  dat: "DAT",
+  direct: "Direct",
+  import: "Import",
+  quote: "Quote",
+  truckstop: "Truckstop",
+}
+
+/** Raw enum (invoice/claim status) → sentence case for the pill register. */
+function sentenceCase(value: string): string {
+  return value.charAt(0).toUpperCase() + value.slice(1).replace(/_/g, " ")
+}
 
 function formatDateTime(value: string | null): string {
   if (!value) return "—"
@@ -164,44 +179,44 @@ export default async function LoadDetailPage({ params }: { params: Promise<{ id:
           {arrival ? (
             <span
               data-testid="load-eta"
-              className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[11px] font-bold uppercase tracking-wider ${
-                arrival.eta.lateMinutes > 60
-                  ? "border-bad-soft bg-bad-soft text-bad"
-                  : "border-info-soft bg-info-soft text-info"
-              }`}
+              className="inline-flex"
               title={`${arrival.eta.miles} mi to ${arrival.target.city}, ${arrival.target.state}${arrival.eta.stale ? " · position is getting old" : ""}`}
             >
-              <Clock className="h-3.5 w-3.5" />
-              {arrival.target.type === "pickup" ? "At pickup" : "Delivery"} {formatEta(arrival.eta)}
-              {arrival.eta.lateMinutes > 60 ? ` · ${Math.round(arrival.eta.lateMinutes / 60)}h late` : ""}
+              <Pill tone={arrival.eta.lateMinutes > 60 ? "bad" : "info"} className="gap-1.5">
+                <Clock className="h-3.5 w-3.5" />
+                {arrival.target.type === "pickup" ? "At pickup" : "Delivery"} {formatEta(arrival.eta)}
+                {arrival.eta.lateMinutes > 60 ? ` · ${Math.round(arrival.eta.lateMinutes / 60)}h late` : ""}
+              </Pill>
             </span>
           ) : null}
           {pickupPill ? (
             <span
               data-testid="pickup-pill"
               title={pickupCheck!.checks.map((c) => `${c.ok === true ? "✓" : c.ok === false ? "✗" : "?"} ${c.label} — ${c.detail}`).join("\n")}
-              className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[11px] font-bold uppercase tracking-wider ${
-                pickupCheck!.result === "verified"
-                  ? "border-ok-soft bg-ok-soft text-ok"
-                  : "border-bad-soft bg-bad-soft text-bad"
-              }`}
+              className="inline-flex"
             >
-              {pickupCheck!.result === "verified" ? <ShieldCheck className="h-3.5 w-3.5" /> : <ShieldAlert className="h-3.5 w-3.5" />}
-              {pickupPill}
+              <Pill tone={pickupCheck!.result === "verified" ? "ok" : "bad"} className="gap-1.5">
+                {pickupCheck!.result === "verified" ? <ShieldCheck className="h-3.5 w-3.5" /> : <ShieldAlert className="h-3.5 w-3.5" />}
+                {pickupPill}
+              </Pill>
             </span>
           ) : null}
           {invoice ? (
-            <Link href={`/hub/money/invoices/${invoice.id}`} className="inline-flex items-center gap-1.5 rounded-full border border-cyan-400/30 bg-cyan-500/10 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-cyan-300 hover:bg-cyan-500/20">
-              <FileText className="h-3.5 w-3.5" /> {invoice.number} · {invoice.status}
+            <Link href={`/hub/money/invoices/${invoice.id}`} className="inline-flex rounded-pill hover:underline">
+              <Pill tone="info" className="gap-1.5">
+                <FileText className="h-3.5 w-3.5" /> {invoice.number} · {sentenceCase(invoice.status)}
+              </Pill>
             </Link>
           ) : null}
           {osdClaim.osdFlagged ? (
             <Link
               href={osdClaim.claim ? `/hub/safety/claims/${osdClaim.claim.id}` : "/hub/safety/claims"}
-              className="inline-flex items-center gap-1.5 rounded-full border border-warn-soft bg-warn-soft px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-warn hover:border-warn"
+              className="inline-flex rounded-pill hover:underline"
             >
-              <AlertTriangle className="h-3.5 w-3.5" />
-              {osdClaim.claim ? `OS&D · Claim ${osdClaim.claim.status}` : "OS&D · No claim on file"}
+              <Pill tone="warn" className="gap-1.5">
+                <AlertTriangle className="h-3.5 w-3.5" />
+                {osdClaim.claim ? `OS&D · Claim ${osdClaim.claim.status}` : "OS&D · No claim on file"}
+              </Pill>
             </Link>
           ) : null}
           <div className="flex flex-wrap gap-2 ml-auto">
@@ -296,22 +311,22 @@ export default async function LoadDetailPage({ params }: { params: Promise<{ id:
           <Panel className="p-4 md:p-5">
             <h2 className="text-[13.5px] font-semibold text-fg mb-3">Rate</h2>
             <dl className="space-y-2 text-sm">
-              <div className="flex justify-between"><dt className="text-fg-2">Linehaul</dt><dd className="text-fg font-semibold">{fmtCentsExact(load.linehaul_cents)}</dd></div>
-              <div className="flex justify-between"><dt className="text-fg-2">Fuel surcharge</dt><dd className="text-fg font-semibold">{fmtCentsExact(load.fuel_surcharge_cents)}</dd></div>
+              <div className="flex justify-between"><dt className="text-fg-2">Linehaul</dt><dd className={moneyCls}>{fmtCentsExact(load.linehaul_cents)}</dd></div>
+              <div className="flex justify-between"><dt className="text-fg-2">Fuel surcharge</dt><dd className={moneyCls}>{fmtCentsExact(load.fuel_surcharge_cents)}</dd></div>
               {(Array.isArray(load.accessorials) ? load.accessorials : []).map((acc, i) => (
                 <div key={i} className="flex justify-between">
                   <dt className="text-fg-2">{acc.label}</dt>
-                  <dd className="text-fg font-semibold">{fmtCentsExact(acc.amount_cents)}</dd>
+                  <dd className={moneyCls}>{fmtCentsExact(acc.amount_cents)}</dd>
                 </div>
               ))}
               <div className="flex justify-between border-t border-border pt-2">
                 <dt className="text-fg font-bold">Total</dt>
-                <dd className="text-accent-text font-semibold text-lg">{fmtCents(totalCents)}</dd>
+                <dd className={cn(moneyCls, "text-lg font-semibold text-accent-text")}>{fmtCents(totalCents)}</dd>
               </div>
               {rpmCents ? (
                 <div className="flex justify-between">
                   <dt className="text-fg-2">Rate per mile</dt>
-                  <dd className="text-fg font-semibold">${(rpmCents / 100).toFixed(2)}/mi · {load.loaded_miles} mi</dd>
+                  <dd className={moneyCls}>${(rpmCents / 100).toFixed(2)}/mi · {load.loaded_miles} mi</dd>
                 </div>
               ) : null}
               <div className="flex items-center justify-between border-t border-border pt-2">
@@ -333,10 +348,10 @@ export default async function LoadDetailPage({ params }: { params: Promise<{ id:
               <div className="flex justify-between"><dt className="text-fg-2">Equipment</dt><dd className="text-fg font-semibold capitalize">{load.equipment.replace("_", " ")}</dd></div>
               <div className="flex justify-between"><dt className="text-fg-2">Commodity</dt><dd className="text-fg font-semibold">{load.commodity ?? "—"}</dd></div>
               <div className="flex justify-between"><dt className="text-fg-2">Weight</dt><dd className="text-fg font-semibold">{load.weight_lbs ? `${load.weight_lbs.toLocaleString()} lbs` : "—"}</dd></div>
-              <div className="flex justify-between"><dt className="text-fg-2">Source</dt><dd className="text-fg font-semibold uppercase">{load.source}</dd></div>
+              <div className="flex justify-between"><dt className="text-fg-2">Source</dt><dd className="text-fg font-semibold">{SOURCE_LABELS[load.source] ?? load.source}</dd></div>
             </dl>
             {load.notes ? (
-              <p className="mt-3 rounded-lg bg-surface-2 p-3 text-body-sm text-fg-2">{load.notes}</p>
+              <p className="mt-3 rounded-control bg-surface-2 p-3 text-body-sm text-fg-2">{load.notes}</p>
             ) : null}
           </Panel>
 

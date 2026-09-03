@@ -6,7 +6,7 @@ import { requirePermissionPage } from "@/lib/hub/session"
 import { can } from "@/lib/hub/permissions"
 import { fmtCents } from "@/lib/hub/types"
 import { formatHubDateShort } from "@/lib/hub/format-dates"
-import { Panel, PageHeader, EmptyState } from "@/components/hub/ui"
+import { Panel, PageHeader, EmptyState, Pill, moneyCls, tableHeadCls, type PillTone } from "@/components/hub/ui"
 import { cn } from "@/lib/utils"
 import { SendStatementButton } from "@/components/hub/SendStatementButton"
 import { RowLink } from "@/components/hub/RowLink"
@@ -15,13 +15,14 @@ import { HelpTip } from "@/components/hub/HelpTip"
 
 export const dynamic = "force-dynamic"
 
-const STATUS_PILL: Record<string, string> = {
-  draft: "bg-surface-2 text-fg-2",
-  sent: "bg-info-soft text-info",
-  partial: "bg-warn-soft text-warn",
-  paid: "bg-ok-soft text-ok",
-  overdue: "bg-bad-soft text-bad",
-  disputed: "bg-accent-soft text-accent-text",
+/** Invoice status → Pill tone. Data-only colour: paid green, overdue red. */
+const STATUS_TONE: Record<string, PillTone> = {
+  draft: "neutral",
+  sent: "info",
+  partial: "warn",
+  paid: "ok",
+  overdue: "bad",
+  disputed: "accent",
 }
 
 const BUCKETS = ["current", "1-30", "31-60", "61-90", "90+"] as const
@@ -135,7 +136,7 @@ export default async function MoneyPage() {
                   <span className={cn("text-[12px] font-medium", cents === 0 ? "text-fg-3" : bucket === "current" ? "text-fg-3" : bucket === "90+" ? "text-bad" : "text-warn")}>
                     {bucket === "current" ? "Current" : `${bucket} days`}
                   </span>
-                  <p className="mt-1.5 font-mono text-xl font-medium tabular-nums text-fg">{fmtCents(cents)}</p>
+                  <p className={cn(moneyCls, "mt-1.5 text-xl")}>{fmtCents(cents)}</p>
                   {/* Share of open AR at a glance — where the money is stuck. */}
                   <div className="mt-2 h-1 overflow-hidden rounded-pill bg-surface-2" aria-hidden>
                     <div
@@ -153,7 +154,7 @@ export default async function MoneyPage() {
           <Panel className="p-4 mb-6">
             <p className="text-body-sm text-fg-2">
               Open receivables:{" "}
-              <span className="font-mono text-[22px] font-medium tracking-tight text-accent-text tabular-nums">
+              <span className={cn(moneyCls, "text-[22px] tracking-tight text-accent-text")}>
                 {fmtCents(aging.totalOpenCents)}
               </span>
               <span className="ml-2 text-fg-3">Overdue reminders run daily and skip factored loads.</span>
@@ -179,7 +180,7 @@ export default async function MoneyPage() {
             {CYCLE_LEGS.map(({ label, who, leg, slow }) => (
               <Panel key={label} className="p-4">
                 <span className={cn("text-[12px] font-medium", slow ? "text-warn" : "text-fg-3")}>{label}</span>
-                <p className={cn("mt-1.5 text-xl font-semibold tabular-nums", slow ? "text-warn" : "text-fg")}>
+                <p className={cn(moneyCls, "mt-1.5 text-xl font-semibold", slow ? "text-warn" : "text-fg")}>
                   {fmtDays(leg.medianDays)}
                   <span className="ml-2 text-body-xs font-normal text-fg-3">
                     {leg.meanDays != null ? `mean ${fmtDays(leg.meanDays)}` : ""}
@@ -230,7 +231,7 @@ export default async function MoneyPage() {
                   </p>
                 </div>
                 <div className="flex items-center gap-3">
-                  <span className="font-mono font-medium text-accent-text tabular-nums">{fmtCents(s.totalOpenCents)}</span>
+                  <span className={cn(moneyCls, "text-accent-text")}>{fmtCents(s.totalOpenCents)}</span>
                   <a
                     href={`/api/hub/customer-statements/${s.customerId}/pdf`}
                     target="_blank"
@@ -258,6 +259,14 @@ export default async function MoneyPage() {
           <EmptyState
             title="No open invoices"
             hint="Deliver a load, collect the POD, and invoice it in one click from the load page."
+            action={
+              <Link
+                href="/hub/loads"
+                className="inline-flex min-h-[44px] items-center rounded-control bg-accent px-5 text-sm font-semibold text-accent-fg hover:bg-accent-hover"
+              >
+                Go to loads
+              </Link>
+            }
           />
         )
       ) : (
@@ -265,7 +274,7 @@ export default async function MoneyPage() {
           <Panel className="hidden md:block overflow-x-auto">
             <table className="hub-table w-full text-sm">
               <thead>
-                <tr className="border-b border-border text-left text-[11px] font-semibold uppercase tracking-wide text-fg-3">
+                <tr className={tableHeadCls}>
                   <th className="px-4 py-3">Invoice</th>
                   <th className="px-4 py-3">Customer</th>
                   <th className="px-4 py-3">Load</th>
@@ -283,25 +292,25 @@ export default async function MoneyPage() {
                     className="cursor-pointer border-b border-border hover:bg-hover"
                   >
                     <td className="px-4 py-3">
-                      <Link href={`/hub/money/invoices/${invoice.id}`} className="font-semibold text-accent-text hover:underline">
+                      <Link href={`/hub/money/invoices/${invoice.id}`} className={cn(moneyCls, "font-semibold text-accent-text hover:underline")}>
                         {invoice.number}
                       </Link>
                       {invoice.factored ? (
-                        <span className="ml-2 rounded-pill bg-accent-soft px-1.5 py-0.5 text-[10px] font-semibold text-accent-text">
+                        <Pill tone="accent" size="xs" className="ml-2">
                           factored
-                        </span>
+                        </Pill>
                       ) : null}
                     </td>
                     <td className="px-4 py-3 text-fg-2">{invoice.customer_name}</td>
                     <td className="px-4 py-3 text-fg-2">{invoice.load_reference}</td>
                     <td className="px-4 py-3 text-fg-2">{formatHubDateShort(invoice.due_on)}</td>
                     <td className="px-4 py-3">
-                      <span className={cn("inline-flex rounded-pill px-2.5 py-0.5 text-[11px] font-semibold", STATUS_PILL[invoice.status])}>
+                      <Pill tone={STATUS_TONE[invoice.status] ?? "neutral"} size="xs">
                         {invoice.status}
-                      </span>
+                      </Pill>
                     </td>
                     <td className="px-4 py-3 text-fg-2">{invoice.bucket}</td>
-                    <td className="px-4 py-3 text-right font-mono font-medium text-accent-text tabular-nums">{fmtCents(invoice.open_cents)}</td>
+                    <td className={cn("px-4 py-3 text-right", moneyCls, "text-accent-text")}>{fmtCents(invoice.open_cents)}</td>
                   </RowLink>
                 ))}
               </tbody>
@@ -312,17 +321,17 @@ export default async function MoneyPage() {
               <Link key={invoice.id} href={`/hub/money/invoices/${invoice.id}`} className="block">
                 <Panel className="p-3.5">
                   <div className="flex items-center justify-between gap-2">
-                    <span className="font-semibold text-fg">{invoice.number}</span>
-                    <span className={cn("inline-flex rounded-pill px-2.5 py-0.5 text-[11px] font-semibold", STATUS_PILL[invoice.status])}>
+                    <span className={cn(moneyCls, "font-semibold")}>{invoice.number}</span>
+                    <Pill tone={STATUS_TONE[invoice.status] ?? "neutral"} size="xs">
                       {invoice.status}
-                    </span>
+                    </Pill>
                   </div>
                   <p className="text-body-sm text-fg-2 mt-1 truncate">
                     {invoice.customer_name} · {invoice.load_reference} · due {formatHubDateShort(invoice.due_on)}
                   </p>
                   <div className="mt-1.5 flex items-center justify-between">
                     <span className="text-body-xs text-fg-3">{invoice.bucket}</span>
-                    <span className="font-mono font-medium text-accent-text tabular-nums">{fmtCents(invoice.open_cents)}</span>
+                    <span className={cn(moneyCls, "text-accent-text")}>{fmtCents(invoice.open_cents)}</span>
                   </div>
                 </Panel>
               </Link>

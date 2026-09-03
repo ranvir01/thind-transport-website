@@ -3,8 +3,7 @@ import { Warehouse } from "lucide-react"
 import { requirePermissionPage } from "@/lib/hub/session"
 import { listFacilities, detentionRisk, formatDwell } from "@/lib/hub/facilities"
 import { getCarrierSettings } from "@/lib/hub/settings"
-import { PageHeader, Panel, EmptyState } from "@/components/hub/ui"
-import { cn } from "@/lib/utils"
+import { PageHeader, Panel, EmptyState, Pill, btnPrimaryCls, btnSecondaryCls } from "@/components/hub/ui"
 
 export const dynamic = "force-dynamic"
 
@@ -42,6 +41,17 @@ export default async function FacilitiesPage({
         <EmptyState
           title={q ? "No matches" : "No facilities yet"}
           hint="Facilities build themselves — every stop on every load files its shipper or receiver here automatically."
+          action={
+            q ? (
+              <Link href="/hub/facilities" className={btnSecondaryCls}>
+                Clear the search
+              </Link>
+            ) : (
+              <Link href="/hub/loads/new" className={btnPrimaryCls}>
+                Book a load
+              </Link>
+            )
+          }
         />
       ) : (
         <Panel className="divide-y divide-border">
@@ -64,18 +74,13 @@ export default async function FacilitiesPage({
                   </span>
                 </span>
                 {f.avg_dwell_minutes != null ? (
-                  <span
-                    className={cn(
-                      "shrink-0 rounded-full border px-2.5 py-0.5 text-[11px] font-bold",
-                      risk === "high"
-                        ? "border-bad-soft bg-bad-soft text-bad"
-                        : risk === "warn"
-                          ? "border-warn-soft bg-warn-soft text-warn"
-                          : "border-border-strong bg-surface-2 text-fg-2"
-                    )}
+                  <Pill
+                    tone={risk === "high" ? "bad" : risk === "warn" ? "warn" : "neutral"}
+                    size="xs"
+                    className="shrink-0"
                   >
                     ~{formatDwell(f.avg_dwell_minutes)} at the dock
-                  </span>
+                  </Pill>
                 ) : (
                   <span className="shrink-0 text-[11px] text-fg-3">no dwell data yet</span>
                 )}

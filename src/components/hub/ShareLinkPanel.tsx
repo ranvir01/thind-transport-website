@@ -114,16 +114,16 @@ export function ShareLinkPanel({ loadId, links }: { loadId: string; links: Share
           {active.map((link) => {
             const expiry = expiryLabel(link.expires_at)
             return (
-            <li key={link.id} className="rounded-lg border border-border/60 p-2">
+            <li key={link.id} className="rounded-card border border-border p-2">
             <div className="flex items-center gap-2">
-              <code className="flex-1 truncate rounded-lg bg-surface-2 px-2.5 py-2 text-body-xs text-fg-2">
+              <code className="flex-1 truncate rounded-control bg-surface-2 px-2.5 py-2 text-body-xs text-fg-2">
                 /track/{link.token.slice(0, 12)}…
               </code>
               {shareable ? (
                 <button
                   aria-label="Send link"
                   onClick={() => send(link.token)}
-                  className="flex h-10 w-10 items-center justify-center rounded-lg bg-accent text-accent-fg hover:bg-accent-hover"
+                  className="flex h-10 w-10 items-center justify-center rounded-control bg-accent text-accent-fg hover:bg-accent-hover"
                 >
                   <Share2 className="h-4 w-4" />
                 </button>
@@ -131,7 +131,7 @@ export function ShareLinkPanel({ loadId, links }: { loadId: string; links: Share
               <button
                 aria-label="Copy link"
                 onClick={() => copy(link.token)}
-                className="flex h-10 w-10 items-center justify-center rounded-lg border border-border text-fg-2 hover:bg-hover"
+                className="flex h-10 w-10 items-center justify-center rounded-control border border-border text-fg-2 hover:bg-hover"
               >
                 <Copy className="h-4 w-4" />
               </button>
@@ -139,7 +139,7 @@ export function ShareLinkPanel({ loadId, links }: { loadId: string; links: Share
                 href={`/track/${link.token}`}
                 target="_blank"
                 rel="noreferrer"
-                className="flex h-10 items-center rounded-lg border border-border px-3 text-xs font-semibold text-fg-2 hover:bg-hover"
+                className="flex h-10 items-center rounded-control border border-border px-3 text-xs font-semibold text-fg-2 hover:bg-hover"
               >
                 Open
               </a>
@@ -149,7 +149,7 @@ export function ShareLinkPanel({ loadId, links }: { loadId: string; links: Share
                     onClick={() => revoke(link.id)}
                     disabled={pending}
                     aria-label="Confirm revoke link"
-                    className="flex h-8 items-center gap-1 rounded-lg bg-bad px-2 text-[11px] font-bold uppercase tracking-wide text-white hover:opacity-90 disabled:opacity-60"
+                    className="flex h-8 items-center gap-1 rounded-control bg-bad px-2 text-[11px] font-bold uppercase tracking-wide text-bad-fg hover:opacity-90 disabled:opacity-60"
                   >
                     {pending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <XCircle className="h-3.5 w-3.5" />}
                     Revoke
@@ -158,7 +158,7 @@ export function ShareLinkPanel({ loadId, links }: { loadId: string; links: Share
                     onClick={() => setConfirmingRevokeId(null)}
                     disabled={pending}
                     aria-label="Keep link"
-                    className="flex h-8 items-center rounded-lg px-2 text-[11px] font-semibold text-fg-3 hover:bg-hover"
+                    className="flex h-8 items-center rounded-control px-2 text-[11px] font-semibold text-fg-3 hover:bg-hover"
                   >
                     Keep
                   </button>
@@ -168,7 +168,7 @@ export function ShareLinkPanel({ loadId, links }: { loadId: string; links: Share
                   aria-label="Revoke link"
                   onClick={() => setConfirmingRevokeId(link.id)}
                   disabled={pending}
-                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-bad hover:bg-bad-soft disabled:opacity-50"
+                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-control text-bad hover:bg-bad-soft disabled:opacity-50"
                 >
                   <XCircle className="h-4 w-4" />
                 </button>
@@ -182,7 +182,7 @@ export function ShareLinkPanel({ loadId, links }: { loadId: string; links: Share
                 <button
                   onClick={() => renew(link.id)}
                   disabled={pending}
-                  className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[11px] font-semibold text-accent-text hover:bg-accent-soft disabled:opacity-50"
+                  className="inline-flex items-center gap-1 rounded-control px-2 py-1 text-[11px] font-semibold text-accent-text hover:bg-accent-soft disabled:opacity-50"
                 >
                   {pending ? <Loader2 className="h-3 w-3 animate-spin" /> : <RefreshCw className="h-3 w-3" />}
                   Renew 30 days
@@ -195,7 +195,7 @@ export function ShareLinkPanel({ loadId, links }: { loadId: string; links: Share
         </ul>
       )}
       {latestToken ? (
-        <div className="mt-3 rounded-lg border border-accent-soft bg-accent-soft p-2.5">
+        <div className="mt-3 rounded-card border border-accent-soft bg-accent-soft p-2.5">
           <p className="text-body-xs text-accent-text break-all">
             {typeof window !== "undefined" ? `${window.location.origin}/track/${latestToken}` : `/track/${latestToken}`}
           </p>
@@ -203,14 +203,14 @@ export function ShareLinkPanel({ loadId, links }: { loadId: string; links: Share
             {shareable ? (
               <button
                 onClick={() => send(latestToken)}
-                className="inline-flex min-h-[36px] items-center gap-1.5 rounded-lg bg-accent px-3 text-xs font-semibold text-accent-fg hover:bg-accent-hover"
+                className="inline-flex min-h-[36px] items-center gap-1.5 rounded-control bg-accent px-3 text-xs font-semibold text-accent-fg hover:bg-accent-hover"
               >
                 <Share2 className="h-3.5 w-3.5" /> Send to broker
               </button>
             ) : null}
             <button
               onClick={() => copy(latestToken)}
-              className="inline-flex min-h-[36px] items-center gap-1.5 rounded-lg border border-border bg-surface px-3 text-xs font-semibold text-fg-2 hover:bg-hover"
+              className="inline-flex min-h-[36px] items-center gap-1.5 rounded-control border border-border bg-surface px-3 text-xs font-semibold text-fg-2 hover:bg-hover"
             >
               <Copy className="h-3.5 w-3.5" /> Copy
             </button>
