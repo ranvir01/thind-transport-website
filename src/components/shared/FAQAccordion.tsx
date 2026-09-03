@@ -8,29 +8,39 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion"
 import { HelpCircle } from "lucide-react"
-import { COMPANY_INFO, EQUIPMENT, FMCSA_LINKS, PAY_RATES, STATS } from "@/lib/constants"
+import { COMPANY_INFO, EQUIPMENT, FMCSA_LINKS, PAY_RATES, STATS, SUPPORT } from "@/lib/constants"
+
+const OO = PAY_RATES.ownerOperator
+const CD = PAY_RATES.companyDriver
+
+/** The span the copy quotes for company drivers: the floor of the local range
+ *  through the ceiling of the OTR range. Derived so it cannot drift from
+ *  PAY_RATES the way six hand-typed spans did before 2026-08-30. */
+const CD_ANNUAL_SPAN = `${CD.local.annual.split("-")[0]}-${CD.otr.annual.split("-")[1]}`
+/** "$1,000 (First Year)" -> "$1,000" — the amount without its qualifier. */
+const CD_SIGN_ON = CD.signOnBonus.split(" ")[0]
 
 const defaultFaqs = [
   // Pay & Compensation
   {
     question: "What are the experience requirements?",
-    answer: "For Owner Operators: Minimum 2 years OTR experience required. For Regional Company Drivers: Minimum 1 year company driver experience required. Both positions require a valid CDL Class A license and a clean driving record. No SAP drivers, no DUI in past 5 years, no felony convictions."
+    answer: `For Owner Operators: Minimum ${PAY_RATES.requirements.otr} required. For Regional Company Drivers: Minimum ${PAY_RATES.requirements.companyDriver} required. Both positions require a valid CDL Class A license and a clean driving record. No SAP drivers, no DUI in past 5 years, no felony convictions.`
   },
   {
     question: "How much can I realistically earn?",
-    answer: "Company Drivers: $57K-$82K annually at $0.63 per mile (based on miles and route type), plus $1,000 sign-on bonus first year. Owner Operators: $150K-$250K gross annually with 90% commission (you keep 90% of gross!), plus $2,500 sign-on bonus. Pay is distributed weekly via direct deposit every Friday."
+    answer: `Company Drivers: ${CD_ANNUAL_SPAN} annually at ${CD.otr.perMile} per mile (based on miles and route type), plus ${CD_SIGN_ON} sign-on bonus first year. Owner Operators: ${OO.annualGross} gross annually with ${OO.commission} commission (you keep ${OO.commission} of gross!), plus ${OO.signOnBonus} sign-on bonus. Pay is distributed weekly via direct deposit every Friday.`
   },
   {
-    question: "What's this 90% commission for owner operators?",
-    answer: "You keep 90% of the gross revenue from each load. There are NO hidden fees or surprise deductions. Fuel surcharge passes through 100% to you. Your weekly settlement shows exactly where every dollar goes. Transparent accounting, no games."
+    question: `What's this ${OO.commission} commission for owner operators?`,
+    answer: `You keep ${OO.commission} of the gross revenue from each load. There are NO hidden fees or surprise deductions. Fuel surcharge passes through ${OO.fuelSurcharge} to you. Your weekly settlement shows exactly where every dollar goes. Transparent accounting, no games.`
   },
   {
-    question: "How does the 90% commission work exactly?",
-    answer: "Simple: If a load pays $3,000 gross, you receive $2,700 (90%). We take 10% to cover our back-office, dispatch, insurance, and administrative costs. NO other deductions. Fuel surcharge? You get 100%. Accessorial charges? You get 90%. Detention, layover, TONU - all 90% to you. Clean, transparent, fair."
+    question: `How does the ${OO.commission} commission work exactly?`,
+    answer: `Simple: If a load pays $3,000 gross, you receive $2,700 (${OO.commission}). We take 10% to cover our back-office, dispatch, insurance, and administrative costs. NO other deductions. Fuel surcharge? You get ${OO.fuelSurcharge}. Accessorial charges? You get ${OO.commission}. Detention, layover, TONU - all ${OO.commission} to you. Clean, transparent, fair.`
   },
   {
     question: "What are the sign-on bonuses?",
-    answer: "Company Drivers: $1,000 sign-on bonus paid during your first year (split across first few paychecks). Owner Operators: $2,500 sign-on bonus. Bonuses are paid according to our schedule. Ask for details during your phone interview."
+    answer: `Company Drivers: ${CD_SIGN_ON} sign-on bonus paid during your first year (split across first few paychecks). Owner Operators: ${OO.signOnBonus} sign-on bonus. Bonuses are paid according to our schedule. Ask for details during your phone interview.`
   },
   
   // Freight & Operations
@@ -59,7 +69,7 @@ const defaultFaqs = [
   // Home Time & Schedule
   {
     question: "What about home time?",
-    answer: "We offer flexible schedules: Local routes (home every night), Regional routes (home on weekends - typically 5 days out, 2 days home), or OTR (2-3 weeks out, 3-4 days home). Tell dispatch the home time you need and they build around it — and you see the delivery date before you accept a load, so you can say no."
+    answer: `We offer flexible schedules: Local routes (home every night), Regional routes (home on weekends - typically 5 days out, 2 days home), or OTR (${CD.otr.homeTime} out, 3-4 days home). Tell dispatch the home time you need and they build around it — and you see the delivery date before you accept a load, so you can say no.`
   },
   {
     question: "Is there forced dispatch?",
@@ -69,29 +79,29 @@ const defaultFaqs = [
   // Benefits & Perks
   {
     question: "Do company drivers get benefits?",
-    answer: "Here's the honest list of what we offer today: $1,000 sign-on bonus in your first year; weekly direct deposit every Friday; performance and referral bonuses; home time you pick (local, regional, or OTR at the same $0.63/mile); modern 2023-2025 Freightliner Cascadias and Volvo VNLs; and 24/7 dispatch you can actually reach. Riders and pets are decided case by case — ask us. We do NOT currently offer company medical, dental, vision, life or disability insurance, or a 401(k) — we'd rather tell you now than at orientation. If that changes, this page changes with it."
+    answer: `Here's the honest list of what we offer today: ${CD_SIGN_ON} sign-on bonus in your first year; weekly direct deposit every Friday; performance and referral bonuses; home time you pick (local, regional, or OTR at the same ${CD.otr.perMile}/mile); modern ${EQUIPMENT.modelYears} ${EQUIPMENT.makes}; and ${SUPPORT.hours} dispatch you can actually reach. Riders and pets are decided case by case — ask us. We do NOT currently offer company medical, dental, vision, life or disability insurance, or a 401(k) — we'd rather tell you now than at orientation. If that changes, this page changes with it.`
   },
   {
     question: "What fuel programs are available for owner operators?",
-    answer: "We offer fuel card programs with discounts at Pilot Flying J, Love's, TA/Petro, and other major chains - typically $0.30-$0.75 off per gallon depending on the chain and the week. IFTA reporting assistance included. 100% of fuel surcharge always passes to you. We help you optimize fuel routes and costs."
+    answer: `We offer fuel card programs with discounts at Pilot Flying J, Love's, TA/Petro, and other major chains - typically $0.30-$0.75 off per gallon depending on the chain and the week. IFTA reporting assistance included. ${OO.fuelSurcharge} of fuel surcharge always passes to you. We help you optimize fuel routes and costs.`
   },
   {
     question: "Do you offer maintenance discounts?",
-    answer: "Yes! Owner operators get preferred pricing at our partner service centers nationwide. Discounts on tires, oil changes, brakes, and major repairs. 24/7 roadside assistance connections available."
+    answer: `Yes! Owner operators get preferred pricing at our partner service centers nationwide. Discounts on tires, oil changes, brakes, and major repairs. ${SUPPORT.roadside} connections available.`
   },
   
   // Getting Started
   {
     question: "How quickly can I start?",
-    answer: "The steps are: a phone interview, application review, background check and drug screening, then orientation in Kent, WA (a virtual option is available). How long each takes depends on how fast your previous employers verify your history — we will tell you where you are at each stage rather than promise a date we do not control."
+    answer: `The steps are: a phone interview, application review, background check and drug screening, then orientation in ${COMPANY_INFO.location} (a virtual option is available). How long each takes depends on how fast your previous employers verify your history — we will tell you where you are at each stage rather than promise a date we do not control.`
   },
   {
     question: "Do you hire nationwide?",
-    answer: "Yes! We hire CDL Class A drivers from all 48 contiguous states. Based in Kent, WA, but our freight network covers the entire country. Whether you're in California, Texas, Florida, New York, or anywhere in between - we want to talk to you. Orientation can be done virtually."
+    answer: `Yes! We hire CDL Class A drivers from all ${STATS.statesCovered} contiguous states. Based in ${COMPANY_INFO.location}, but our freight network covers the entire country. Whether you're in California, Texas, Florida, New York, or anywhere in between - we want to talk to you. Orientation can be done virtually.`
   },
   {
     question: "What if I don't have my own truck yet?",
-    answer: "No problem! Start as a company driver ($0.63/mile) while you save up and learn our operations. Many of our current owner operators started as company drivers. We can guide you through the transition when you're ready to purchase your own truck. We don't do lease-purchase (those programs often trap drivers)."
+    answer: `No problem! Start as a company driver (${CD.otr.perMile}/mile) while you save up and learn our operations. Many of our current owner operators started as company drivers. We can guide you through the transition when you're ready to purchase your own truck. We don't do lease-purchase (those programs often trap drivers).`
   },
   
   // Equipment & Requirements
@@ -111,7 +121,7 @@ const defaultFaqs = [
   },
   {
     question: "What is FMCSA Motus and does it change Thind Transport's authority?",
-    answer: `FMCSA is modernizing carrier registration with Motus, a new unified system replacing the legacy Unified Registration System (URS) and FMCSA Portal. Thind Transport LLC remains a federally registered motor carrier (USDOT ${COMPANY_INFO.dot}, MC-${COMPANY_INFO.mc}). Existing operating authority and safety records stay valid; carrier registration updates and biennial filings will move through Motus as FMCSA completes rollout in 2026. Individual drivers do not register in Motus — the motor carrier does. Owner operators and company drivers still complete our hiring and DOT application process with us as usual. Official transition details: ${FMCSA_LINKS.motusInfo}`,
+    answer: `FMCSA is modernizing carrier registration with Motus, a new unified system replacing the legacy Unified Registration System (URS) and FMCSA Portal. ${COMPANY_INFO.name} LLC remains a federally registered motor carrier (USDOT ${COMPANY_INFO.dot}, MC-${COMPANY_INFO.mc}). Existing operating authority and safety records stay valid; carrier registration updates and biennial filings will move through Motus as FMCSA completes rollout in 2026. Individual drivers do not register in Motus — the motor carrier does. Owner operators and company drivers still complete our hiring and DOT application process with us as usual. Official transition details: ${FMCSA_LINKS.motusInfo}`,
   },
   {
     question: "What ELD do you use?",
@@ -120,8 +130,8 @@ const defaultFaqs = [
   
   // Company Info
   {
-    question: "How long has Thind Transport been in business?",
-    answer: `Thind Transport was founded in ${COMPANY_INFO.founded} in Kent, Washington by ${COMPANY_INFO.owner}, who has ${COMPANY_INFO.ownerExperience} years in trucking. We run ${STATS.trucksInFleet} trucks today. Family-owned — when you call, you talk to the people who dispatch the loads.`
+    question: `How long has ${COMPANY_INFO.name} been in business?`,
+    answer: `${COMPANY_INFO.name} was founded in ${COMPANY_INFO.founded} in Kent, Washington by ${COMPANY_INFO.owner}, who has ${COMPANY_INFO.ownerExperience} years in trucking. We run ${STATS.trucksInFleet} trucks today. Family-owned — when you call, you talk to the people who dispatch the loads.`
   },
   {
     question: "Why should I choose Thind over bigger carriers?",
@@ -165,19 +175,23 @@ export function FAQAccordion({ items: allItems = defaultFaqs, darkBackground = t
       />
       <Accordion type="single" collapsible className="w-full">
         {items.map((faq, index) => (
-          <AccordionItem 
-            key={`${id}-${index}`} 
+          // Two grammars, one prop: `darkBackground` is the navy band
+          // (steel type on a navy panel); the false branch is the house paper
+          // island — bg-paper / text-ink / border-ink/15, the same rule
+          // AudienceSelector and HomeTimeLanes use.
+          <AccordionItem
+            key={`${id}-${index}`}
             value={`item-${id}-${index}`}
             className={`border rounded-fleet mb-2 px-4 transition-colors ${
               darkBackground
                 ? "border-steel-700 bg-navy-700/50 hover:bg-steel-800/40 data-[state=open]:bg-steel-800/60 data-[state=open]:border-orange/50"
-                : "border-gray-200 bg-white hover:bg-orange-50/50 data-[state=open]:bg-orange-50/70 data-[state=open]:border-orange-300 shadow-sm"
+                : "border-ink/15 bg-paper hover:bg-orange-50/50 data-[state=open]:bg-orange-50/70 data-[state=open]:border-orange-300 shadow-m-e1"
             }`}
           >
             <AccordionTrigger className={`text-left py-5 font-semibold text-base hover:no-underline [&[data-state=open]>svg]:text-orange-500 ${
               darkBackground
-                ? "text-white hover:text-orange-400 [&[data-state=open]]:text-orange-400 [&>svg]:text-zinc-400"
-                : "text-gray-900 hover:text-orange-600 [&[data-state=open]]:text-orange-700 [&>svg]:text-gray-400"
+                ? "text-white hover:text-orange-400 [&[data-state=open]]:text-orange-400 [&>svg]:text-steel-400"
+                : "text-ink hover:text-orange-600 [&[data-state=open]]:text-orange-700 [&>svg]:text-ink-3"
             }`}>
               <div className="flex items-start gap-3 flex-1 pr-4">
                 <HelpCircle className="h-5 w-5 mt-0.5 flex-shrink-0 text-orange-500" />
@@ -185,7 +199,7 @@ export function FAQAccordion({ items: allItems = defaultFaqs, darkBackground = t
               </div>
             </AccordionTrigger>
             <AccordionContent className={`text-base leading-relaxed pb-5 pl-8 ${
-              darkBackground ? "text-zinc-300" : "text-gray-600"
+              darkBackground ? "text-steel-200" : "text-ink-2"
             }`}>
               <p>{faq.answer}</p>
             </AccordionContent>

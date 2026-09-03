@@ -1,29 +1,17 @@
 import { Metadata } from "next"
 import Script from "next/script"
-import Image from "next/image"
 import Link from "next/link"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import {
-  CheckCircle2,
-  ChevronRight,
-  Compass,
-  Home,
-  MapPin,
-  Phone,
-  Route,
-  Truck,
-} from "lucide-react"
-import { COMPANY_INFO, PAY_RATES, STATS } from "@/lib/constants"
+import { ArrowRight } from "lucide-react"
+import { COMPANY_INFO, PAY_RATES, SERVICES, STATS } from "@/lib/constants"
 import { RouteMapVisualization } from "@/components/features/RouteMapVisualization"
 import { FAQAccordion } from "@/components/shared/FAQAccordion"
 import { PageBreadcrumb } from "@/components/shared/PageBreadcrumb"
-import { PageHero } from "@/components/shared/PageHero"
-import { MARKET_DATA } from "@/lib/market-data"
+import { AsphaltHero } from "@/components/shared/AsphaltHero"
 import { AvailableTrucksStrip } from "@/components/features/AvailableTrucksStrip"
+import { HomeTimeLanes } from "@/components/home/HomeTimeLanes"
 import { RelatedLinks } from "@/components/shared/RelatedLinks"
 import { driverLinks } from "@/components/shared/link-sets"
+import { Reveal } from "@/components/ui/Reveal"
 
 export const metadata: Metadata = {
   // The root layout appends "| Thind Transport" via its title template — a
@@ -50,37 +38,30 @@ const jsonLd = {
   },
 }
 
-const routeTypes = [
+/** The three facts a driver checks before reading the lanes. Static text, not
+ *  count-ups: a reach and a home yard are identifiers, not a scoreboard. */
+/** Only a figure takes the mono tabular face; a trailer list and a town name
+ *  are prose and read in the display face. */
+const HERO_FACTS = [
   {
-    name: "Local",
-    icon: Home,
-    homeTime: "Home daily when local work is available",
-    pay: PAY_RATES.companyDriver.local.annual,
-    detail: "Best for drivers who want shorter runs and more predictable time at home.",
+    label: "Reach",
+    value: `${STATS.statesCovered} states`,
+    note: "Freight out of the home yard",
+    mono: true,
   },
   {
-    name: "Regional",
-    icon: Compass,
-    homeTime: "Weekly home time discussions",
-    pay: PAY_RATES.companyDriver.regional.annual,
-    detail: "A balance of miles and home time across the western lanes we regularly discuss.",
+    label: "Trailers",
+    value: SERVICES.types.join(", "),
+    note: "Pick what you're set up for",
+    mono: false,
   },
   {
-    name: "OTR",
-    icon: Truck,
-    homeTime: PAY_RATES.companyDriver.otr.homeTime,
-    pay: PAY_RATES.companyDriver.otr.annual,
-    detail: "Designed for drivers who want broader lane options and more time on the road.",
+    label: "Home yard",
+    value: COMPANY_INFO.location,
+    note: "Where the lanes start and end",
+    mono: false,
   },
-]
-
-const laneSnapshots = MARKET_DATA.hotLanes.slice(0, 4).map((lane) => ({
-  from: lane.from,
-  to: lane.to,
-  miles: lane.distance.toLocaleString(),
-  rate: `$${lane.rate.toFixed(2)}/mi`,
-  transit: lane.transitTime,
-}))
+] as const
 
 const routeFAQs = [
   {
@@ -107,194 +88,86 @@ const routeFAQs = [
 
 export default function RoutesPage() {
   return (
-    <>
+    <div className="min-h-screen overflow-x-hidden bg-navy-950">
       <Script
         id="routes-jsonld"
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
 
-      <div className="brand-page-shell min-h-screen">
-        <PageBreadcrumb pageName="Routes & Lanes" category="Drivers" />
-
-        <PageHero
-          image="/images/generated/hero-cascadia-highway.webp"
-          imageAlt="Illustration of a tractor-trailer on a Pacific Northwest highway"
-          eyebrow="CDL-A Route Overview"
-          title={
-            <>
-              Routes That Match <span className="text-orange">How You Want To Run</span>
-            </>
-          }
-          description="Local, regional, and OTR — the right fit depends on your experience, trailer background, and home-time needs. Here's how each one runs."
-          primaryLabel="Find Your Fit"
-        >
-          <div className="mt-8 flex flex-wrap gap-3 text-sm font-medium text-white/90">
-            <span className="rounded-lg border border-white/15 bg-white/10 px-4 py-2">48-state reach</span>
-            <span className="rounded-lg border border-white/15 bg-white/10 px-4 py-2">Flatbed, reefer, dry van</span>
-            <span className="rounded-lg border border-white/15 bg-white/10 px-4 py-2">Kent, WA base</span>
-          </div>
-        </PageHero>
-
-        {/* Real posted capacity, moved here when /load-board (five invented
-            loads) was deleted. Renders nothing when nothing is posted. */}
-        <AvailableTrucksStrip />
-
-        <section className="bg-[#101926] py-16">
-          <div className="container">
-            <div className="grid gap-6 md:grid-cols-3">
-              {routeTypes.map((route) => {
-                const Icon = route.icon
-                return (
-                  <Card key={route.name} className="h-full border-gray-200 bg-white">
-                    <CardContent className="p-6">
-                      <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-navy/10">
-                        <Icon className="h-6 w-6 text-navy" />
-                      </div>
-                      <h2 className="mb-2 text-2xl font-black text-navy">{route.name} Routes</h2>
-                      <p className="mb-4 text-gray-600">{route.detail}</p>
-                      <div className="space-y-3 text-sm text-gray-700">
-                        <div className="flex items-start gap-2">
-                          <CheckCircle2 className="mt-0.5 h-4 w-4 flex-shrink-0 text-green-600" />
-                          <span>{route.homeTime}</span>
-                        </div>
-                        <div className="flex items-start gap-2">
-                          <CheckCircle2 className="mt-0.5 h-4 w-4 flex-shrink-0 text-green-600" />
-                          <span>Typical annual range: {route.pay}</span>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                )
-              })}
-            </div>
-          </div>
-        </section>
-
-        <section className="bg-white py-16">
-          <div className="container">
-            <div className="mb-10 text-center">
-              <Badge className="mb-4 border-0 bg-[#17181B] px-4 py-2 text-xs font-bold text-white">
-                Market Snapshot
-              </Badge>
-              <h2 className="mb-3 text-3xl font-black text-navy md:text-4xl">
-                Example Freight Corridors
-              </h2>
-              <p className="mx-auto max-w-2xl text-gray-600">
-                These are sample market snapshots from the data used on the site. They are not presented as guaranteed live loads.
-              </p>
-            </div>
-
-            <div className="grid gap-4 md:grid-cols-2">
-              {laneSnapshots.map((lane) => (
-                <Card key={`${lane.from}-${lane.to}`} className="border-gray-200">
-                  <CardContent className="p-6">
-                    <div className="mb-3 flex items-start justify-between gap-3">
-                      <div>
-                        <p className="text-sm font-semibold uppercase tracking-wider text-gray-500">
-                          Lane
-                        </p>
-                        <h3 className="text-xl font-black text-navy">
-                          {lane.from} to {lane.to}
-                        </h3>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-sm font-semibold text-gray-500">Rate snapshot</p>
-                        <p className="text-2xl font-black text-orange">{lane.rate}</p>
-                      </div>
-                    </div>
-                    <div className="flex flex-wrap gap-3 text-sm text-gray-700">
-                      <span className="rounded-full bg-gray-100 px-3 py-1">{lane.miles} miles</span>
-                      <span className="rounded-full bg-gray-100 px-3 py-1">{lane.transit}</span>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        <section className="bg-white py-16">
-          <div className="container">
-            <RouteMapVisualization />
-          </div>
-        </section>
-
-        <section className="bg-[#101926] py-16">
-          <div className="container">
-            <div className="mx-auto max-w-4xl">
-              <div className="mb-10 text-center">
-                <Badge className="mb-4 border-0 bg-[#17181B] px-4 py-2 text-xs font-bold text-white">
-                  Frequently Asked Questions
-                </Badge>
-                <h2 className="mb-3 text-3xl font-black text-white md:text-4xl">
-                  Route Questions We Hear Most
-                </h2>
-              </div>
-              <FAQAccordion items={routeFAQs} darkBackground={true} gradientColor="#101926" />
-            </div>
-          </div>
-        </section>
-
-        <section className="relative overflow-hidden bg-navy py-16 md:py-24">
-          <Image
-            src="/images/generated/truck-mountain-pass.webp"
-            alt=""
-            aria-hidden
-            fill
-            sizes="100vw"
-            className="object-cover"
+      <AsphaltHero
+        breadcrumb={
+          /* The trail lives inside the asphalt band; its own bar chrome
+             (opaque ground, blur, nav-clearance padding, second gutter) is
+             overridden here rather than stacked above the hero. */
+          <PageBreadcrumb
+            pageName="Routes & Lanes"
+            category="Drivers"
+            className="!border-b-0 !bg-transparent !pb-0 !pt-4 !backdrop-blur-none [&>div]:px-0 [&_ol]:justify-start"
           />
-          <div className="absolute inset-0 bg-gradient-to-b from-navy/90 via-navy/75 to-navy/90" />
-          <div className="container relative text-center">
-            <h2 className="mb-4 text-3xl font-black text-white md:text-4xl">
-              Want To Talk Through Your Best Route Fit?
-            </h2>
-            <p className="mx-auto mb-8 max-w-2xl text-lg font-medium text-white/90">
-              Tell us your experience level, trailer background, and home-time preferences. We&apos;ll help you figure out which conversations make sense.
-            </p>
-            <div className="mb-6 flex flex-col justify-center gap-4 sm:flex-row">
-              <Button
-                size="lg"
-                className="bg-orange-600 font-bold text-base text-white hover:bg-orange-600"
-                asChild
+        }
+        eyebrow="CDL-A route overview"
+        title="Routes that match how you want to run."
+        description="Local, regional, and OTR — the right fit depends on your experience, trailer background, and home-time needs. Here's how each one runs."
+      >
+        <dl className="rounded-m-3 border border-white/10 bg-white/5 p-6">
+          {HERO_FACTS.map((fact, i) => (
+            <div key={fact.label} className={i === 0 ? "" : "mt-6 border-t border-white/10 pt-5"}>
+              <dt className="font-display text-m-micro font-bold uppercase tracking-[0.15em] text-orange-300">
+                {fact.label}
+              </dt>
+              <dd
+                className={
+                  fact.mono
+                    ? "mt-1 font-mono text-m-h4 font-bold tabular-nums text-paper"
+                    : "mt-1 font-display text-m-h4 font-bold text-paper"
+                }
               >
-                <Link href="/apply">
-                  Apply Now
-                  <ChevronRight className="ml-2 h-5 w-5" />
-                </Link>
-              </Button>
-              <Button
-                size="lg"
-                variant="outline"
-                className="border-2 border-white/40 !bg-white/10 font-bold text-base text-white backdrop-blur-sm hover:!bg-white/20"
-                asChild
-              >
-                <Link href={`tel:${COMPANY_INFO.phoneFormatted}`}>
-                  <Phone className="mr-2 h-4 w-4" />
-                  Call {COMPANY_INFO.phone}
-                </Link>
-              </Button>
+                {fact.value}
+              </dd>
+              <dd className="text-m-body text-paper/70">{fact.note}</dd>
             </div>
-            <div className="flex flex-wrap items-center justify-center gap-4 text-sm font-medium text-white/85">
-              <span className="flex items-center gap-1">
-                <CheckCircle2 className="h-4 w-4" />
-                CDL-A required
-              </span>
-              <span className="hidden sm:inline">•</span>
-              <span className="flex items-center gap-1">
-                <MapPin className="h-4 w-4" />
-                Based in Kent, WA
-              </span>
-              <span className="hidden sm:inline">•</span>
-              <span className="flex items-center gap-1">
-                <Route className="h-4 w-4" />
-                Flatbed, reefer, dry van
-              </span>
+          ))}
+        </dl>
+      </AsphaltHero>
+
+      {/* Real posted capacity, moved here when /load-board (five invented
+          loads) was deleted. Renders nothing when nothing is posted. */}
+      <AvailableTrucksStrip />
+
+      {/* One owner of the lanes message. The three route-type cards that used
+          to sit here repeated HomeTimeLanes with looser numbers, and the
+          "example freight corridors" grid printed the same MARKET_DATA rows
+          the corridor table below already prints. */}
+      <HomeTimeLanes />
+
+      <section aria-labelledby="corridors-heading" className="bg-navy-950 py-section">
+        <div className="container">
+          <Reveal className="mx-auto max-w-5xl">
+            <RouteMapVisualization />
+          </Reveal>
+          <p className="mx-auto mt-4 max-w-5xl text-m-body text-steel-300">
+            These are market snapshots of the corridors we commonly run. They are not presented as
+            guaranteed live loads.
+          </p>
+        </div>
+      </section>
+
+      <section aria-labelledby="routes-faq-heading" className="bg-asphalt py-section text-paper">
+        <div className="container">
+          <div className="mx-auto max-w-4xl">
+            <h2
+              id="routes-faq-heading"
+              className="font-display text-m-h2 font-bold text-paper text-balance"
+            >
+              Route questions we hear most
+            </h2>
+            <div className="mt-8">
+              <FAQAccordion items={routeFAQs} darkBackground={true} />
             </div>
           </div>
-        </section>
-      </div>
+        </div>
+      </section>
 
       <RelatedLinks
         tone="dark"
@@ -302,6 +175,44 @@ export default function RoutesPage() {
         intro="The lanes are half the picture — here's the pay, the clock and the equipment."
         links={driverLinks(["/routes"])}
       />
-    </>
+
+      {/* The page's ONE closing block. The navy photo band with its two pill
+          buttons made the same offer the hero already makes. */}
+      <section aria-labelledby="routes-apply-heading" className="bg-navy-950 py-section-tight">
+        <div className="container">
+          <div className="mx-auto max-w-measure text-center">
+            <h2
+              id="routes-apply-heading"
+              className="font-display text-m-h2 font-bold text-white text-balance"
+            >
+              Want to talk through your best route fit?
+            </h2>
+            <p className="mt-3 text-m-body text-steel-200">
+              Tell us your experience level, trailer background, and home-time preferences. We&apos;ll
+              help you figure out which conversations make sense.
+            </p>
+            <div className="mt-6 flex flex-wrap items-center justify-center gap-4">
+              <Link
+                href="/apply"
+                className="inline-flex min-h-[48px] items-center gap-2 rounded-fleet bg-orange-600 px-7 text-m-body font-semibold text-white transition-colors duration-base ease-entrance hover:bg-orange-700 hover:text-white"
+              >
+                <span>Start your application</span>
+                <ArrowRight className="h-4 w-4" aria-hidden />
+              </Link>
+              <a
+                href={`tel:${COMPANY_INFO.phoneFormatted}`}
+                className="inline-flex min-h-[48px] items-center gap-2 text-m-body font-semibold text-white underline-offset-4 hover:text-orange-300 hover:underline"
+              >
+                <span>or call</span>
+                <span className="font-mono tabular-nums">{COMPANY_INFO.phone}</span>
+              </a>
+            </div>
+            <p className="mt-4 text-m-body text-steel-300">
+              {`CDL-A required · Based in ${COMPANY_INFO.location} · ${SERVICES.types.join(", ")}`}
+            </p>
+          </div>
+        </div>
+      </section>
+    </div>
   )
 }

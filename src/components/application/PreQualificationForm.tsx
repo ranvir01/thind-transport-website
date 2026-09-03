@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, type ReactNode } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
@@ -16,11 +16,8 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { toast } from "sonner"
-import {
-  Loader2, CheckCircle2, AlertCircle,
-} from "lucide-react"
+import { Loader2, CheckCircle2, AlertCircle } from "lucide-react"
 import { submitPreQualification } from "@/app/actions/submit-pre-qualification"
-import { cn } from "@/lib/utils"
 import { HONEYPOT_FIELD, readHoneypotValue } from "@/lib/honeypot"
 import { track } from "@vercel/analytics"
 import { HoneypotField } from "@/components/shared/HoneypotField"
@@ -28,13 +25,25 @@ import { AttributionField } from "@/components/shared/AttributionField"
 import Link from "next/link"
 import { COMPANY_INFO, PAY_RATES } from "@/lib/constants"
 
+/**
+ * The /pre-qualify form — a paper island on the dark page ground.
+ *
+ * DOM ORDER OF THE TEN RADIX SELECTS IS PINNED: scripts/e2e-apply-smoke.mjs
+ * drives them by index (ownSleeperTruck, canDriveManual, paidBiMonthly,
+ * runLower40, runWaToAnywhere, hasRiderOrPet, isSapDriver, hasFelony,
+ * accident5Year, movingViolations5Year). So are the #cityState,
+ * #cdlExperience and #homeTimeDuration ids and the four result strings
+ * ("Driver Pre-Qualification", "Submit Pre-Qualification", "Congratulations!
+ * You Pre-Qualify", "Thank You for Your Interest") — all verbatim.
+ */
+
 const formSchema = z.object({
   firstName: z.string().min(2, "First Name is required"),
   lastName: z.string().min(2, "Last Name is required"),
   phone: z.string().min(14, "Please enter a valid 10-digit phone number"),
   email: z.string().email("Invalid email address"),
   cityState: z.string().min(2, "City / State is required"),
-  
+
   ownSleeperTruck: z.string().min(1, "Required"),
   cdlExperience: z.string().min(1, "Required"),
   canDriveManual: z.string().min(1, "Required"),
@@ -44,7 +53,7 @@ const formSchema = z.object({
   homeTimeDuration: z.string().min(1, "Required"),
   jobsInLast3Years: z.string().min(1, "Required"),
   suspensionDetails: z.string().optional(),
-  
+
   hasRiderOrPet: z.string().min(1, "Required"),
   isSapDriver: z.string().min(1, "Required"),
   hasFelony: z.string().min(1, "Required"),
@@ -53,6 +62,62 @@ const formSchema = z.object({
 })
 
 type FormData = z.infer<typeof formSchema>
+
+const YES_NO = ["Yes", "No"] as const
+const NO_YES = ["No", "Yes"] as const
+const COUNTS = ["None", "1", "2", "3+"] as const
+
+function FieldError({ children }: { children?: ReactNode }) {
+  if (!children) return null
+  return (
+    <p role="alert" className="text-m-micro font-semibold text-signal">
+      {children}
+    </p>
+  )
+}
+
+/**
+ * One Radix select with a visible caption. The caption is a <p>, not a
+ * <label>: the trigger is a button Radix owns, so the association is made with
+ * aria-labelledby rather than a label that wraps nothing.
+ */
+function ChoiceField({
+  id,
+  caption,
+  options,
+  error,
+  onValueChange,
+}: {
+  id: string
+  caption: string
+  options: readonly string[]
+  error?: string
+  onValueChange: (value: string) => void
+}) {
+  const captionId = `${id}-caption`
+  return (
+    <div className="space-y-2">
+      <p id={captionId} className="text-label-lg text-ink">
+        {caption}
+      </p>
+      <Select onValueChange={onValueChange}>
+        <SelectTrigger id={id} aria-labelledby={captionId} aria-invalid={error ? true : undefined}>
+          <SelectValue placeholder="Select" />
+        </SelectTrigger>
+        <SelectContent>
+          {options.map((option) => (
+            <SelectItem key={option} value={option}>
+              {option}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      <FieldError>{error}</FieldError>
+    </div>
+  )
+}
+
+const paperIsland = "rounded-m-3 border border-ink/15 bg-paper p-6 text-ink md:p-8"
 
 export function PreQualificationForm() {
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -67,20 +132,19 @@ export function PreQualificationForm() {
     register,
     handleSubmit,
     setValue,
-    watch,
     formState: { errors },
   } = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       suspensionDetails: "",
-    }
+    },
   })
 
   // Phone Mask Logic
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     let value = e.target.value.replace(/\D/g, "")
     if (value.length > 10) value = value.slice(0, 10)
-    
+
     if (value.length > 6) {
       value = `(${value.slice(0, 3)}) ${value.slice(3, 6)}-${value.slice(6)}`
     } else if (value.length > 3) {
@@ -88,7 +152,7 @@ export function PreQualificationForm() {
     } else if (value.length > 0) {
       value = `(${value}`
     }
-    
+
     setValue("phone", value, { shouldValidate: true })
   }
 
@@ -120,8 +184,10 @@ export function PreQualificationForm() {
           // different bonuses for owner-operators vs company drivers).
           isOwnerOperator: data.ownSleeperTruck === "Yes",
         })
-        // Scroll to top to show result
-        window.scrollTo({ top: 0, behavior: 'smooth' })
+        // Scroll the RESULT into view, not the document top: the page opens
+        // with a full asphalt hero, so scrollTo(0) parked the driver back on
+        // the headline with the verdict card below the fold.
+        document.getElementById("pre-qualification")?.scrollIntoView({ behavior: "smooth" })
       } else {
         setServerError(result.message)
         toast.error(result.message)
@@ -140,301 +206,338 @@ export function PreQualificationForm() {
         ? PAY_RATES.ownerOperator.signOnBonus
         : PAY_RATES.companyDriver.signOnBonus
       return (
-        <div className="bg-white rounded-3xl p-8 md:p-12 shadow-2xl shadow-green-900/20 border border-green-100 text-center animate-in fade-in slide-in-from-bottom-4 duration-500">
-          <div className="w-24 h-24 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-8 ring-8 ring-green-50">
-            <CheckCircle2 className="w-12 h-12" />
-          </div>
-          <h2 className="text-3xl md:text-4xl font-black text-slate-900 mb-4">
+        <div className={paperIsland}>
+          <span className="flex h-16 w-16 items-center justify-center rounded-full bg-cedar/10 text-cedar">
+            <CheckCircle2 className="h-10 w-10" aria-hidden />
+          </span>
+          {/* Pinned verbatim by scripts/e2e-apply-smoke.mjs. */}
+          <h2 id="pre-qualification-heading" className="mt-6 font-display text-m-h2 font-bold text-ink text-balance">
             Congratulations! You Pre-Qualify
           </h2>
-          <p className="text-xl text-slate-600 max-w-xl mx-auto mb-8">
+          <p className="mt-3 max-w-measure text-m-lede text-ink-2">
             Based on your answers, you match our requirements for top-tier pay and routes.
           </p>
-          <div className="bg-green-50 rounded-xl p-6 mb-8 max-w-md mx-auto border border-green-100">
-            <ul className="text-left space-y-3 font-medium text-green-900">
+          <div className="mt-6 rounded-m-3 border border-cedar/30 bg-cedar/10 p-5">
+            <ul className="list-none space-y-3 text-m-body font-medium text-ink">
               {/* Only constants-backed facts here. The priority-processing and
                   same-day-orientation promises were removed 2026-08-04:
                   neither was sourced from anything, and a promise the office
                   can't keep costs the driver who showed up believing it. */}
-              <li className="flex items-center gap-2"><CheckCircle2 className="w-5 h-5 text-green-600" /> Eligible for {signOnBonus} Sign-On Bonus</li>
-              <li className="flex items-center gap-2"><CheckCircle2 className="w-5 h-5 text-green-600" /> Weekly Direct Deposit Pay</li>
-              <li className="flex items-center gap-2"><CheckCircle2 className="w-5 h-5 text-green-600" /> No Forced Dispatch</li>
+              <li className="flex items-center gap-2">
+                <CheckCircle2 className="h-5 w-5 flex-shrink-0 text-cedar" aria-hidden />
+                <span>{`Eligible for a ${signOnBonus} sign-on bonus`}</span>
+              </li>
+              <li className="flex items-center gap-2">
+                <CheckCircle2 className="h-5 w-5 flex-shrink-0 text-cedar" aria-hidden />
+                <span>Weekly direct deposit pay</span>
+              </li>
+              <li className="flex items-center gap-2">
+                <CheckCircle2 className="h-5 w-5 flex-shrink-0 text-cedar" aria-hidden />
+                <span>No forced dispatch</span>
+              </li>
             </ul>
           </div>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button asChild className="h-14 text-lg font-bold bg-green-600 hover:bg-green-700 text-white shadow-xl shadow-green-600/30 px-8">
+          <div className="mt-8 flex flex-wrap items-center gap-6">
+            {/* hover:text-white is load-bearing: globals.css sets
+                `a:hover { color: var(--brand-accent-strong) }` at (0,1,1),
+                which beats the variant's bare `text-white` (0,1,0) and would
+                paint #EC5A50 on the orange-700 fill (2.33:1). The `hover:`
+                variant is (0,2,0), so it wins — same guard AsphaltHero uses. */}
+            <Button asChild size="lg" className="hover:text-white">
               <Link href="/apply">Complete Full Application</Link>
             </Button>
-            <Button asChild variant="outline" className="h-14 text-lg font-medium border-slate-300 hover:bg-slate-50">
-              <a href={`tel:${COMPANY_INFO.phoneFormatted}`}>Call Recruiting</a>
-            </Button>
-          </div>
-        </div>
-      )
-    } else {
-      return (
-        <div className="bg-white rounded-3xl p-8 md:p-12 shadow-2xl shadow-orange-900/20 border border-orange-100 text-center animate-in fade-in slide-in-from-bottom-4 duration-500">
-          <div className="w-24 h-24 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center mx-auto mb-8 ring-8 ring-orange-50">
-            <AlertCircle className="w-12 h-12" />
-          </div>
-          <h2 className="text-3xl font-bold text-slate-900 mb-4">
-            Thank You for Your Interest
-          </h2>
-          <p className="text-lg text-slate-600 max-w-xl mx-auto mb-8">
-            Based on your answers, we need to review your application manually to determine eligibility. A recruiter will review your details and contact you within 24 hours on business days.
-          </p>
-          <div className="flex justify-center">
-            <Button asChild className="h-14 text-lg font-bold bg-slate-900 hover:bg-slate-800 text-white px-8">
-              <Link href="/">Return Home</Link>
-            </Button>
+            <a
+              href={`tel:${COMPANY_INFO.phoneFormatted}`}
+              className="inline-flex min-h-[44px] items-center gap-2 font-semibold text-signal underline-offset-4 hover:text-signal hover:underline"
+            >
+              <span>or call</span>
+              <span className="font-mono tabular-nums">{COMPANY_INFO.phone}</span>
+            </a>
           </div>
         </div>
       )
     }
+
+    return (
+      <div className={paperIsland}>
+        <span className="flex h-16 w-16 items-center justify-center rounded-full bg-signal/10 text-signal">
+          <AlertCircle className="h-10 w-10" aria-hidden />
+        </span>
+        {/* Pinned verbatim by scripts/e2e-apply-smoke.mjs. */}
+        <h2 id="pre-qualification-heading" className="mt-6 font-display text-m-h2 font-bold text-ink text-balance">
+          Thank You for Your Interest
+        </h2>
+        <p className="mt-3 max-w-measure text-m-lede text-ink-2">
+          Based on your answers, we need to review your application manually to determine
+          eligibility. A recruiter will review your details and contact you within 24 hours on
+          business days.
+        </p>
+        <div className="mt-8 flex flex-wrap items-center gap-6">
+          <Button asChild size="lg" className="hover:text-white">
+            <a href={`tel:${COMPANY_INFO.phoneFormatted}`}>
+              <span>Call</span>
+              <span className="font-mono tabular-nums">{COMPANY_INFO.phone}</span>
+            </a>
+          </Button>
+          <Link
+            href="/"
+            className="inline-flex min-h-[44px] items-center font-semibold text-ink underline-offset-4 hover:text-ink hover:underline"
+          >
+            Return home
+          </Link>
+        </div>
+      </div>
+    )
   }
 
   return (
-    <div className="bg-white rounded-3xl p-8 md:p-12 shadow-2xl shadow-slate-200/50 border border-slate-100">
-      <div className="text-center mb-10">
-        <h2 className="text-3xl font-bold text-slate-900">Driver Pre-Qualification</h2>
-        <p className="text-slate-600 mt-2">Complete this form to check your eligibility instantly</p>
+    <div className={paperIsland}>
+      <div className="mb-10">
+        {/* Pinned verbatim: the landing anchor of e2e-apply-smoke.mjs. */}
+        <h2 id="pre-qualification-heading" className="font-display text-m-h2 font-bold text-ink text-balance">
+          Driver Pre-Qualification
+        </h2>
+        <p className="mt-2 max-w-measure text-m-body text-ink-2">
+          Complete this form to check your eligibility instantly.
+        </p>
       </div>
 
       {serverError && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg flex items-start gap-2 mb-8">
-          <AlertCircle className="h-5 w-5 mt-0.5 flex-shrink-0" />
-          <p>{serverError}</p>
+        <div
+          role="alert"
+          className="mb-8 flex items-start gap-2 rounded-m-3 border border-signal/40 bg-signal/10 px-4 py-3 text-ink"
+        >
+          <AlertCircle className="mt-0.5 h-5 w-5 flex-shrink-0 text-signal" aria-hidden />
+          <p className="text-m-body text-ink">{serverError}</p>
         </div>
       )}
 
-      <form onSubmit={handleSubmit(onSubmit)} className="relative space-y-8">
+      <form onSubmit={handleSubmit(onSubmit)} className="relative space-y-10">
         <HoneypotField />
-      <AttributionField />
-        {/* Basic Information */}
-        <div className="space-y-6">
-          <h3 className="text-xl font-bold text-slate-800 border-b pb-2">Basic Information</h3>
-          <div className="grid md:grid-cols-2 gap-6">
+        <AttributionField />
+
+        {/* Basic information */}
+        <fieldset className="space-y-6">
+          <legend className="mb-4 w-full border-b border-ink/15 pb-2 font-display text-m-h4 font-bold text-ink">
+            Basic information
+          </legend>
+          <div className="grid gap-6 md:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="firstName">First Name</Label>
-              <Input id="firstName" {...register("firstName")} autoComplete="given-name" placeholder="Enter first name" className="h-12" />
-              {errors.firstName && <p className="text-red-500 text-xs">{errors.firstName.message}</p>}
+              <Label htmlFor="firstName" size="lg" className="text-ink">First name</Label>
+              <Input
+                id="firstName"
+                {...register("firstName")}
+                autoComplete="given-name"
+                placeholder="Enter first name"
+                variant={errors.firstName ? "error" : "default"}
+              />
+              <FieldError>{errors.firstName?.message}</FieldError>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="lastName">Last Name</Label>
-              <Input id="lastName" {...register("lastName")} autoComplete="family-name" placeholder="Enter last name" className="h-12" />
-              {errors.lastName && <p className="text-red-500 text-xs">{errors.lastName.message}</p>}
+              <Label htmlFor="lastName" size="lg" className="text-ink">Last name</Label>
+              <Input
+                id="lastName"
+                {...register("lastName")}
+                autoComplete="family-name"
+                placeholder="Enter last name"
+                variant={errors.lastName ? "error" : "default"}
+              />
+              <FieldError>{errors.lastName?.message}</FieldError>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="phone">Phone Number</Label>
-              <Input id="phone" {...register("phone")} onChange={handlePhoneChange} type="tel" inputMode="tel" autoComplete="tel" placeholder="(555) 555-5555" className="h-12" />
-              {errors.phone && <p className="text-red-500 text-xs">{errors.phone.message}</p>}
+              <Label htmlFor="phone" size="lg" className="text-ink">Phone number</Label>
+              {/* lead-form-autofill.test.ts reads this line: id, type,
+                  inputMode and autoComplete must stay on it together. */}
+              <Input id="phone" {...register("phone")} onChange={handlePhoneChange} type="tel" inputMode="tel" autoComplete="tel" placeholder="(555) 555-5555" className="font-mono tabular-nums" variant={errors.phone ? "error" : "default"} />
+              <FieldError>{errors.phone?.message}</FieldError>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input id="email" {...register("email")} type="email" autoComplete="email" placeholder="john@example.com" className="h-12" />
-              {errors.email && <p className="text-red-500 text-xs">{errors.email.message}</p>}
+              <Label htmlFor="email" size="lg" className="text-ink">Email</Label>
+              <Input
+                id="email"
+                {...register("email")}
+                type="email"
+                autoComplete="email"
+                placeholder="john@example.com"
+                variant={errors.email ? "error" : "default"}
+              />
+              <FieldError>{errors.email?.message}</FieldError>
             </div>
-            <div className="col-span-2 space-y-2">
-              <Label htmlFor="cityState">City / State</Label>
-              <Input id="cityState" {...register("cityState")} placeholder="e.g. Kent, WA" className="h-12" />
-              {errors.cityState && <p className="text-red-500 text-xs">{errors.cityState.message}</p>}
+            <div className="space-y-2 md:col-span-2">
+              <Label htmlFor="cityState" size="lg" className="text-ink">City / state</Label>
+              <Input
+                id="cityState"
+                {...register("cityState")}
+                placeholder={`e.g. ${COMPANY_INFO.location}`}
+                variant={errors.cityState ? "error" : "default"}
+              />
+              <FieldError>{errors.cityState?.message}</FieldError>
             </div>
           </div>
+        </fieldset>
+
+        {/* Driver qualifications */}
+        <fieldset className="space-y-6">
+          <legend className="mb-4 w-full border-b border-ink/15 pb-2 font-display text-m-h4 font-bold text-ink">
+            Driver qualifications
+          </legend>
+          <div className="grid gap-6 md:grid-cols-2">
+            <ChoiceField
+              id="ownSleeperTruck"
+              caption="Own sleeper truck?"
+              options={YES_NO}
+              error={errors.ownSleeperTruck?.message}
+              onValueChange={(val) => setValue("ownSleeperTruck", val, { shouldValidate: true })}
+            />
+
+            <div className="space-y-2">
+              <Label htmlFor="cdlExperience" size="lg" className="text-ink">CDL experience (years)</Label>
+              <Input
+                id="cdlExperience"
+                {...register("cdlExperience")}
+                placeholder="e.g. 5 years"
+                variant={errors.cdlExperience ? "error" : "default"}
+              />
+              <FieldError>{errors.cdlExperience?.message}</FieldError>
+            </div>
+
+            <ChoiceField
+              id="canDriveManual"
+              caption="Can drive manual?"
+              options={YES_NO}
+              error={errors.canDriveManual?.message}
+              onValueChange={(val) => setValue("canDriveManual", val, { shouldValidate: true })}
+            />
+
+            <ChoiceField
+              id="paidBiMonthly"
+              caption="Are you ok getting paid 1st and 15th every month?"
+              options={YES_NO}
+              error={errors.paidBiMonthly?.message}
+              onValueChange={(val) => setValue("paidBiMonthly", val, { shouldValidate: true })}
+            />
+
+            <ChoiceField
+              id="runLower40"
+              caption="Can run lower 40?"
+              options={YES_NO}
+              error={errors.runLower40?.message}
+              onValueChange={(val) => setValue("runLower40", val, { shouldValidate: true })}
+            />
+
+            <ChoiceField
+              id="runWaToAnywhere"
+              caption="Can run WA to anywhere?"
+              options={YES_NO}
+              error={errors.runWaToAnywhere?.message}
+              onValueChange={(val) => setValue("runWaToAnywhere", val, { shouldValidate: true })}
+            />
+
+            <div className="space-y-2">
+              <Label htmlFor="homeTimeDuration" size="lg" className="text-ink">Home time duration</Label>
+              <Input
+                id="homeTimeDuration"
+                {...register("homeTimeDuration")}
+                placeholder="e.g. Weekly, Bi-weekly"
+                variant={errors.homeTimeDuration ? "error" : "default"}
+              />
+              <FieldError>{errors.homeTimeDuration?.message}</FieldError>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="jobsInLast3Years" size="lg" className="text-ink">Jobs in last 3 years</Label>
+              <Input
+                id="jobsInLast3Years"
+                {...register("jobsInLast3Years")}
+                placeholder="e.g. 2"
+                className="font-mono tabular-nums"
+                variant={errors.jobsInLast3Years ? "error" : "default"}
+              />
+              <FieldError>{errors.jobsInLast3Years?.message}</FieldError>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="suspensionDetails" size="lg" className="text-ink">
+              License suspension details (optional)
+            </Label>
+            <Textarea
+              id="suspensionDetails"
+              {...register("suspensionDetails")}
+              placeholder="Explain if applicable..."
+            />
+          </div>
+        </fieldset>
+
+        {/* Safety and history */}
+        <fieldset className="space-y-6">
+          <legend className="mb-4 w-full border-b border-ink/15 pb-2 font-display text-m-h4 font-bold text-ink">
+            Safety and history
+          </legend>
+          <div className="grid gap-6 md:grid-cols-2">
+            <ChoiceField
+              id="hasRiderOrPet"
+              caption="Has rider or pet?"
+              options={YES_NO}
+              error={errors.hasRiderOrPet?.message}
+              onValueChange={(val) => setValue("hasRiderOrPet", val, { shouldValidate: true })}
+            />
+
+            <ChoiceField
+              id="isSapDriver"
+              caption="Are you a SAP driver?"
+              options={NO_YES}
+              error={errors.isSapDriver?.message}
+              onValueChange={(val) => setValue("isSapDriver", val, { shouldValidate: true })}
+            />
+
+            <ChoiceField
+              id="hasFelony"
+              caption="Ever felony charged?"
+              options={NO_YES}
+              error={errors.hasFelony?.message}
+              onValueChange={(val) => setValue("hasFelony", val, { shouldValidate: true })}
+            />
+
+            <ChoiceField
+              id="accident5Year"
+              caption="Accidents in the last 5 years?"
+              options={COUNTS}
+              error={errors.accident5Year?.message}
+              onValueChange={(val) => setValue("accident5Year", val, { shouldValidate: true })}
+            />
+
+            <ChoiceField
+              id="movingViolations5Year"
+              caption="Moving violations in the last 5 years?"
+              options={COUNTS}
+              error={errors.movingViolations5Year?.message}
+              onValueChange={(val) => setValue("movingViolations5Year", val, { shouldValidate: true })}
+            />
+          </div>
+        </fieldset>
+
+        <div className="space-y-4">
+          <Button type="submit" size="lg" disabled={isSubmitting} className="w-full">
+            {isSubmitting ? (
+              <>
+                <Loader2 className="h-5 w-5 animate-spin" aria-hidden />
+                Submitting...
+              </>
+            ) : (
+              "Submit Pre-Qualification"
+            )}
+          </Button>
+          <p className="text-center text-m-micro text-ink-2">
+            <span>Prefer to talk it through? Call </span>
+            <a
+              href={`tel:${COMPANY_INFO.phoneFormatted}`}
+              className="font-semibold text-signal underline-offset-4 hover:text-signal hover:underline"
+            >
+              <span className="font-mono tabular-nums">{COMPANY_INFO.phone}</span>
+            </a>
+          </p>
         </div>
-
-        {/* Driver Qualifications */}
-        <div className="space-y-6">
-          <h3 className="text-xl font-bold text-slate-800 border-b pb-2">Driver Qualifications</h3>
-          <div className="grid md:grid-cols-2 gap-6">
-            <div className="space-y-2">
-              <Label>Own Sleeper Truck?</Label>
-              <Select onValueChange={(val) => setValue("ownSleeperTruck", val)}>
-                <SelectTrigger className="h-12">
-                  <SelectValue placeholder="Select" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Yes">Yes</SelectItem>
-                  <SelectItem value="No">No</SelectItem>
-                </SelectContent>
-              </Select>
-              {errors.ownSleeperTruck && <p className="text-red-500 text-xs">{errors.ownSleeperTruck.message}</p>}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="cdlExperience">CDL Experience (Years)</Label>
-              <Input id="cdlExperience" {...register("cdlExperience")} placeholder="e.g. 5 years" className="h-12" />
-              {errors.cdlExperience && <p className="text-red-500 text-xs">{errors.cdlExperience.message}</p>}
-            </div>
-
-            <div className="space-y-2">
-              <Label>Can Drive Manual?</Label>
-              <Select onValueChange={(val) => setValue("canDriveManual", val)}>
-                <SelectTrigger className="h-12">
-                  <SelectValue placeholder="Select" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Yes">Yes</SelectItem>
-                  <SelectItem value="No">No</SelectItem>
-                </SelectContent>
-              </Select>
-              {errors.canDriveManual && <p className="text-red-500 text-xs">{errors.canDriveManual.message}</p>}
-            </div>
-
-            <div className="space-y-2">
-              <Label>Are you ok getting paid 1st and 15th every month ?</Label>
-              <Select onValueChange={(val) => setValue("paidBiMonthly", val)}>
-                <SelectTrigger className="h-12">
-                  <SelectValue placeholder="Select" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Yes">Yes</SelectItem>
-                  <SelectItem value="No">No</SelectItem>
-                </SelectContent>
-              </Select>
-              {errors.paidBiMonthly && <p className="text-red-500 text-xs">{errors.paidBiMonthly.message}</p>}
-            </div>
-
-            <div className="space-y-2">
-              <Label>Can Run Lower 40?</Label>
-              <Select onValueChange={(val) => setValue("runLower40", val)}>
-                <SelectTrigger className="h-12">
-                  <SelectValue placeholder="Select" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Yes">Yes</SelectItem>
-                  <SelectItem value="No">No</SelectItem>
-                </SelectContent>
-              </Select>
-              {errors.runLower40 && <p className="text-red-500 text-xs">{errors.runLower40.message}</p>}
-            </div>
-
-            <div className="space-y-2">
-              <Label>Can Run WA to Anywhere?</Label>
-              <Select onValueChange={(val) => setValue("runWaToAnywhere", val)}>
-                <SelectTrigger className="h-12">
-                  <SelectValue placeholder="Select" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Yes">Yes</SelectItem>
-                  <SelectItem value="No">No</SelectItem>
-                </SelectContent>
-              </Select>
-              {errors.runWaToAnywhere && <p className="text-red-500 text-xs">{errors.runWaToAnywhere.message}</p>}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="homeTimeDuration">Home Time Duration</Label>
-              <Input id="homeTimeDuration" {...register("homeTimeDuration")} placeholder="e.g. Weekly, Bi-weekly" className="h-12" />
-              {errors.homeTimeDuration && <p className="text-red-500 text-xs">{errors.homeTimeDuration.message}</p>}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="jobsInLast3Years">Jobs in Last 3 Years</Label>
-              <Input id="jobsInLast3Years" {...register("jobsInLast3Years")} placeholder="e.g. 2" className="h-12" />
-              {errors.jobsInLast3Years && <p className="text-red-500 text-xs">{errors.jobsInLast3Years.message}</p>}
-            </div>
-          </div>
-          
-          <div className="space-y-2 mt-4">
-            <Label htmlFor="suspensionDetails">License Suspension Details</Label>
-            <Textarea id="suspensionDetails" {...register("suspensionDetails")} placeholder="Explain if applicable..." />
-          </div>
-        </div>
-
-        {/* Safety & Legal */}
-        <div className="space-y-6">
-          <h3 className="text-xl font-bold text-slate-800 border-b pb-2">Safety & History</h3>
-          <div className="grid md:grid-cols-2 gap-6">
-            <div className="space-y-2">
-              <Label>Has Rider or Pet?</Label>
-              <Select onValueChange={(val) => setValue("hasRiderOrPet", val)}>
-                <SelectTrigger className="h-12">
-                  <SelectValue placeholder="Select" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Yes">Yes</SelectItem>
-                  <SelectItem value="No">No</SelectItem>
-                </SelectContent>
-              </Select>
-              {errors.hasRiderOrPet && <p className="text-red-500 text-xs">{errors.hasRiderOrPet.message}</p>}
-            </div>
-
-            <div className="space-y-2">
-              <Label>Are You a SAP Driver?</Label>
-              <Select onValueChange={(val) => setValue("isSapDriver", val)}>
-                <SelectTrigger className="h-12">
-                  <SelectValue placeholder="Select" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="No">No</SelectItem>
-                  <SelectItem value="Yes">Yes</SelectItem>
-                </SelectContent>
-              </Select>
-              {errors.isSapDriver && <p className="text-red-500 text-xs">{errors.isSapDriver.message}</p>}
-            </div>
-
-            <div className="space-y-2">
-              <Label>Ever Felony Charged?</Label>
-              <Select onValueChange={(val) => setValue("hasFelony", val)}>
-                <SelectTrigger className="h-12">
-                  <SelectValue placeholder="Select" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="No">No</SelectItem>
-                  <SelectItem value="Yes">Yes</SelectItem>
-                </SelectContent>
-              </Select>
-              {errors.hasFelony && <p className="text-red-500 text-xs">{errors.hasFelony.message}</p>}
-            </div>
-
-            <div className="space-y-2">
-              <Label>Accident in 5 Year?</Label>
-              <Select onValueChange={(val) => setValue("accident5Year", val)}>
-                <SelectTrigger className="h-12">
-                  <SelectValue placeholder="Select" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="None">None</SelectItem>
-                  <SelectItem value="1">1</SelectItem>
-                  <SelectItem value="2">2</SelectItem>
-                  <SelectItem value="3+">3+</SelectItem>
-                </SelectContent>
-              </Select>
-              {errors.accident5Year && <p className="text-red-500 text-xs">{errors.accident5Year.message}</p>}
-            </div>
-
-             <div className="space-y-2">
-              <Label>Moving Violations in 5 year?</Label>
-              <Select onValueChange={(val) => setValue("movingViolations5Year", val)}>
-                <SelectTrigger className="h-12">
-                  <SelectValue placeholder="Select" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="None">None</SelectItem>
-                  <SelectItem value="1">1</SelectItem>
-                  <SelectItem value="2">2</SelectItem>
-                  <SelectItem value="3+">3+</SelectItem>
-                </SelectContent>
-              </Select>
-              {errors.movingViolations5Year && <p className="text-red-500 text-xs">{errors.movingViolations5Year.message}</p>}
-            </div>
-          </div>
-        </div>
-
-        <Button 
-          type="submit" 
-          disabled={isSubmitting}
-          className="w-full h-14 text-lg font-bold bg-orange-600 hover:bg-orange-500 text-white shadow-xl shadow-orange-500/20"
-        >
-          {isSubmitting ? (
-            <>
-              <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-              Submitting...
-            </>
-          ) : (
-            "Submit Pre-Qualification"
-          )}
-        </Button>
       </form>
     </div>
   )

@@ -9,7 +9,7 @@ import {
   DollarSign, Heart, MapPin, BookOpen, Users,
   Truck, Shield, ChevronRight, LayoutDashboard,
 } from "lucide-react"
-import { COMPANY_INFO } from "@/lib/constants"
+import { COMPANY_INFO, EQUIPMENT, PAY_RATES, STATS } from "@/lib/constants"
 import { PersonaSwitcher } from "@/components/shared/PersonaSwitcher"
 
 // Navigation items with dropdowns
@@ -24,13 +24,16 @@ const driverMenuItems = [
   {
     href: "/pay-rates",
     label: "Pay Rates",
-    description: "90% O/O split",
+    description: `${PAY_RATES.ownerOperator.commission} O/O split`,
     icon: DollarSign,
   },
   {
     href: "/benefits",
     label: "Benefits",
-    description: "Full package",
+    // Not "full package" — we do not carry one, and the phrase is on the
+    // banned-claims list. These three are the first three rows of
+    // BENEFITS.companyDriver, named plainly.
+    description: "Sign-on bonus, weekly pay, home time",
     icon: Heart,
   },
   {
@@ -42,7 +45,7 @@ const driverMenuItems = [
   {
     href: "/cdl-jobs",
     label: "Jobs by State",
-    description: "Hiring in all 48",
+    description: `Hiring in all ${STATS.statesCovered}`,
     icon: MapPin,
   },
   {
@@ -63,7 +66,7 @@ const companyMenuItems = [
   {
     href: "/fleet",
     label: "Our Fleet",
-    description: "2023-2025 Cascadias & VNLs",
+    description: EQUIPMENT.short,
     icon: Truck,
   },
   {
@@ -158,7 +161,7 @@ function DesktopDropdown({
       </button>
 
       {isOpen && (
-        <div className="absolute top-full left-0 mt-1 w-64 py-1 bg-navy border border-steel-700 rounded-fleet-lg shadow-brand-lg overflow-hidden motion-safe:animate-dropdown-in">
+        <div className="chrome-panel-in absolute top-full left-0 mt-1 w-64 py-1 bg-navy border border-steel-700 rounded-fleet-lg shadow-m-e3 overflow-hidden">
           {items.map((item) => {
             const Icon = item.icon
             const isActive = pathname === item.href
@@ -178,7 +181,7 @@ function DesktopDropdown({
                   `}
               >
                 <div
-                  className={`p-2 rounded-lg transition-colors
+                  className={`p-2 rounded-m-2 transition-colors
                     ${
                       item.highlight
                         ? "bg-orange-600/20 text-orange-400"
@@ -192,16 +195,16 @@ function DesktopDropdown({
                 </div>
                 <div className="flex-1">
                   <div
-                    className={`text-sm font-medium ${item.highlight ? "text-orange-400" : isActive ? "text-white" : "text-white/90"}`}
+                    className={`text-m-body font-medium ${item.highlight ? "text-orange-300" : isActive ? "text-white" : "text-steel-100"}`}
                   >
                     {item.label}
                   </div>
-                  <div className="text-xs text-white/70">
+                  <div className="text-m-micro text-steel-300">
                     {item.description}
                   </div>
                 </div>
                 {item.highlight && (
-                  <ChevronRight className="w-4 h-4 text-orange-400 group-hover:translate-x-1 transition-transform" />
+                  <ChevronRight className="w-4 h-4 text-orange-300 group-hover:translate-x-1 transition-transform" />
                 )}
               </Link>
             )
@@ -280,18 +283,27 @@ function MobileMenuDrawer({
         <>
           {/* Backdrop */}
           <div
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[101] motion-safe:animate-backdrop-in"
+            className="fixed inset-0 bg-navy-950/80 z-[101] motion-safe:animate-backdrop-in"
             onClick={onClose}
           />
 
-          {/* Drawer */}
+          {/* Drawer.
+              The edge is load-bearing, not decoration (WCAG 1.4.11, 3:1 to
+              identify the component): the panel ground and the darkened
+              backdrop are both near-black, so surface-vs-surface reads 1.07:1
+              however they are mixed, and shadow-m-e* is a paper ladder that
+              paints nothing here. So the boundary is the rule itself —
+              border-steel-500 measures 3.47:1 against the composited backdrop
+              and 3.23:1 against the panel, the lowest rung of the ramp that
+              clears 3:1 on BOTH sides (white/10 reads 1.40, steel-600 2.40).
+              The white/10 rules inside are dividers, a different job. */}
           <div
             ref={drawerRef}
             role="dialog"
             aria-modal="true"
             aria-label="Site menu"
             tabIndex={-1}
-            className="fixed top-0 right-0 bottom-0 w-[85vw] max-w-sm bg-[linear-gradient(180deg,#131418_0%,#0A0B0C_100%)] z-[102] flex flex-col shadow-2xl motion-safe:animate-drawer-in"
+            className="chrome-drawer-in fixed top-0 right-0 bottom-0 w-[85vw] max-w-sm border-l border-steel-500 bg-navy z-[102] flex flex-col shadow-m-e5"
           >
             {/* Header */}
             <div className="flex items-center justify-between p-4 border-b border-white/10">
@@ -327,7 +339,7 @@ function MobileMenuDrawer({
                       expandedSection === "drivers" ? null : "drivers",
                     )
                   }
-                  className="w-full flex items-center justify-between py-3 text-white/80 text-xs uppercase tracking-widest font-semibold"
+                  className="w-full flex items-center justify-between py-3 font-display text-m-micro font-bold uppercase tracking-[0.15em] text-steel-300"
                 >
                   For Drivers
                   <ChevronDown
@@ -344,10 +356,10 @@ function MobileMenuDrawer({
                           key={item.href}
                           href={item.href}
                           onClick={onClose}
-                          className={`flex items-center gap-3 py-3 px-2 rounded-xl transition-all
+                          className={`flex items-center gap-3 py-3 px-2 rounded-fleet transition-all
                               ${
                                 item.highlight
-                                  ? "bg-gradient-to-r from-orange-500/20 to-orange-600/10 border border-orange-500/30"
+                                  ? "bg-orange-600/10 border border-orange-600/40"
                                   : isActive
                                     ? "bg-white/10"
                                     : "hover:bg-white/5"
@@ -355,10 +367,10 @@ function MobileMenuDrawer({
                             `}
                         >
                           <div
-                            className={`p-2.5 rounded-xl
+                            className={`p-2.5 rounded-m-2
                               ${
                                 item.highlight
-                                  ? "bg-orange-600 text-white"
+                                  ? "bg-orange-600/20 text-orange-300"
                                   : isActive
                                     ? "bg-white/20 text-white"
                                     : "bg-white/5 text-white/60"
@@ -369,16 +381,16 @@ function MobileMenuDrawer({
                           </div>
                           <div className="flex-1">
                             <div
-                              className={`font-medium ${item.highlight ? "text-orange-400" : isActive ? "text-white" : "text-white/90"}`}
+                              className={`font-medium ${item.highlight ? "text-orange-300" : isActive ? "text-white" : "text-steel-100"}`}
                             >
                               {item.label}
                             </div>
-                            <div className="text-xs text-white/70">
+                            <div className="text-m-micro text-steel-300">
                               {item.description}
                             </div>
                           </div>
                           {item.highlight && (
-                            <span className="text-[10px] px-2 py-0.5 rounded-full bg-orange-600 text-white font-bold uppercase">
+                            <span className="rounded-full border border-orange-600/40 bg-orange-600/15 px-2 py-0.5 font-display text-m-micro font-bold uppercase tracking-[0.15em] text-orange-300">
                               Start
                             </span>
                           )}
@@ -397,7 +409,7 @@ function MobileMenuDrawer({
                       expandedSection === "company" ? null : "company",
                     )
                   }
-                  className="w-full flex items-center justify-between py-3 text-white/80 text-xs uppercase tracking-widest font-semibold"
+                  className="w-full flex items-center justify-between py-3 font-display text-m-micro font-bold uppercase tracking-[0.15em] text-steel-300"
                 >
                   Company
                   <ChevronDown
@@ -414,22 +426,22 @@ function MobileMenuDrawer({
                           key={item.href}
                           href={item.href}
                           onClick={onClose}
-                          className={`flex items-center gap-3 py-3 px-2 rounded-xl transition-all
+                          className={`flex items-center gap-3 py-3 px-2 rounded-fleet transition-all
                               ${isActive ? "bg-white/10" : "hover:bg-white/5"}
                             `}
                         >
                           <div
-                            className={`p-2.5 rounded-xl ${isActive ? "bg-white/20 text-white" : "bg-white/10 text-white/80"}`}
+                            className={`p-2.5 rounded-m-2 ${isActive ? "bg-white/20 text-white" : "bg-white/10 text-steel-200"}`}
                           >
                             <Icon className="w-5 h-5" />
                           </div>
                           <div className="flex-1">
                             <div
-                              className={`font-medium ${isActive ? "text-white" : "text-white/90"}`}
+                              className={`font-medium ${isActive ? "text-white" : "text-steel-100"}`}
                             >
                               {item.label}
                             </div>
-                            <div className="text-xs text-white/70">
+                            <div className="text-m-micro text-steel-300">
                               {item.description}
                             </div>
                           </div>
@@ -445,22 +457,22 @@ function MobileMenuDrawer({
                 <Link
                   href="/driver/login"
                   onClick={onClose}
-                  className={`flex items-center gap-3 py-3 px-2 rounded-xl transition-all
+                  className={`flex items-center gap-3 py-3 px-2 rounded-fleet transition-all
                     ${pathname === "/driver/login" ? "bg-white/10" : "hover:bg-white/5"}
                   `}
                 >
                   <div
-                    className={`p-2.5 rounded-xl ${pathname === "/driver/login" ? "bg-white/20 text-white" : "bg-white/10 text-white/80"}`}
+                    className={`p-2.5 rounded-m-2 ${pathname === "/driver/login" ? "bg-white/20 text-white" : "bg-white/10 text-steel-200"}`}
                   >
                     <Users className="w-5 h-5" />
                   </div>
                   <div className="flex-1">
                     <div
-                      className={`font-medium ${pathname === "/driver/login" ? "text-white" : "text-white/90"}`}
+                      className={`font-medium ${pathname === "/driver/login" ? "text-white" : "text-steel-100"}`}
                     >
                       Driver Login
                     </div>
-                    <div className="text-xs text-white/70">
+                    <div className="text-m-micro text-steel-300">
                       Access your application
                     </div>
                   </div>
@@ -469,18 +481,18 @@ function MobileMenuDrawer({
             </div>
 
             {/* Footer Actions */}
-            <div className="p-4 border-t border-white/10 space-y-3 bg-[rgba(5,8,14,0.92)]">
+            <div className="p-4 border-t border-white/10 space-y-3 bg-navy-950">
               <a
                 href={`tel:${COMPANY_INFO.phoneFormatted}`}
-                className="flex items-center justify-center gap-2 w-full py-3 px-4 bg-white/5 hover:bg-white/10 rounded-xl text-white font-medium transition-colors"
+                className="flex min-h-[48px] items-center justify-center gap-2 w-full px-4 bg-white/5 hover:bg-white/10 rounded-fleet border border-white/15 text-white font-semibold transition-colors"
               >
-                <Phone className="w-4 h-4" />
-                {COMPANY_INFO.phone}
+                <Phone className="w-4 h-4" aria-hidden />
+                <span className="font-mono tabular-nums">{COMPANY_INFO.phone}</span>
               </a>
               <Link
                 href="/apply"
                 onClick={onClose}
-                className="flex items-center justify-center gap-2 w-full py-3 px-4 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 rounded-xl text-white font-bold transition-all shadow-lg shadow-orange-500/25"
+                className="flex min-h-[48px] items-center justify-center gap-2 w-full px-4 bg-orange-600 hover:bg-orange-700 active:bg-orange-800 rounded-fleet text-white font-semibold transition-colors"
               >
                 Apply Now
                 <ChevronRight className="w-4 h-4" />
@@ -539,10 +551,10 @@ export const CinematicNavbar = () => {
       <header
         className={`fixed top-0 left-0 right-0 z-[100] border-b transition-[transform,box-shadow] duration-300 ${
           scrolled ? "border-steel-700 shadow-brand" : "border-steel-800/80"
-        } ${navHidden ? "-translate-y-full" : "translate-y-0"} bg-navy/95 supports-[backdrop-filter]:bg-navy/85 supports-[backdrop-filter]:backdrop-blur-md`}
+        } ${navHidden ? "-translate-y-full" : "translate-y-0"} bg-navy/95`}
       >
         <div className="fleet-accent-line" />
-        <nav className="container flex items-center justify-between gap-4 h-14 md:h-16 px-4">
+        <nav className="container flex items-center justify-between gap-4 h-14 md:h-16">
           {/* Wordmark — understated text identity, not a boxed logo */}
           <Link
             href="/"
@@ -599,24 +611,39 @@ export const CinematicNavbar = () => {
             {/* Persistent audience switcher — always visible so nobody is
                 trapped in a lane; highlight keys off pathname, never a cookie
                 (no hydration mismatch, no flash). lg+ only: at md the bar has
-                no room and the drawer carries the three doors instead. */}
+                no room and the drawer carries the same doors instead. */}
             <PersonaSwitcher className="ml-2 hidden lg:flex" />
           </div>
 
-          {/* Phone Number - Desktop only */}
+          {/* The call link, lg and up. The digits ARE the accessible name at
+              every width. Below xl the bar has no room to paint them — the
+              wordmark, two dropdowns, Portal, the four persona doors, this
+              link and Apply already overrun the lg container once the digits
+              are laid out — so they go sr-only rather than display:none. As
+              display:none a bare Phone glyph (lucide sets no aria-hidden and
+              no title) left the link with an EMPTY accessible name across the
+              whole lg band, which no QA viewport exercises: design-qa samples
+              mobile/tablet/desktop and viewport-matrix's laptop is the xl
+              breakpoint itself. From xl the digits are visible text, sitting
+              beside Apply the way the rest of the site prints a phone. */}
           <a
             href={`tel:${COMPANY_INFO.phoneFormatted}`}
-            className="hidden lg:flex items-center gap-2 px-3 py-2 text-sm font-semibold text-steel-300 hover:text-orange transition-colors"
+            className="hidden lg:flex items-center gap-2 px-3 py-2 text-sm font-semibold text-steel-300 hover:text-orange-300 transition-colors"
             data-cursor="CALL"
           >
-            <Phone className="w-4 h-4" />
-            <span className="hidden xl:inline">{COMPANY_INFO.phone}</span>
+            <Phone className="w-4 h-4" aria-hidden />
+            <span className="sr-only font-mono tabular-nums xl:not-sr-only">
+              {COMPANY_INFO.phone}
+            </span>
           </a>
 
-          {/* Apply Button */}
+          {/* Apply. md and up deliberately, not sm: MobileCommandBar's own
+              filled-red Apply is md:hidden, so at sm both were fixed to the
+              viewport at once. The two breakpoints are now complementary —
+              exactly one red Apply is pinned at any width. */}
           <Link
             href="/apply"
-            className="hidden sm:flex min-h-[40px] items-center rounded-fleet bg-orange-600 px-4 text-sm font-semibold text-white transition-colors hover:bg-orange-500 active:bg-orange-700"
+            className="hidden md:flex min-h-[48px] items-center rounded-fleet bg-orange-600 px-4 text-sm font-semibold text-white transition-colors hover:bg-orange-700 active:bg-orange-800"
             data-cursor="APPLY"
           >
             Apply Now

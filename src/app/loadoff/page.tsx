@@ -1,15 +1,15 @@
 import { Metadata } from "next"
 import Link from "next/link"
 import Image from "next/image"
-import { Button } from "@/components/ui/button"
-import { Card } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
 import {
   LayoutDashboard, Truck, DollarSign, Fuel, ShieldCheck, Smartphone,
-  PlugZap, ArrowRight, CheckCircle2, MapPin, FileText,
+  ArrowRight, CheckCircle2, MapPin,
 } from "lucide-react"
 import { PageBreadcrumb } from "@/components/shared/PageBreadcrumb"
+import { AsphaltHero } from "@/components/shared/AsphaltHero"
+import { Reveal } from "@/components/ui/Reveal"
 import { APP_ICONS } from "@/lib/site-icons"
+import { STATS } from "@/lib/constants"
 
 export const metadata: Metadata = {
   // absolute: the string already carries the carrier name, and the root
@@ -26,6 +26,22 @@ export const metadata: Metadata = {
   appleWebApp: { capable: true, title: "LoadOff" },
   icons: APP_ICONS,
 }
+
+/**
+ * The LoadOff product page.
+ *
+ * Every /hub href here is a plain <a>, never next/link — a soft navigation
+ * leaves the marketing manifest active and iOS then offers to install the
+ * website instead of the app (src/lib/cross-app-link.ts, enforced by
+ * src/__tests__/cross-app-links.test.ts). <AsphaltHero> already does that for
+ * its own actions.
+ *
+ * The white "honest engineering metrics" band is gone. Two of its four figures
+ * ("10 integration providers", "6 user roles served") were hand-typed counts of
+ * things that change every release, so they were wrong within weeks of being
+ * written. What survives is either derived from an array on this page or is a
+ * fact the copy already stands behind.
+ */
 
 const MODULES = [
   {
@@ -60,230 +76,281 @@ const MODULES = [
   },
 ] as const
 
+/** Derived or already-stated: nothing here is a count somebody has to remember
+ *  to update when the product changes. */
+const HERO_FACTS = [
+  { label: "Automated tests", value: "1,400+" },
+  { label: "Modules", value: String(MODULES.length) },
+  { label: "Trucks it runs", value: String(STATS.trucksInFleet) },
+  { label: "Freight dispatched", value: "Daily" },
+] as const
+
+const TOURS = [
+  {
+    poster: "/videos/poster-money.jpg",
+    mp4: "/videos/tour-money.mp4",
+    webm: "/videos/tour-money.webm",
+    label: "LoadOff money walkthrough: invoices, receivables, and driver settlements",
+    caption: "From delivered to paid — invoices and settlements.",
+  },
+  {
+    poster: "/videos/poster-driver.jpg",
+    mp4: "/videos/tour-driver.mp4",
+    webm: "/videos/tour-driver.webm",
+    label: "LoadOff driver app walkthrough: confirm a dispatch, pay stubs, and install from the browser",
+    caption: "The driver app — installs from the browser.",
+  },
+] as const
+
+const PRINCIPLES = [
+  {
+    icon: MapPin,
+    title: "Integrations with a fallback",
+    text: "ELD, fuel cards, load boards, QuickBooks — every connection has a CSV or manual path that always works, so nothing ever blocks the day.",
+  },
+  {
+    icon: CheckCircle2,
+    title: "Tested like money depends on it",
+    text: "1,400+ automated tests cover the math that pays drivers and bills brokers, because it does.",
+  },
+  {
+    icon: ShieldCheck,
+    title: "Multi-tenant from day one",
+    text: "Thind Transport is tenant #1. Every query is carrier-scoped, every credential encrypted at rest, every change audit-logged.",
+  },
+] as const
+
 export default function LoadOffPage() {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-50">
+    <div className="brand-page-shell overflow-x-hidden">
       {/* iOS keys standalone launch off the apple-prefixed name; Next emits
           only `mobile-web-app-capable`. React hoists this into <head>. */}
       <meta name="apple-mobile-web-app-capable" content="yes" />
-      <PageBreadcrumb pageName="LoadOff TMS" category="Company" />
 
-      {/* Hero — product-first: the real Today screen is the pitch */}
-      <div className="relative overflow-hidden bg-gradient-to-b from-[#101114] to-[#17181B] text-white pt-20 pb-0">
-        <div className="container relative">
-          <div className="text-center max-w-4xl mx-auto">
-            <Badge className="mb-6 bg-white/10 text-white border-white/20 px-4 py-2 text-sm font-bold">
-              <PlugZap className="h-4 w-4 mr-1.5" />
-              Built in-house · Runs our fleet every day
-            </Badge>
-            <h1 className="text-5xl md:text-6xl font-black mb-6 leading-tight">
-              LoadOff<span className="text-indigo-300">.</span> Take a load off.
-            </h1>
-            <p className="text-xl text-white/85 max-w-3xl mx-auto leading-relaxed">
-              The transportation management system we built to run Thind Transport — dispatch,
-              invoicing, settlements, fuel, IFTA, and compliance in one calm place, with a phone
-              app drivers actually use.
-            </p>
-            <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
-              {/* PLAIN <a>, NOT next/link — deliberate, and load-bearing.
-                  See the note above CROSS_APP_LINK_REASON below. */}
-              <Button size="lg" className="bg-none bg-white text-slate-900 shadow-none hover:bg-slate-100" asChild>
-                <a href="/hub">
-                  Open LoadOff <ArrowRight className="h-5 w-5 ml-2" />
-                </a>
-              </Button>
-              <Button size="lg" variant="outline" className="border-white/40 text-white hover:bg-white/10" asChild>
-                <a href="/hub/get-app">
-                  <Smartphone className="h-5 w-5 mr-2" /> Put it on your phone
-                </a>
-              </Button>
-              <Button size="lg" variant="outline" className="border-white/40 text-white hover:bg-white/10" asChild>
-                <Link href="/schedule-meeting">
-                  <FileText className="h-5 w-5 mr-2" /> Ask for a walkthrough
-                </Link>
-              </Button>
+      <AsphaltHero
+        breadcrumb={
+          <PageBreadcrumb
+            pageName="LoadOff TMS"
+            category="Company"
+            className="!border-b-0 !bg-transparent !pb-0 !pt-4 !backdrop-blur-none [&>div]:px-0 [&_ol]:justify-start"
+          />
+        }
+        eyebrow="Built in-house · Runs our fleet every day"
+        title={
+          <>
+            LoadOff<span className="text-signal-up">.</span> Take a load off.
+          </>
+        }
+        description="The transportation management system we built to run Thind Transport — dispatch, invoicing, settlements, fuel, IFTA, and compliance in one calm place, with a phone app drivers actually use."
+        applyHref="/hub"
+        applyLabel="Open LoadOff"
+        extraLinks={[{ href: "/hub/demo", label: "Try the interactive demo" }]}
+      >
+        <dl className="grid grid-cols-2 gap-3">
+          {HERO_FACTS.map((fact) => (
+            <div key={fact.label} className="rounded-m-3 border border-white/10 bg-white/5 p-4">
+              <dt className="font-display text-m-micro font-bold uppercase tracking-[0.15em] text-orange-300">
+                {fact.label}
+              </dt>
+              <dd className="mt-2 font-mono text-m-h4 font-bold tabular-nums text-paper">
+                {fact.value}
+              </dd>
             </div>
-          </div>
-          {/* The product itself, front and center */}
-          <div className="relative mx-auto mt-12 max-w-5xl">
-            <div className="overflow-hidden rounded-t-2xl border border-b-0 border-white/15 shadow-[0_-8px_60px_rgba(0,0,0,0.5)]">
-              <Image
-                src="/images/loadoff/today.png"
-                alt="The LoadOff Today command center — live loads, money owed, and what needs attention this morning"
-                width={1440}
-                height={900}
-                priority
-                className="w-full h-auto"
-              />
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Honest engineering metrics — verifiable, not marketing numbers */}
-      <div className="border-b border-gray-200 bg-white">
-        <div className="container px-4">
-          <div className="grid grid-cols-2 md:grid-cols-4 divide-x divide-gray-100">
-            {[
-              { value: "1,400+", label: "Automated tests" },
-              { value: "10", label: "Integration providers" },
-              { value: "6", label: "User roles served" },
-              { value: "Daily", label: "Real freight dispatched" },
-            ].map((stat) => (
-              <div key={stat.label} className="px-4 py-6 text-center">
-                <p className="text-3xl font-black text-gray-900">{stat.value}</p>
-                <p className="mt-1 text-xs font-bold uppercase tracking-wider text-gray-500">{stat.label}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      <div className="container py-16">
-        {/* Watch it run — real screen recordings with captions, no audio needed */}
-        <h2 className="text-3xl font-black text-gray-900 text-center mb-3">Watch it run</h2>
-        <p className="text-center text-gray-600 mb-8 max-w-2xl mx-auto">
-          Real recordings of the live product with captions — no sound needed.
-        </p>
-        <div className="grid lg:grid-cols-3 gap-8 mb-16 items-start">
-          <Card variant="light" className="lg:col-span-2 overflow-hidden shadow-xl border-gray-100">
-            <video
-              poster="/videos/poster-office.jpg"
-              controls
-              muted
-              playsInline
-              preload="none"
-              className="w-full h-auto"
-              aria-label="LoadOff office walkthrough: Today, dispatch, loads, money, and integrations in 36 seconds"
-            >
-              <source src="/videos/tour-office.mp4" type="video/mp4" />
-              <source src="/videos/tour-office.webm" type="video/webm" />
-            </video>
-            <p className="px-5 py-3 text-sm text-gray-600 border-t border-gray-100">
-              The whole morning in 36 seconds — Today, dispatch, loads, money, integrations.
-            </p>
-          </Card>
-          <div className="space-y-8">
-            <Card variant="light" className="overflow-hidden shadow-xl border-gray-100">
-              <video
-                poster="/videos/poster-money.jpg"
-                controls
-                muted
-                playsInline
-                preload="none"
-                className="w-full h-auto"
-                aria-label="LoadOff money walkthrough: invoices, receivables, and driver settlements"
-              >
-                <source src="/videos/tour-money.mp4" type="video/mp4" />
-                <source src="/videos/tour-money.webm" type="video/webm" />
-              </video>
-              <p className="px-5 py-3 text-sm text-gray-600 border-t border-gray-100">
-                From delivered to paid — invoices and settlements.
-              </p>
-            </Card>
-            <Card variant="light" className="overflow-hidden shadow-xl border-gray-100 max-w-[300px] mx-auto lg:mx-0">
-              <video
-                poster="/videos/poster-driver.jpg"
-                controls
-                muted
-                playsInline
-                preload="none"
-                className="w-full h-auto"
-                aria-label="LoadOff driver app walkthrough: confirm a dispatch, pay stubs, and install from the browser"
-              >
-                <source src="/videos/tour-driver.mp4" type="video/mp4" />
-                <source src="/videos/tour-driver.webm" type="video/webm" />
-              </video>
-              <p className="px-5 py-3 text-sm text-gray-600 border-t border-gray-100">
-                The driver app — installs from the browser.
-              </p>
-            </Card>
-          </div>
-        </div>
-
-        {/* Modules */}
-        <h2 className="text-3xl font-black text-gray-900 text-center mb-10">
-          Everything a small carrier runs on
-        </h2>
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-16">
-          {MODULES.map((mod) => (
-            <Card key={mod.title} variant="light" className="p-6 border-gray-200 hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300">
-              <div className="w-11 h-11 rounded-xl bg-indigo-500/10 flex items-center justify-center mb-4">
-                <mod.icon className="h-6 w-6 text-indigo-600" />
-              </div>
-              <h3 className="font-bold text-gray-900 text-lg mb-2">{mod.title}</h3>
-              <p className="text-sm text-gray-600 leading-relaxed">{mod.text}</p>
-            </Card>
           ))}
-        </div>
+        </dl>
+      </AsphaltHero>
 
-        {/* Principles strip */}
-        <Card variant="light" className="p-8 mb-16 bg-gradient-to-br from-slate-50 via-indigo-50/40 to-slate-50 border-indigo-100 shadow-xl">
-          <div className="grid md:grid-cols-3 gap-6 text-center">
-            <div>
-              <MapPin className="h-6 w-6 text-indigo-600 mx-auto mb-2" />
-              <h4 className="font-bold text-gray-900">Integrations with a fallback</h4>
-              <p className="text-sm text-gray-600 mt-1">
-                ELD, fuel cards, load boards, QuickBooks — every connection has a CSV or manual
-                path that always works, so nothing ever blocks the day.
+      <section aria-labelledby="screen-heading" className="py-section">
+        <div className="container">
+          <Reveal className="mx-auto max-w-measure text-center">
+            <h2 id="screen-heading" className="font-display text-m-h2 font-bold text-balance text-white">
+              The screen it opens on
+            </h2>
+            <p className="mt-3 text-m-body text-steel-300">
+              Loads due, drivers who haven&apos;t confirmed, PODs missing, money not yet invoiced —
+              the whole morning in one place.
+            </p>
+          </Reveal>
+          <Reveal
+            index={1}
+            className="mx-auto mt-8 max-w-5xl overflow-hidden rounded-m-3 border border-white/10"
+          >
+            <Image
+              src="/images/loadoff/today.png"
+              alt="The LoadOff Today command center — live loads, money owed, and what needs attention this morning"
+              width={1440}
+              height={900}
+              sizes="(max-width: 1024px) 100vw, 1024px"
+              className="img-authentic h-auto w-full"
+            />
+          </Reveal>
+        </div>
+      </section>
+
+      {/* Watch it run — real screen recordings with captions, no audio needed.
+          scripts/e2e-showcase-smoke.mjs pins this heading and all three videos. */}
+      <section aria-labelledby="watch-heading" className="brand-section-panel py-section">
+        <div className="container">
+          <Reveal className="mx-auto max-w-measure text-center">
+            <h2 id="watch-heading" className="font-display text-m-h2 font-bold text-balance text-white">
+              Watch it run
+            </h2>
+            <p className="mt-3 text-m-body text-steel-300">
+              Real recordings of the live product with captions — no sound needed.
+            </p>
+          </Reveal>
+
+          <div className="mt-8 grid items-start gap-6 lg:grid-cols-3">
+            <Reveal className="overflow-hidden rounded-m-3 border border-white/10 bg-white/5 lg:col-span-2">
+              <video
+                poster="/videos/poster-office.jpg"
+                controls
+                muted
+                playsInline
+                preload="none"
+                className="h-auto w-full"
+                aria-label="LoadOff office walkthrough: Today, dispatch, loads, money, and integrations in 36 seconds"
+              >
+                <source src="/videos/tour-office.mp4" type="video/mp4" />
+                <source src="/videos/tour-office.webm" type="video/webm" />
+              </video>
+              <p className="border-t border-white/10 px-5 py-3 text-m-body text-steel-300">
+                The whole morning in 36 seconds — Today, dispatch, loads, money, integrations.
               </p>
-            </div>
-            <div>
-              <CheckCircle2 className="h-6 w-6 text-indigo-600 mx-auto mb-2" />
-              <h4 className="font-bold text-gray-900">Tested like money depends on it</h4>
-              <p className="text-sm text-gray-600 mt-1">
-                1,400+ automated tests cover the math that pays drivers and bills brokers, because
-                it does.
-              </p>
-            </div>
-            <div>
-              <ShieldCheck className="h-6 w-6 text-indigo-600 mx-auto mb-2" />
-              <h4 className="font-bold text-gray-900">Multi-tenant from day one</h4>
-              <p className="text-sm text-gray-600 mt-1">
-                Thind Transport is tenant #1. Every query is carrier-scoped, every credential
-                encrypted at rest, every change audit-logged.
-              </p>
+            </Reveal>
+
+            <div className="space-y-6">
+              {TOURS.map((tour, i) => (
+                <Reveal
+                  key={tour.mp4}
+                  index={Math.min(i + 1, 4)}
+                  className="overflow-hidden rounded-m-3 border border-white/10 bg-white/5"
+                >
+                  <video
+                    poster={tour.poster}
+                    controls
+                    muted
+                    playsInline
+                    preload="none"
+                    className="h-auto w-full"
+                    aria-label={tour.label}
+                  >
+                    <source src={tour.mp4} type="video/mp4" />
+                    <source src={tour.webm} type="video/webm" />
+                  </video>
+                  <p className="border-t border-white/10 px-5 py-3 text-m-body text-steel-300">
+                    {tour.caption}
+                  </p>
+                </Reveal>
+              ))}
             </div>
           </div>
-        </Card>
-
-        {/* Under the hood — for the technically curious */}
-        <div className="mb-16 rounded-2xl border border-gray-200 bg-white p-6 md:p-8 shadow-md">
-          <p className="text-center text-xs font-bold uppercase tracking-[0.2em] text-gray-400 mb-4">Under the hood</p>
-          <p className="mx-auto max-w-3xl text-center text-gray-600 leading-relaxed">
-            Next.js and Postgres, multi-tenant from the first table: every query carrier-scoped, money
-            kept in integer cents, credentials encrypted at rest, every change audit-logged. Verified
-            continuously by 1,400+ automated tests and browser-driven smoke suites before anything
-            reaches the trucks — engineering discipline borrowed from software companies much larger
-            than a 15-truck carrier, because drivers&apos; paychecks run through it.
-          </p>
         </div>
+      </section>
 
-        {/* CTA */}
-        <Card className="p-10 bg-gradient-to-br from-[#17181B] via-[#101114] to-[#17181B] text-white text-center shadow-2xl">
-          <h2 className="text-3xl font-bold mb-4">See it running</h2>
-          <p className="text-lg mb-6 text-white/85 max-w-2xl mx-auto">
-            LoadOff dispatches our trucks, bills our brokers, and pays our drivers today.
-            Open it, or ask us for a walkthrough with demo data.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            {/* Plain <a> — see CROSS_APP_LINK_REASON. */}
-            <Button size="lg" className="bg-none bg-white text-slate-900 shadow-none hover:bg-slate-100" asChild>
-              <a href="/hub">
-                Open LoadOff <ArrowRight className="h-5 w-5 ml-2" />
+      <section aria-labelledby="modules-heading" className="py-section">
+        <div className="container">
+          <Reveal className="mx-auto max-w-measure text-center">
+            <h2 id="modules-heading" className="font-display text-m-h2 font-bold text-balance text-white">
+              Everything a small carrier runs on
+            </h2>
+          </Reveal>
+          <ul className="mx-auto mt-8 grid max-w-5xl list-none gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {MODULES.map((mod, i) => (
+              <Reveal as="li" key={mod.title} index={Math.min(i, 4)}>
+                <div className="h-full rounded-m-3 border border-white/10 bg-white/5 p-5">
+                  <mod.icon className="h-5 w-5 text-orange-300" aria-hidden />
+                  <h3 className="mt-3 font-display text-m-h4 font-bold text-white">{mod.title}</h3>
+                  <p className="mt-2 max-w-measure text-m-body text-steel-300">{mod.text}</p>
+                </div>
+              </Reveal>
+            ))}
+          </ul>
+        </div>
+      </section>
+
+      <section aria-labelledby="principles-heading" className="brand-section-panel py-section">
+        <div className="container">
+          <Reveal className="mx-auto max-w-measure text-center">
+            <h2
+              id="principles-heading"
+              className="font-display text-m-h2 font-bold text-balance text-white"
+            >
+              How it is built
+            </h2>
+          </Reveal>
+          <ul className="mx-auto mt-8 grid max-w-5xl list-none gap-x-10 gap-y-8 md:grid-cols-3">
+            {PRINCIPLES.map((p, i) => (
+              <Reveal as="li" key={p.title} index={Math.min(i, 4)}>
+                <p.icon className="h-5 w-5 text-orange-300" aria-hidden />
+                <h3 className="mt-3 font-display text-m-h4 font-bold text-white">{p.title}</h3>
+                <p className="mt-2 max-w-measure text-m-body text-steel-300">{p.text}</p>
+              </Reveal>
+            ))}
+          </ul>
+
+          <Reveal className="mx-auto mt-10 max-w-measure text-center">
+            <p className="font-display text-m-micro font-bold uppercase tracking-[0.15em] text-orange-300">
+              Under the hood
+            </p>
+            <p className="mt-3 text-m-body text-steel-300">
+              Next.js and Postgres, multi-tenant from the first table: every query carrier-scoped,
+              money kept in integer cents, credentials encrypted at rest, every change audit-logged.
+              Verified continuously by 1,400+ automated tests and browser-driven smoke suites before
+              anything reaches the trucks.
+            </p>
+          </Reveal>
+        </div>
+      </section>
+
+      {/* The page's ONE closing block. Plain <a> for /hub — see the note above. */}
+      <section aria-labelledby="loadoff-cta-heading" className="bg-navy-950 py-section-tight">
+        <div className="container">
+          <div className="mx-auto max-w-measure text-center">
+            <h2
+              id="loadoff-cta-heading"
+              className="font-display text-m-h3 font-bold text-balance text-white"
+            >
+              See it running
+            </h2>
+            <p className="mt-3 text-m-body text-steel-300">
+              LoadOff dispatches our trucks, bills our brokers, and pays our drivers today. Open it,
+              or ask us for a walkthrough with demo data.
+            </p>
+            <div className="mt-6 flex flex-wrap items-center justify-center gap-4">
+              <a
+                href="/hub"
+                className="inline-flex min-h-[48px] items-center gap-2 rounded-fleet bg-orange-600 px-7 text-m-body font-semibold text-white transition-colors duration-base ease-entrance hover:bg-orange-700 hover:text-white"
+              >
+                Open LoadOff
+                <ArrowRight className="h-4 w-4" aria-hidden />
               </a>
-            </Button>
-            <Button size="lg" variant="outline" className="border-white/40 text-white hover:bg-white/10" asChild>
-              <a href="/hub/get-app">
-                <Smartphone className="h-5 w-5 mr-2" /> Install it on your phone
+              <a
+                href="/hub/demo"
+                className="inline-flex min-h-[48px] items-center text-m-body font-semibold text-white underline-offset-4 hover:text-orange-300 hover:underline"
+              >
+                Try the interactive demo
               </a>
-            </Button>
-            <Button size="lg" variant="outline" className="border-white/40 text-white hover:bg-white/10" asChild>
-              <Link href="/schedule-meeting">Schedule a walkthrough</Link>
-            </Button>
+              {/* /hub/get-app, not /app: Chrome only offers the install sheet
+                  on a page inside the narrow /hub manifest scope, so the one
+                  install link on this page points straight at it. Pinned by
+                  src/lib/hub/__tests__/pwa-manifest-wiring.test.ts. */}
+              <a
+                href="/hub/get-app"
+                className="inline-flex min-h-[48px] items-center text-m-body font-semibold text-white underline-offset-4 hover:text-orange-300 hover:underline"
+              >
+                Put it on your phone
+              </a>
+              <Link
+                href="/schedule-meeting"
+                className="inline-flex min-h-[48px] items-center text-m-body font-semibold text-white underline-offset-4 hover:text-orange-300 hover:underline"
+              >
+                Schedule a walkthrough
+              </Link>
+            </div>
           </div>
-        </Card>
-      </div>
+        </div>
+      </section>
     </div>
   )
 }
