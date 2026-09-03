@@ -8,6 +8,7 @@ import {
 import { getActiveAlerts } from "@/lib/hub/weather"
 import { pendingAnnouncementsForUser } from "@/lib/hub/announcements"
 import { getCarrierSettings } from "@/lib/hub/settings"
+import { formatHosMinutes } from "@/lib/hub/hos"
 import { fmtCentsExact } from "@/lib/hub/types"
 import { cn } from "@/lib/utils"
 import { DriverLoadCard } from "@/components/hub/driver/DriverLoadCard"
@@ -168,7 +169,7 @@ export default async function DriverHomePage() {
             ].map((clock) => (
               <div key={clock.label} className="driver-card driver-card--well py-2">
                 <p className={cn("font-mono text-xl font-medium tabular-nums", hosClockTone(clock.minutes))}>
-                  {clock.minutes != null ? `${Math.floor(clock.minutes / 60)}h ${clock.minutes % 60}m` : "—"}
+                  {clock.minutes != null ? formatHosMinutes(clock.minutes) : "—"}
                 </p>
                 <p className="text-[12px] font-bold uppercase tracking-wider text-steel-300">{clock.label}</p>
               </div>

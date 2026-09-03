@@ -431,6 +431,7 @@ describe("presentation helpers", () => {
     expect(formatHosMinutes(60)).toBe("1h")
     expect(formatHosMinutes(465)).toBe("7h 45m")
     expect(formatHosMinutes(-30)).toBe("0m") // clamped, never a negative clock
+    expect(formatHosMinutes(-1)).toBe("0m") // driver-home used to render "-1h -1m"
   })
 
   it("maps clocks onto the same severity vocabulary the ELD feed uses", () => {

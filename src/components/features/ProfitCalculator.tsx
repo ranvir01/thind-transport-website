@@ -123,6 +123,7 @@ export const ProfitCalculator = () => {
   const [emailSent, setEmailSent] = useState(false)
   const [emailError, setEmailError] = useState<string | null>(null)
   const [isSending, setIsSending] = useState(false)
+  const [showGuarantee, setShowGuarantee] = useState(false)
 
   // Update rate when equipment type changes
   useEffect(() => {
@@ -602,6 +603,7 @@ export const ProfitCalculator = () => {
               </div>
             </details>
           </div>
+
         </div>
       </div>
     </section>

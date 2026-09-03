@@ -1,3 +1,3 @@
-sha=5561a9ffbdff599af430cb2789c518a504912c39
-drained_at=2026-09-02T03:05:00Z
-run=cursor-deploy-2026-09-02T03
+sha=4b9ea9f7c036c25b724a1aed9f9993612d4bd228
+drained_at=2026-09-03T02:06:54Z
+run=deploy-agent-cron-2026-09-03T02

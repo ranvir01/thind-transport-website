@@ -1,6 +1,7 @@
 import { requireDriverUser } from "@/lib/hub/session"
 import { getCarrierSettings } from "@/lib/hub/settings"
 import { getFlag } from "@/lib/hub/flags"
+import { listThreadsForDriver } from "@/lib/hub/messages"
 import { isSandboxCarrier, seatForEmail } from "@/lib/hub/sandbox"
 import { readSimScenario } from "@/lib/hub/sandbox-shift"
 import { SandboxBanner } from "@/components/hub/SandboxBanner"
@@ -14,12 +15,19 @@ export default async function DriverAppLayout({ children }: { children: React.Re
   // Driver app is a navy-backdrop surface same as the portal, so the same
   // WCAG-contrast resolution applies: reuse resolvePortalAccent rather than
   // re-deriving it.
-  const [accent, sim, scenario] = await Promise.all([
+  const [accent, sim, scenario, unreadMessages] = await Promise.all([
     getCarrierSettings(user.carrierId)
       .then((s) => resolvePortalAccent(s.branding.accent))
       .catch(() => PORTAL_ACCENT_DEFAULT),
     sandbox ? getFlag("sim.shift_mode", { carrierId: user.carrierId }) : Promise.resolve(false),
     sandbox ? readSimScenario() : Promise.resolve("steady" as const),
+    // Messages tab badge. Same unread definition the inbox page already
+    // shows per-thread — listThreadsForDriver, summed. A read failure is
+    // no badge, not a 500 on every driver screen. NotificationsBell already
+    // shows notification unread; do not double-count that here.
+    listThreadsForDriver(user.carrierId, user.driverId, user.id)
+      .then((threads) => threads.reduce((n, t) => n + (t.unread_count ?? 0), 0))
+      .catch(() => 0),
   ])
 
   return (
@@ -37,7 +45,10 @@ export default async function DriverAppLayout({ children }: { children: React.Re
         } as React.CSSProperties
       }
     >
-      <DriverNav firstName={user.name.split(" ")[0]} />
+      <DriverNav
+        firstName={user.name.split(" ")[0]}
+        badges={{ "/hub/driver/messages": unreadMessages }}
+      />
       <OfflineSync />
       {/* Clearance mirrors the chrome's own geometry, inset for inset:
           - top: 56px header + the notch inset the header pads itself by, plus
