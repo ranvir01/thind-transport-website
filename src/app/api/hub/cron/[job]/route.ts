@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { query } from "@/lib/hub/db"
-import { complianceEntries } from "@/lib/hub/compliance"
+import { runComplianceAlerts } from "@/lib/hub/compliance"
 import { runOverdueReminders, runAutoInvoicing } from "@/lib/hub/invoices"
 import { runDetentionAlerts } from "@/lib/hub/detention"
 import { runTaskAutomations } from "@/lib/hub/tasks"
@@ -17,8 +17,6 @@ import { runUniversalSync } from "@/lib/hub/integrations/universal-sync"
 import { pollDocsMailbox } from "@/lib/hub/mailbox"
 import { notifyRandomTestPool, selectRandomTestPool } from "@/lib/hub/random-testing"
 import { sendOwnerDigest } from "@/lib/hub/digest"
-import { getCarrierSettings } from "@/lib/hub/settings"
-import { createMailTransport, mailFrom } from "@/lib/mailer"
 import { runMigrations } from "@/lib/hub/migrate"
 
 // Migrations on a cold backlog can outlive the default limit; 60s is the cap
@@ -112,25 +110,9 @@ export async function GET(
     const started = new Date()
     try {
       if (job === "compliance-scan") {
-        const entries = await complianceEntries(carrier.id)
-        const alerts = entries.filter((entry) => {
-          if (!entry.due) return false
-          const days = Math.ceil((new Date(entry.due).getTime() - Date.now()) / 86400000)
-          return days === 60 || days === 30 || days === 7 || days < 0
-        })
-        const settings = await getCarrierSettings(carrier.id)
-        if (alerts.length > 0 && settings.notifications.officeEmail) {
-          const transport = createMailTransport()
-          await transport.sendMail({
-            from: mailFrom(`${carrier.name} Compliance`),
-            to: settings.notifications.officeEmail,
-            subject: `Compliance alerts: ${alerts.length} item(s) need attention`,
-            text: alerts
-              .map((a) => `• ${a.name} — ${a.kind}: due ${a.due}${a.color === "red" ? " (EXPIRED)" : ""}`)
-              .join("\n"),
-          })
-        }
-        results[carrier.id] = { alerts: alerts.length }
+        // Alerts land in-app first and email second (see runComplianceAlerts):
+        // a rejected SMTP credential must not take the expiry warnings with it.
+        results[carrier.id] = await runComplianceAlerts(carrier.id, carrier.name)
       } else if (job === "ar-reminders") {
         results[carrier.id] = await runOverdueReminders(carrier.id)
       } else if (job === "detention-alerts") {
