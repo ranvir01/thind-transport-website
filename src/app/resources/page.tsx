@@ -3,7 +3,7 @@ import Link from "next/link"
 import {
   ArrowRight, Shield, Fuel, Wrench, AlertTriangle, Phone,
   CheckCircle2, ExternalLink, HeartPulse, Truck,
-  Navigation, Calculator, FileCheck, Route, Smartphone,
+  Navigation, Calculator, ChevronDown, FileCheck, Route, Smartphone,
   type LucideIcon,
 } from "lucide-react"
 import { HosClockCalculator } from "@/components/features/HosClockCalculator"
@@ -553,18 +553,33 @@ export default function ResourcesPage() {
                       <p className="mt-2 max-w-measure text-m-body text-paper/80">
                         {resource.description}
                       </p>
+                      {/* The 105 detail bullets across these cards rendered
+                          expanded, which is most of why this page ran 17 phone
+                          screens. A reference library is scanned by heading
+                          first, so the bullets sit behind a native <details>
+                          (same no-JS pattern as the footer columns) and the
+                          card keeps its title, description and link visible. */}
                       {resource.details ? (
-                        <ul className="mt-4 flex-1 list-none space-y-2">
-                          {resource.details.map((detail) => (
-                            <li
-                              key={detail}
-                              className="flex items-start gap-2 text-m-body text-paper/80"
-                            >
-                              <CheckCircle2 className="mt-1 h-4 w-4 shrink-0 text-paper/50" aria-hidden />
-                              <span>{detail}</span>
-                            </li>
-                          ))}
-                        </ul>
+                        <details className="group mt-4 flex-1">
+                          <summary className="inline-flex min-h-[44px] cursor-pointer list-none items-center gap-1.5 text-m-body font-semibold text-paper/80 hover:text-paper [&::-webkit-details-marker]:hidden">
+                            <span>What it covers</span>
+                            <ChevronDown
+                              className="h-4 w-4 shrink-0 transition-transform duration-base group-open:rotate-180"
+                              aria-hidden
+                            />
+                          </summary>
+                          <ul className="mt-1 list-none space-y-2">
+                            {resource.details.map((detail) => (
+                              <li
+                                key={detail}
+                                className="flex items-start gap-2 text-m-body text-paper/80"
+                              >
+                                <CheckCircle2 className="mt-1 h-4 w-4 shrink-0 text-paper/50" aria-hidden />
+                                <span>{detail}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </details>
                       ) : (
                         <span className="flex-1" />
                       )}
