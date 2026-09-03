@@ -1,7 +1,18 @@
 "use client"
 
+/**
+ * The full job card behind a "details" text link on /pay-rates.
+ *
+ * Every figure interpolates PAY_RATES / BENEFITS / COMPANY_INFO — the previous
+ * version hand-typed "$0.63", "90%" and "Kent, WA" in six places and drifted
+ * from the pay page it sat on. The footer carries the one red action (Apply)
+ * and the phone number as a text link, the same pair as every other apply
+ * block on the site. Radix Dialog stays; the trigger is a 44px text link.
+ */
+
 import { useState } from "react"
-import { COMPANY_INFO, PAY_RATES, SUPPORT } from "@/lib/constants"
+import Link from "next/link"
+import { ArrowRight, CheckCircle2, ChevronRight } from "lucide-react"
 import {
   Dialog,
   DialogContent,
@@ -11,176 +22,182 @@ import {
   DialogTrigger,
   DialogFooter,
 } from "@/components/ui/dialog"
-import { Badge } from "@/components/ui/badge"
-import Link from "next/link"
+import { Button } from "@/components/ui/button"
+import { BENEFITS, COMPANY_INFO, PAY_RATES, SERVICES } from "@/lib/constants"
+
+type CompanyLane = "local" | "regional" | "otr"
 
 interface JobDetailsDialogProps {
   jobType?: "company" | "owner"
+  /** For a company card about one lane: Apply opens /apply on that lane. */
+  lane?: CompanyLane
 }
 
-export function JobDetailsDialog({ jobType = "company" }: JobDetailsDialogProps) {
+interface JobDetails {
+  title: string
+  type: string
+  salary: string
+  description: string
+  requirements: readonly string[]
+  benefits: readonly string[]
+  routes: readonly string[]
+}
+
+const cd = PAY_RATES.companyDriver
+const oo = PAY_RATES.ownerOperator
+
+// Widened to string[] on purpose: comparing two distinct `as const` literals is
+// a TypeScript error, so the day the rates diverge this fails to compile
+// instead of quietly keeping the "same rate" line (HomeTimeLanes does the same).
+const COMPANY_RATES: string[] = [cd.local.perMile, cd.regional.perMile, cd.otr.perMile]
+const SAME_RATE = COMPANY_RATES.every((rate) => rate === COMPANY_RATES[0])
+
+/** "$57K-$63K" … "$69K-$82K" → "$57K–$82K": the published floor to the published ceiling. */
+const COMPANY_RANGE = `${cd.local.annual.split("-")[0]}–${cd.otr.annual.split("-")[1]}`
+
+const JOB_DETAILS: Record<"company" | "owner", JobDetails> = {
+  company: {
+    title: "CDL-A company driver — local, regional and OTR",
+    type: "Full-time",
+    salary: `${COMPANY_RANGE}/year`,
+    description: `${SAME_RATE ? `${cd.local.perMile} per mile on every lane. ` : ""}Local home ${cd.local.homeTime.toLowerCase()} (${cd.local.annual}/year), regional home ${cd.regional.homeTime.toLowerCase()} (${cd.regional.annual}/year), OTR ${cd.otr.homeTime} out (${cd.otr.annual}/year).`,
+    requirements: [
+      "Valid CDL Class A license",
+      `${PAY_RATES.requirements.companyDriver} (required)`,
+      "Clean driving record (no major violations in past 3 years)",
+      "Pass DOT physical and drug screening",
+      "21 years or older",
+    ],
+    benefits: BENEFITS.companyDriver,
+    routes: [
+      `Local: ${cd.local.perMile}/mile, home ${cd.local.homeTime.toLowerCase()}, ${cd.local.annual}/year`,
+      `Regional: ${cd.regional.perMile}/mile, home ${cd.regional.homeTime.toLowerCase()}, ${cd.regional.annual}/year`,
+      `OTR: ${cd.otr.perMile}/mile, ${cd.otr.homeTime} out, ${cd.otr.annual}/year`,
+      ...(SAME_RATE ? ["Same per-mile rate on every lane — picking local is not a pay cut"] : []),
+    ],
+  },
+  owner: {
+    title: "Owner-operator — lease on",
+    type: "Independent contractor",
+    salary: `${oo.annualGross}/year typical gross`,
+    description: `Keep ${oo.commission} of the linehaul with ${oo.fuelSurcharge} fuel-surcharge pass-through. Typical gross ${oo.annualGross}/year at ${oo.perMile}/mile — your revenue depends on the miles you choose to run. No forced dispatch.`,
+    requirements: [
+      "Valid CDL Class A license",
+      `${PAY_RATES.requirements.otr} (required)`,
+      "Your own power unit (truck)",
+      "Clean driving record",
+    ],
+    benefits: BENEFITS.ownerOperator,
+    routes: [
+      `Typical freight: ${oo.perMile}/mile`,
+      `Keep ${oo.commission} of gross`,
+      `${oo.fuelSurcharge} fuel surcharge pass-through`,
+      `${SERVICES.types.join(", ")} — you pick the load`,
+      "No forced dispatch",
+    ],
+  },
+}
+
+const SECTION_HEADING = "mb-3 font-display text-m-h4 font-bold text-ink"
+// list-none + mb-0: the base layer gives every ul a light copy colour and every
+// li a bottom margin, both tuned for the dark ground, not a paper dialog.
+const LIST = "list-none text-m-body text-ink"
+const ROW = "mb-0 flex items-start gap-2"
+const ICON = "mt-1 h-5 w-5 shrink-0 text-signal"
+
+export function JobDetailsDialog({ jobType = "company", lane }: JobDetailsDialogProps) {
   const [open, setOpen] = useState(false)
-  
-  const jobDetails = {
-    company: {
-      title: "Regional Company Truck Driver",
-      type: "Full-Time",
-      salary: `${PAY_RATES.companyDriver.regional.annual}/year`,
-      description: "Join our team as a regional company driver. $0.63 per mile, the same rate local, regional or OTR, with flexible home time.",
-      requirements: [
-        "Valid CDL Class A license",
-        "Minimum 1 year company driver experience (REQUIRED)",
-        "Clean driving record (no major violations in past 3 years)",
-        "Pass DOT physical and drug screening",
-        "21 years or older",
-        "Able to pass background check"
-      ],
-      benefits: [
-        `${PAY_RATES.companyDriver.signOnBonus.replace(" (First Year)", "")} sign-on bonus (first year)`,
-        "$0.63 per mile (regional)",
-        "Weekly direct deposit pay - Every Friday",
-        "Flexible home time - Regional routes",
-        "Home on weekends",
-        "Consistent freight year-round",
-        "Modern, well-maintained equipment",
-        SUPPORT.dispatch,
-        "Fuel card programs available"
-      ],
-      routes: [
-        "Regional routes: $0.63 per mile",
-        "Home on weekends - Work 5 days",
-        `Annual earning potential: ${PAY_RATES.companyDriver.regional.annual}`,
-        "Consistent miles and freight",
-        "Multiple route options available"
-      ]
-    },
-    owner: {
-      title: "OTR → Owner Operator",
-      type: "Independent Contractor",
-      salary: `${PAY_RATES.ownerOperator.annualGross}/year`,
-      description: "Run OTR under our authority and keep 90% of the linehaul. No forced dispatch, no hidden deductions — you see the rate con on every load.",
-      requirements: [
-        "Valid CDL Class A license",
-        "Minimum 2 years OTR experience (REQUIRED)",
-        "Your own power unit (truck)",
-        "Cargo and liability insurance ($1M minimum)",
-        "Clean driving record",
-        "MC authority (or we can help you get it)"
-      ],
-      benefits: [
-        "You keep 90% of the linehaul",
-        "$2,500 sign-on bonus",
-        "No forced dispatch - you choose your loads",
-        "No hidden fees or deductions",
-        "Transparent weekly settlements",
-        "Fuel surcharge passed through 100%",
-        "Weekly settlements and fast pay options",
-        "Fuel card programs with discounts",
-        "Maintenance and tire discounts",
-        SUPPORT.dispatch,
-        "Factoring services available",
-        "Consistent quality freight across Flatbed, Reefer, Dry Van"
-      ],
-      routes: [
-        `OTR loads nationwide: ${PAY_RATES.ownerOperator.perMile} per mile`,
-        "90% of gross - YOU keep 90%!",
-        "Flatbed, Reefer, or Dry Van freight",
-        "No forced dispatch - pick your lanes",
-        "Consistent freight year-round"
-      ]
-    }
-  }
-  
-  const details = jobDetails[jobType]
-  
+  const details = JOB_DETAILS[jobType]
+  const applyHref =
+    jobType === "owner"
+      ? "/apply?type=owner"
+      : lane
+        ? `/apply?type=company&lane=${lane}`
+        : "/apply?type=company"
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <button className="text-blue-600 font-semibold hover:underline inline-flex items-center gap-1">
-          View Full Details
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-          </svg>
+        {/* Colour is inherited so the link reads on whichever card mounts it. */}
+        <button
+          type="button"
+          className="inline-flex min-h-[44px] items-center gap-1 text-m-body font-semibold underline-offset-4 hover:underline"
+        >
+          {jobType === "company" ? "Company driver details" : "Owner-operator details"}
+          <ChevronRight className="h-4 w-4" aria-hidden />
         </button>
       </DialogTrigger>
-      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-        <DialogHeader>
-          <div className="flex items-start justify-between">
-            <div className="flex-1">
-              <DialogTitle className="text-2xl mb-2">{details.title}</DialogTitle>
-              <div className="flex items-center gap-2 mb-2">
-                <Badge>{details.type}</Badge>
-                <Badge variant="secondary">{details.salary}</Badge>
-                <Badge variant="outline">Kent, WA</Badge>
-              </div>
-            </div>
-          </div>
-          <DialogDescription className="text-base">
+      {/* The dialog is the same paper island as every other widget: the
+          primitive's own bg-white / shadow-lg / sm:rounded-lg are the shared
+          app defaults, overridden here rather than in src/components/ui. */}
+      <DialogContent className="max-h-[80svh] max-w-2xl overflow-y-auto rounded-m-3 border-ink/15 bg-paper text-ink shadow-m-e4 sm:rounded-m-3">
+        <DialogHeader className="text-left">
+          <DialogTitle className="font-display text-m-h3 font-bold text-ink">{details.title}</DialogTitle>
+          <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-m-body text-ink-2">
+            <span>{details.type}</span>
+            <span aria-hidden>·</span>
+            <span className="font-mono tabular-nums text-ink">{details.salary}</span>
+            <span aria-hidden>·</span>
+            <span>{COMPANY_INFO.location}</span>
+          </p>
+          <DialogDescription className="max-w-measure text-m-body text-ink-2">
             {details.description}
           </DialogDescription>
         </DialogHeader>
-        
+
         <div className="space-y-6">
           <div>
-            <h3 className="font-semibold text-lg mb-3">Requirements</h3>
-            <ul className="space-y-2">
-              {details.requirements.map((req, index) => (
-                <li key={index} className="flex items-start gap-2">
-                  <svg className="w-5 h-5 text-blue-600 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
+            <h3 className={SECTION_HEADING}>Requirements</h3>
+            <ul className={`${LIST} space-y-2`}>
+              {details.requirements.map((req) => (
+                <li key={req} className={ROW}>
+                  <CheckCircle2 className={ICON} aria-hidden />
                   <span>{req}</span>
                 </li>
               ))}
             </ul>
           </div>
-          
+
           <div>
-            <h3 className="font-semibold text-lg mb-3">Benefits & Perks</h3>
-            <div className="grid md:grid-cols-2 gap-2">
-              {details.benefits.map((benefit, index) => (
-                <div key={index} className="flex items-start gap-2">
-                  <svg className="w-5 h-5 text-green-600 mt-0.5 shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                  </svg>
-                  <span className="text-sm">{benefit}</span>
-                </div>
+            <h3 className={SECTION_HEADING}>Pay, benefits, and other compensation</h3>
+            <ul className={`${LIST} grid gap-2 md:grid-cols-2`}>
+              {details.benefits.map((benefit) => (
+                <li key={benefit} className={ROW}>
+                  <CheckCircle2 className={ICON} aria-hidden />
+                  <span>{benefit}</span>
+                </li>
               ))}
-            </div>
+            </ul>
           </div>
-          
+
           <div>
-            <h3 className="font-semibold text-lg mb-3">Route Options</h3>
-            <div className="bg-gray-50 rounded-lg p-4 space-y-2">
-              {details.routes.map((route, index) => (
-                <div key={index} className="flex items-start gap-2">
-                  <svg className="w-5 h-5 text-purple-600 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                  </svg>
-                  <span className="text-sm font-medium">{route}</span>
-                </div>
+            <h3 className={SECTION_HEADING}>Route options</h3>
+            <ul className={`${LIST} space-y-2 rounded-m-2 border border-ink/10 p-4`}>
+              {details.routes.map((route) => (
+                <li key={route} className={ROW}>
+                  <ArrowRight className={ICON} aria-hidden />
+                  <span className="font-medium">{route}</span>
+                </li>
               ))}
-            </div>
+            </ul>
           </div>
         </div>
-        
-        <DialogFooter className="flex-col sm:flex-row gap-3">
-          <a 
+
+        <DialogFooter className="flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-start sm:space-x-0">
+          <Button asChild size="lg" className="w-full sm:w-auto">
+            <Link href={applyHref} onClick={() => setOpen(false)}>
+              Apply now
+            </Link>
+          </Button>
+          <a
             href={`tel:${COMPANY_INFO.phoneFormatted}`}
-            className="w-full sm:w-auto bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors text-center"
+            className="inline-flex min-h-[48px] w-full items-center justify-center text-m-body font-semibold text-ink underline-offset-4 hover:underline sm:w-auto"
           >
-            Call {COMPANY_INFO.phone}
+            <span>or call </span>
+            <span className="font-mono tabular-nums">{COMPANY_INFO.phone}</span>
           </a>
-          <Link 
-            href="/apply"
-            className="w-full sm:w-auto bg-green-500 text-white px-6 py-3 rounded-lg font-semibold hover:bg-green-600 transition-colors text-center"
-            onClick={() => setOpen(false)}
-          >
-            Apply Now
-          </Link>
         </DialogFooter>
       </DialogContent>
     </Dialog>
   )
 }
-

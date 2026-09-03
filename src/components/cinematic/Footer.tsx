@@ -4,107 +4,77 @@ import { useEffect, useState } from "react"
 import Link from "next/link"
 
 import { usePathname } from "next/navigation"
-import { COMPANY_INFO, SUPPORT, TRUST_INDICATORS } from "@/lib/constants"
-import {
-  Award,
-  BadgeCheck,
-  Shield,
-  ShieldCheck,
-  Phone,
-  Mail,
-  MapPin,
-  ExternalLink,
-  ChevronDown,
-} from "lucide-react"
+import { COMPANY_INFO, FMCSA_LINKS } from "@/lib/constants"
+import { ChevronDown, ExternalLink, Mail, MapPin, Phone } from "lucide-react"
+
+type FooterLink = { href: string; label: string; highlight?: boolean }
 
 const FooterSection = ({
   title,
   links,
 }: {
   title: string
-  links: { href: string; label: string; highlight?: boolean; external?: boolean }[]
+  links: FooterLink[]
 }) => (
   <details className="group border-b border-white/10 md:border-0 [&:not([open])>ul]:hidden md:[&:not([open])>ul]:block">
     <summary className="flex min-h-[44px] cursor-pointer list-none items-center justify-between py-4 marker:content-none md:cursor-default md:py-0 md:pointer-events-none [&::-webkit-details-marker]:hidden">
-      <h4 className="font-display text-sm font-bold uppercase tracking-[0.18em] text-steel-300">{title}</h4>
+      <h4 className="font-display text-m-micro font-bold uppercase tracking-[0.15em] text-steel-300">{title}</h4>
       <ChevronDown
         aria-hidden
-        className="h-5 w-5 text-steel-400 transition-transform duration-200 group-open:rotate-180 md:hidden"
+        className="h-5 w-5 text-steel-400 transition-transform duration-base group-open:rotate-180 md:hidden"
       />
     </summary>
-    <ul className="space-y-3 pb-4 pl-2 text-sm md:mt-6 md:pb-0 md:pl-0">
+    <ul className="space-y-2 pb-4 text-m-body md:mt-5 md:pb-0">
       {links.map((link) => (
         <li key={link.href}>
-          {link.external ? (
-            <a
-              href={link.href}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="group/link flex items-center gap-2 py-1 text-steel-300 transition-colors hover:text-orange-400"
-            >
-              <span className="h-1 w-1 rounded-full bg-steel-600 transition-colors group-hover/link:bg-orange-400" />
-              <span>{link.label}</span>
-              <ExternalLink className="h-3 w-3 opacity-60" aria-hidden />
-            </a>
-          ) : (
-            <Link
-              href={link.href}
-              className={`group/link flex items-center gap-2 py-1 transition-colors hover:text-orange-400 ${
-                link.highlight ? "font-semibold text-steel-100" : "text-steel-300"
-              }`}
-            >
-              <span
-                className={`h-1 w-1 rounded-full transition-colors group-hover/link:bg-orange-400 ${
-                  link.highlight ? "bg-orange-600" : "bg-steel-600"
-                }`}
-              />
-              <span>{link.label}</span>
-            </Link>
-          )}
+          <Link
+            href={link.href}
+            className={`inline-flex items-center py-2 underline-offset-4 hover:underline ${
+              link.highlight
+                ? "font-semibold text-orange-300"
+                : "text-steel-200 hover:text-white"
+            }`}
+          >
+            {link.label}
+          </Link>
         </li>
       ))}
     </ul>
   </details>
 )
 
-// Footer link sections: one list each, rendered ONCE. On phones the section is
-// a native <details> (no JS, no duplicated DOM — the old version shipped every
-// link twice as md:hidden + hidden md:block copies and animated max-height,
-// which clipped the eight-item driver list); from md the list is always open.
+// Two columns, one list each, rendered ONCE. On phones the section is a native
+// <details> (no JS, no duplicated DOM — the old version shipped every link
+// twice as md:hidden + hidden md:block copies and animated max-height, which
+// clipped the list); from md the list is always open.
+//
+// Six routes each, the six the nav itself promotes. The footer used to carry
+// sixteen links plus a certifications column plus a trust panel, which is a
+// site map, not a footer: /app, /driver/login, /trust and the two FMCSA links
+// are all still one click away from the nav, the related-links blocks, or the
+// authority line below.
 const FooterLinkSections = () => {
-  const driverLinks = [
-    { href: "/apply", label: "Apply Now", highlight: true },
-    { href: "/pay-rates", label: "Pay Rates" },
+  const driverLinks: FooterLink[] = [
+    { href: "/apply", label: "Apply", highlight: true },
+    { href: "/pay-rates", label: "Pay rates" },
     { href: "/benefits", label: "Benefits" },
-    { href: "/routes", label: "Routes & Lanes" },
-    { href: "/resources", label: "Driver Resources" },
-    { href: "/cdl-jobs", label: "Jobs by State" },
-    { href: "/app", label: "Get the Driver App" },
-    { href: "/driver/login", label: "Driver Login" },
+    { href: "/routes", label: "Routes and lanes" },
+    { href: "/cdl-jobs", label: "Jobs by state" },
+    { href: "/resources", label: "Driver resources" },
   ]
 
-  const companyLinks = [
-    { href: "/about", label: "About Us" },
-    { href: "/fleet", label: "Our Fleet" },
-    { href: "/shippers", label: "Ship With Us" },
-    { href: "/brokers", label: "For Brokers" },
+  const companyLinks: FooterLink[] = [
+    { href: "/about", label: "About us" },
+    { href: "/fleet", label: "Our fleet" },
+    { href: "/shippers", label: "Ship with us" },
+    { href: "/brokers", label: "For brokers" },
     { href: "/loadoff", label: "LoadOff TMS" },
-    { href: "/veterans", label: "Veterans Program" },
-    {
-      href: "https://safer.fmcsa.dot.gov/CompanySnapshot.aspx",
-      label: "FMCSA SAFER Record",
-      external: true,
-    },
-    {
-      href: "https://www.fmcsa.dot.gov/registration/whats-coming",
-      label: "FMCSA Motus (Registration)",
-      external: true,
-    },
+    { href: "/contact", label: "Contact" },
   ]
 
   return (
-    <div className="grid grid-cols-1 gap-0 md:grid-cols-2 md:gap-8">
-      <FooterSection title="For Drivers" links={driverLinks} />
+    <div className="grid grid-cols-1 gap-0 md:col-span-2 md:grid-cols-2 md:gap-8">
+      <FooterSection title="For drivers" links={driverLinks} />
       <FooterSection title="Company" links={companyLinks} />
     </div>
   )
@@ -184,7 +154,7 @@ export const MobileCommandBar = () => {
   if (hide || !pastHero || formInView) return null
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-[90] md:hidden border-t border-white/10 bg-navy-950/95 supports-[backdrop-filter]:bg-navy-950/85 supports-[backdrop-filter]:backdrop-blur-md motion-safe:animate-slide-up">
+    <div className="fixed bottom-0 left-0 right-0 z-[90] md:hidden border-t border-white/10 bg-navy-950/95 motion-safe:animate-slide-up">
       <div className="flex gap-2 px-3 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom,0px))] pl-[max(0.75rem,env(safe-area-inset-left,0px))] pr-[max(0.75rem,env(safe-area-inset-right,0px))]">
         <a
           href={`tel:${COMPANY_INFO.phoneFormatted}`}
@@ -196,7 +166,7 @@ export const MobileCommandBar = () => {
         </a>
         <Link
           href="/apply"
-          className="flex min-h-[48px] flex-[1.2] items-center justify-center gap-2 rounded-fleet bg-orange-600 px-4 font-semibold text-white transition-colors hover:bg-orange-500 active:bg-orange-700"
+          className="flex min-h-[48px] flex-[1.2] items-center justify-center gap-2 rounded-fleet bg-orange-600 px-4 font-semibold text-white transition-colors hover:bg-orange-700 active:bg-orange-800"
         >
           <span className="text-sm">Apply Now</span>
         </Link>
@@ -205,163 +175,81 @@ export const MobileCommandBar = () => {
   )
 }
 
-// The full revealed footer
+// The full revealed footer — name, address, phone, email; two link columns;
+// the authority line with the record that proves it; the legal row. Everything
+// else that used to live here (a mesh gradient, a noise overlay, a
+// certifications column, an insurance-status panel and a services ticker) was
+// decoration or a claim nothing in this repo evidences.
 export const CinematicFooter = () => {
   const pathname = usePathname()
   if (pathname.startsWith("/hub") || pathname.startsWith("/track")) return null
 
-  const certificationIconMap = {
-    "shield-check": ShieldCheck,
-    "badge-check": BadgeCheck,
-    award: Award,
-    shield: Shield,
-  } as const
-
   const currentYear = new Date().getFullYear()
 
   return (
-    <footer className="relative w-full bg-navy-950 text-white border-t border-white/5 pb-24 md:pb-0">
-      {/* Mesh Gradient Background */}
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-navy-800 via-navy-950 to-navy-950 opacity-50" />
-
-      {/* Noise Overlay — inline SVG turbulence, no external request */}
-      <div className="absolute inset-0 opacity-[0.02] pointer-events-none bg-[url('data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%22160%22 height=%22160%22><filter id=%22n%22><feTurbulence type=%22fractalNoise%22 baseFrequency=%220.8%22 numOctaves=%222%22/></filter><rect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23n)%22/></svg>')]" />
-
-      {/* Main Footer Content */}
-      <div className="relative z-10">
-        <div className="container py-16 md:py-24">
-          <div className="grid gap-12 sm:grid-cols-2 lg:grid-cols-3">
-            {/* Company Info Column */}
-            <div className="space-y-6">
-              <div className="flex items-center gap-3">
-                <h3 className="brand-wordmark text-3xl leading-none text-white">
-                  {COMPANY_INFO.name}
-                </h3>
-              </div>
-              <p className="text-zinc-400 text-sm leading-relaxed">
-                Family-owned trucking company founded in {COMPANY_INFO.founded}.
-                Over {COMPANY_INFO.ownerExperience} years of owner experience
-                delivering nationwide freight.
-              </p>
-
-              {/* Contact Info */}
-              <div className="space-y-4 pt-4">
-                <div className="flex items-start gap-3">
-                  <Phone className="h-4 w-4 text-orange-500 mt-1 flex-shrink-0" />
-                  <div>
-                    <a
-                      href={`tel:${COMPANY_INFO.phoneFormatted}`}
-                      className="text-zinc-300 hover:text-orange-500 transition-colors font-medium"
-                    >
-                      {COMPANY_INFO.phone}
-                    </a>
-                    <p className="text-xs text-zinc-400">
-                      {SUPPORT.dispatch}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3">
-                  <Mail className="h-4 w-4 text-orange-500 mt-1 flex-shrink-0" />
-                  <div>
-                    <a
-                      href={`mailto:${COMPANY_INFO.email}`}
-                      className="text-zinc-300 hover:text-orange-500 transition-colors font-medium break-all"
-                    >
-                      {COMPANY_INFO.email}
-                    </a>
-                    <p className="text-xs text-zinc-400">Email Us Anytime</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3">
-                  <MapPin className="h-4 w-4 text-orange-500 mt-1 flex-shrink-0" />
-                  <div>
-                    <p className="text-zinc-300 text-sm">
-                      {COMPANY_INFO.address}
-                    </p>
-                    <p className="text-xs text-zinc-400">Mailing Address</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Quick Links Columns */}
-            <FooterLinkSections />
-
-            {/* Certifications & Trust Column */}
-            <div>
-              <h4 className="font-display font-bold mb-6 text-sm uppercase tracking-[0.18em] text-steel-300">
-                Certifications & Safety
-              </h4>
-              <div className="space-y-4 text-sm">
-                {TRUST_INDICATORS.certifications.map((cert) => {
-                  const Icon =
-                    certificationIconMap[
-                      cert.icon as keyof typeof certificationIconMap
-                    ] ?? ShieldCheck
-
-                  const href = "href" in cert ? cert.href : undefined
-                  const content = (
-                    <div
-                      className={`flex items-start gap-3 ${href ? "group cursor-pointer" : ""}`}
-                    >
-                      <Icon className="mt-0.5 h-4 w-4 flex-shrink-0 text-zinc-400 transition-colors group-hover:text-orange-400" />
-                      <div>
-                        <div className="font-medium text-zinc-200 text-sm group-hover:text-white transition-colors">
-                          {cert.name}
-                          {href && (
-                            <ExternalLink className="inline-block w-3 h-3 ml-1 text-zinc-500" />
-                          )}
-                        </div>
-                        <div className="text-zinc-400 text-xs">
-                          {cert.issuer}
-                        </div>
-                      </div>
-                    </div>
-                  )
-
-                  return href ? (
-                    <a key={cert.name} href={href} target="_blank" rel="noopener noreferrer">
-                      {content}
-                    </a>
-                  ) : (
-                    <div key={cert.name}>{content}</div>
-                  )
-                })}
-              </div>
-
-              {/* DOT/MC Info */}
-              <div className="mt-8 p-4 bg-white/5 rounded-xl border border-white/5 backdrop-blur-sm">
-                <p className="text-xs text-zinc-400 mb-2 uppercase tracking-wider font-display">
-                  Licensed & Insured
-                </p>
-                <div className="space-y-1 font-display text-sm tracking-[0.08em]">
-                  <p className="text-white">
-                    DOT#{" "}
-                    <span className="text-zinc-400">{COMPANY_INFO.dot}</span>
-                  </p>
-                  <p className="text-white">
-                    MC-<span className="text-zinc-400">{COMPANY_INFO.mc}</span>
-                  </p>
-                </div>
-              </div>
-            </div>
+    <footer className="w-full border-t border-white/10 bg-navy-950 pb-24 text-white md:pb-0">
+      <div className="container py-section">
+        <div className="grid gap-10 md:grid-cols-3">
+          {/* NAP — the four facts a search engine and a driver both need. */}
+          <div className="space-y-5">
+            <h3 className="brand-wordmark text-m-h4 leading-none text-white">
+              {COMPANY_INFO.name}
+            </h3>
+            <address className="space-y-3 not-italic text-m-body text-steel-300">
+              <span className="flex items-start gap-3">
+                <MapPin aria-hidden className="mt-1 h-4 w-4 flex-shrink-0 text-steel-400" />
+                <span>{COMPANY_INFO.address}</span>
+              </span>
+              <span className="flex items-center gap-3">
+                <Phone aria-hidden className="h-4 w-4 flex-shrink-0 text-steel-400" />
+                <a
+                  href={`tel:${COMPANY_INFO.phoneFormatted}`}
+                  className="font-semibold text-steel-200 underline-offset-4 transition-colors hover:text-white hover:underline"
+                >
+                  <span className="font-mono tabular-nums">{COMPANY_INFO.phone}</span>
+                </a>
+              </span>
+              <span className="flex items-center gap-3">
+                <Mail aria-hidden className="h-4 w-4 flex-shrink-0 text-steel-400" />
+                <a
+                  href={`mailto:${COMPANY_INFO.email}`}
+                  className="break-all text-steel-200 underline-offset-4 transition-colors hover:text-white hover:underline"
+                >
+                  {COMPANY_INFO.email}
+                </a>
+              </span>
+            </address>
           </div>
+
+          <FooterLinkSections />
         </div>
+
+        {/* Authority, and the public record a reader can check it against. */}
+        <p className="mt-10 flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-white/10 pt-6 text-m-body text-steel-300">
+          <span className="font-mono tabular-nums">
+            {`USDOT ${COMPANY_INFO.dot} · MC ${COMPANY_INFO.mc}`}
+          </span>
+          <a
+            href={FMCSA_LINKS.safer}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 font-semibold text-orange-300 underline-offset-4 hover:underline"
+          >
+            <span>Check our record on FMCSA SAFER</span>
+            <ExternalLink aria-hidden className="h-3.5 w-3.5" />
+          </a>
+        </p>
       </div>
 
-      {/* Bottom Bar */}
-      <div className="relative z-10 border-t border-white/5 bg-navy-950">
-        <div className="container py-8">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-            <p className="text-xs text-zinc-400">
-              © {currentYear} {COMPANY_INFO.name}. All rights reserved.
-            </p>
-            <div className="flex items-center gap-6 text-xs text-zinc-400 font-display uppercase tracking-[0.18em]">
-              <span>Flatbed • Reefer • Dry Van</span>
-              <span className="hidden sm:inline text-zinc-500">|</span>
-              <span className="hidden sm:inline">Nationwide Service</span>
-            </div>
-          </div>
+      <div className="border-t border-white/10">
+        <div className="container flex flex-col items-center justify-between gap-3 py-6 text-m-micro text-steel-300 sm:flex-row">
+          <p>{`© ${currentYear} ${COMPANY_INFO.name}. All rights reserved.`}</p>
+          <Link
+            href="/privacy"
+            className="font-semibold text-steel-200 underline-offset-4 transition-colors hover:text-white hover:underline"
+          >
+            Privacy policy
+          </Link>
         </div>
       </div>
     </footer>

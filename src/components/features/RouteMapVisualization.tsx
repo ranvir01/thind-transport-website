@@ -1,68 +1,85 @@
-"use client"
-
-import { Card } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { MapPin, Navigation, Route, TrendingUp } from "lucide-react"
+import { MapPin, Navigation, Route } from "lucide-react"
 import { MARKET_DATA } from "@/lib/market-data"
 
-export function RouteMapVisualization() {
-  const routeNames: Record<string, string> = {
-    "sea-la": "I-5 Corridor",
-    "sea-chi": "I-90 Transcontinental",
-    "tac-slc": "I-84 Mountain Route",
-    "kent-den": "I-90/I-25 Mountain",
-    "sea-sf": "I-5 Pacific Route",
-    "pdx-las": "US-95/I-15 Desert",
-    "spk-msp": "I-90 Northern",
-    "kent-phx": "I-5/I-10 Corridor"
-  }
+/**
+ * The corridors we actually run, as one dense-data island (DIRECTION.md §3,
+ * archetype C): a header row from md up, one row per lane, miles in mono.
+ *
+ * Server component. The old "use client" existed only for a Card import;
+ * eight rows of static data need no JavaScript.
+ */
 
-  const majorLanes = MARKET_DATA.hotLanes.map(lane => ({
-    route: routeNames[lane.id] || `${lane.from} to ${lane.to}`,
-    from: lane.from.split(',')[0], // Just city name
-    to: lane.to.split(',')[0],
-    distance: `${lane.distance.toLocaleString()} mi`,
+const ROUTE_NAMES: Record<string, string> = {
+  "sea-la": "I-5 Corridor",
+  "sea-chi": "I-90 Transcontinental",
+  "tac-slc": "I-84 Mountain Route",
+  "kent-den": "I-90/I-25 Mountain",
+  "sea-sf": "I-5 Pacific Route",
+  "pdx-las": "US-95/I-15 Desert",
+  "spk-msp": "I-90 Northern",
+  "kent-phx": "I-5/I-10 Corridor",
+}
+
+const EYEBROW = "font-display text-m-micro font-bold uppercase tracking-[0.15em] text-ink-2"
+const COLUMNS = "md:grid-cols-[2fr_2fr_auto_auto]"
+
+export function RouteMapVisualization() {
+  const majorLanes = MARKET_DATA.hotLanes.map((lane) => ({
+    id: lane.id,
+    route: ROUTE_NAMES[lane.id] || `${lane.from} to ${lane.to}`,
+    from: lane.from.split(",")[0],
+    to: lane.to.split(",")[0],
+    distance: `${lane.distance.toLocaleString("en-US")} mi`,
     frequency: lane.frequency,
-    type: lane.type
+    type: lane.type,
   }))
 
   return (
-    <Card className="p-6">
-      <div className="mb-6">
-        <h3 className="text-2xl font-bold text-gray-900 mb-2 flex items-center gap-2">
-          <Route className="h-6 w-6 text-blue-600" />
-          Major Freight Corridors
-        </h3>
-        <p className="text-gray-600">Our primary shipping lanes and routes</p>
+    <div className="rounded-m-3 border border-ink/15 bg-paper p-6 text-ink">
+      <div className="flex items-start gap-3">
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-signal/10">
+          <Route className="h-5 w-5 text-signal" aria-hidden />
+        </span>
+        <div>
+          <h2 id="corridors-heading" className="font-display text-m-h3 font-bold text-ink">
+            Major freight corridors
+          </h2>
+          <p className="mt-1 max-w-measure text-m-body text-ink-2">
+            Primary shipping lanes we actually run — not a live load board.
+          </p>
+        </div>
       </div>
 
-      <div className="space-y-4">
-        {majorLanes.map((lane, index) => (
-          <div key={index} className="p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-            <div className="flex items-start justify-between gap-4">
-              <div className="flex-1">
-                <div className="flex items-center gap-2 mb-2">
-                  <Badge className={`text-white ${lane.type === "Primary" ? "!bg-orange-600" : lane.type === "Long-Haul" ? "!bg-navy" : "!bg-green-700"}`}>
-                    {lane.type}
-                  </Badge>
-                  <span className="font-semibold text-gray-900">{lane.route}</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm text-gray-600">
-                  <MapPin className="h-4 w-4 text-green-600" />
-                  <span className="font-medium">{lane.from}</span>
-                  <Navigation className="h-4 w-4 text-gray-400" />
-                  <span className="font-medium">{lane.to}</span>
-                  <span className="text-gray-400">•</span>
-                  <span>{lane.distance}</span>
-                  <span className="text-gray-400">•</span>
-                  <span>{lane.frequency}</span>
-                </div>
-              </div>
-              <TrendingUp className="h-5 w-5 text-green-600" />
-            </div>
-          </div>
-        ))}
+      {/* Column headers are desktop-only: each row carries its own labels on
+          a phone, where a header row would have scrolled away. */}
+      <div className={`mt-6 hidden gap-x-4 border-b border-ink/15 pb-2 md:grid ${COLUMNS}`}>
+        <span className={EYEBROW}>Corridor</span>
+        <span className={EYEBROW}>Lane</span>
+        <span className={`${EYEBROW} md:text-right`}>Miles</span>
+        <span className={`${EYEBROW} md:text-right`}>Frequency</span>
       </div>
-    </Card>
+
+      <ul className="mt-6 list-none text-ink md:mt-0">
+        {majorLanes.map((lane) => (
+          <li
+            key={lane.id}
+            className={`mb-0 grid grid-cols-1 gap-x-4 gap-y-1 border-b border-ink/10 py-3 md:items-baseline md:py-4 ${COLUMNS}`}
+          >
+            <span className="flex flex-col">
+              <span className={EYEBROW}>{lane.type}</span>
+              <span className="text-m-body font-semibold text-ink">{lane.route}</span>
+            </span>
+            <span className="flex items-center gap-2 text-m-body text-ink-2">
+              <MapPin className="h-4 w-4 shrink-0 text-signal" aria-hidden />
+              <span>{lane.from}</span>
+              <Navigation className="h-4 w-4 shrink-0 text-ink-3" aria-hidden />
+              <span>{lane.to}</span>
+            </span>
+            <span className="font-mono text-m-body tabular-nums text-ink md:text-right">{lane.distance}</span>
+            <span className="text-m-body text-ink-2 md:text-right">{lane.frequency}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
   )
 }

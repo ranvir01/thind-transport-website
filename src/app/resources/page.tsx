@@ -1,18 +1,17 @@
 import { Metadata } from "next"
 import Link from "next/link"
 import {
-  Shield, Fuel, Wrench, AlertTriangle, Phone,
-  BookOpen, CheckCircle2, ExternalLink, HeartPulse, Truck,
-  Navigation, Calculator, FileCheck, Timer, Route,
-  Smartphone,
+  ArrowRight, Shield, Fuel, Wrench, AlertTriangle, Phone,
+  CheckCircle2, ExternalLink, HeartPulse, Truck,
+  Navigation, Calculator, FileCheck, Route, Smartphone,
+  type LucideIcon,
 } from "lucide-react"
 import { HosClockCalculator } from "@/components/features/HosClockCalculator"
 import { RelatedLinks } from "@/components/shared/RelatedLinks"
-
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { COMPANY_INFO } from "@/lib/constants"
+import { COMPANY_INFO, FMCSA_LINKS, SUPPORT } from "@/lib/constants"
 import { PageBreadcrumb } from "@/components/shared/PageBreadcrumb"
+import { AsphaltHero } from "@/components/shared/AsphaltHero"
+import { Reveal } from "@/components/ui/Reveal"
 
 const RESOURCE_LINKS = [
   {
@@ -77,14 +76,29 @@ export const metadata: Metadata = {
   alternates: { canonical: "/resources" },
 }
 
-const resourceCategories = [
+interface Resource {
+  title: string
+  description: string
+  details?: readonly string[]
+  link?: string
+  external?: boolean
+}
+
+interface ResourceCategory {
+  id: string
+  title: string
+  icon: LucideIcon
+  resources: readonly Resource[]
+}
+
+const resourceCategories: ResourceCategory[] = [
   {
-    title: "FMCSA Compliance & Regulations",
+    id: "compliance",
+    title: "FMCSA compliance and regulations",
     icon: Shield,
-    color: "blue",
     resources: [
       {
-        title: "FMCSA Motus Registration (2026)",
+        title: "FMCSA Motus registration (2026)",
         description:
           "FMCSA's new Motus system is replacing the URS and FMCSA Portal for motor carrier registration, biennial updates, and operating authority filings.",
         details: [
@@ -92,13 +106,13 @@ const resourceCategories = [
           "Existing USDOT numbers and MC authority remain valid during the transition",
           "Carriers—not individual drivers—manage registration in Motus",
           "Keep FMCSA Portal account and company information current before legacy systems sunset",
-          "MC docket numbers (e.g. MC-876103) are not being eliminated under current FMCSA plans",
+          `MC docket numbers (e.g. MC-${COMPANY_INFO.mc}) are not being eliminated under current FMCSA plans`,
         ],
-        link: "https://www.fmcsa.dot.gov/registration/whats-coming",
+        link: FMCSA_LINKS.motusInfo,
         external: true,
       },
       {
-        title: "Hours of Service (HOS) Guide",
+        title: "Hours of service (HOS) guide",
         description: "Complete breakdown of driving limits, rest requirements, and exceptions, straight from the FMCSA rule.",
         details: [
           "11-hour driving limit after 10 consecutive hours off duty",
@@ -111,7 +125,7 @@ const resourceCategories = [
         external: true,
       },
       {
-        title: "ELD Compliance Requirements",
+        title: "ELD compliance requirements",
         description: "Electronic Logging Device mandate details, exemptions, and best practices for proper use.",
         details: [
           "ELD mandate compliance requirements",
@@ -124,7 +138,7 @@ const resourceCategories = [
         external: true,
       },
       {
-        title: "CSA Safety Scores Explained",
+        title: "CSA safety scores explained",
         description: "Understanding your CSA score, BASICs categories, and how to maintain clean records.",
         details: [
           "7 BASICs categories breakdown",
@@ -137,7 +151,7 @@ const resourceCategories = [
         external: true,
       },
       {
-        title: "DOT Inspection Checklist",
+        title: "DOT inspection checklist",
         description: "Pre-trip and during inspection requirements to stay compliant and avoid violations.",
         details: [
           "Level I through Level VI inspection types",
@@ -150,12 +164,12 @@ const resourceCategories = [
     ],
   },
   {
-    title: "Safety & Training",
+    id: "safety",
+    title: "Safety and training",
     icon: AlertTriangle,
-    color: "orange",
     resources: [
       {
-        title: "Defensive Driving Techniques",
+        title: "Defensive driving techniques",
         description: "Professional driving strategies to avoid accidents and protect your record.",
         details: [
           "Smith System 5 Keys methodology",
@@ -166,7 +180,7 @@ const resourceCategories = [
         ],
       },
       {
-        title: "Load Securement Standards",
+        title: "Load securement standards",
         description: "FMCSA cargo securement requirements for flatbed, dry van, and reefer loads.",
         details: [
           "General securement requirements",
@@ -179,7 +193,7 @@ const resourceCategories = [
         external: true,
       },
       {
-        title: "Hazmat Endorsement Guide",
+        title: "Hazmat endorsement guide",
         description: "Requirements, training, and procedures for hazardous materials endorsement.",
         details: [
           "TSA background check process",
@@ -192,7 +206,7 @@ const resourceCategories = [
         external: true,
       },
       {
-        title: "Accident Procedures",
+        title: "Accident procedures",
         description: "Step-by-step guide for what to do if you're involved in an accident.",
         details: [
           "Immediate safety steps",
@@ -205,12 +219,12 @@ const resourceCategories = [
     ],
   },
   {
-    title: "Fuel & Efficiency",
+    id: "fuel",
+    title: "Fuel and efficiency",
     icon: Fuel,
-    color: "green",
     resources: [
       {
-        title: "Fuel Card Programs",
+        title: "Fuel card programs",
         description: "Maximize savings with our partner fuel programs and discount networks.",
         details: [
           "Pilot Flying J discount program",
@@ -220,13 +234,11 @@ const resourceCategories = [
           "IFTA compliance support",
         ],
         link: "/fuel-program",
-        internal: true,
       },
       {
-        title: "Fuel Efficiency Tips",
+        title: "Fuel efficiency tips",
         description: "Techniques that move the needle on MPG, and what a cent per gallon is worth on your own miles.",
         link: "/fuel-program",
-        internal: true,
         details: [
           "Optimal cruise speed (62-65 mph sweet spot)",
           "Progressive shifting techniques",
@@ -236,7 +248,7 @@ const resourceCategories = [
         ],
       },
       {
-        title: "IFTA Reporting Guide",
+        title: "IFTA reporting guide",
         description: "International Fuel Tax Agreement reporting requirements and deadlines.",
         details: [
           "Quarterly reporting deadlines",
@@ -251,12 +263,12 @@ const resourceCategories = [
     ],
   },
   {
-    title: "Maintenance & Equipment",
+    id: "maintenance",
+    title: "Maintenance and equipment",
     icon: Wrench,
-    color: "purple",
     resources: [
       {
-        title: "Pre-Trip Inspection Guide",
+        title: "Pre-trip inspection guide",
         description: "Complete CDL pre-trip inspection checklist following FMCSA requirements.",
         details: [
           "Engine compartment checks",
@@ -267,7 +279,7 @@ const resourceCategories = [
         ],
       },
       {
-        title: "Tire Maintenance Standards",
+        title: "Tire maintenance standards",
         description: "DOT tire requirements, maintenance schedules, and replacement guidelines.",
         details: [
           "Minimum tread depth requirements",
@@ -278,7 +290,7 @@ const resourceCategories = [
         ],
       },
       {
-        title: "Preventive Maintenance Schedule",
+        title: "Preventive maintenance schedule",
         description: "Recommended maintenance intervals to prevent breakdowns and extend equipment life.",
         details: [
           "Oil change intervals",
@@ -291,12 +303,12 @@ const resourceCategories = [
     ],
   },
   {
-    title: "Health & Wellness",
+    id: "health",
+    title: "Health and wellness",
     icon: HeartPulse,
-    color: "red",
     resources: [
       {
-        title: "DOT Physical Requirements",
+        title: "DOT physical requirements",
         description: "Medical examination requirements for maintaining your CDL certification.",
         details: [
           "Medical certification timeline",
@@ -309,7 +321,7 @@ const resourceCategories = [
         external: true,
       },
       {
-        title: "Healthy Eating on the Road",
+        title: "Healthy eating on the road",
         description: "Nutrition tips for truck drivers to maintain energy and health while traveling.",
         details: [
           "Portable healthy snack ideas",
@@ -320,7 +332,7 @@ const resourceCategories = [
         ],
       },
       {
-        title: "Exercise & Stretching Guide",
+        title: "Exercise and stretching guide",
         description: "Simple exercises and stretches that can be done during breaks and at truck stops.",
         details: [
           "Pre-drive stretching routine",
@@ -331,7 +343,7 @@ const resourceCategories = [
         ],
       },
       {
-        title: "Mental Health Resources",
+        title: "Mental health resources",
         description: "Support resources for managing stress, isolation, and mental wellness on the road.",
         details: [
           "Truckers Against Trafficking hotline",
@@ -346,12 +358,12 @@ const resourceCategories = [
     ],
   },
   {
-    title: "Business Tools",
+    id: "business",
+    title: "Business tools",
     icon: Calculator,
-    color: "indigo",
     resources: [
       {
-        title: "Owner Operator Tax Guide",
+        title: "Owner operator tax guide",
         description: "Tax deductions, quarterly estimates, and record-keeping for independent drivers.",
         details: [
           "Per diem deduction rules",
@@ -364,13 +376,12 @@ const resourceCategories = [
         external: true,
       },
       {
-        title: "Load Profitability Calculator",
+        title: "Load profitability calculator",
         description: "Calculate true profitability of loads including fuel, time, and operational costs.",
         link: "/pay-rates",
-        internal: true,
       },
       {
-        title: "Trip Planning Resources",
+        title: "Trip planning resources",
         description: "Tools and resources for efficient route planning and trip management.",
         details: [
           "Truck-specific GPS recommendations",
@@ -380,7 +391,6 @@ const resourceCategories = [
           "Load board best practices",
         ],
         link: "/routes",
-        internal: true,
       },
     ],
   },
@@ -388,7 +398,7 @@ const resourceCategories = [
 
 const quickLinks = [
   {
-    title: "FMCSA SAFER System",
+    title: "FMCSA SAFER system",
     description: "Look up carrier safety records",
     url: "https://safer.fmcsa.dot.gov/",
     icon: Shield,
@@ -400,101 +410,93 @@ const quickLinks = [
     icon: FileCheck,
   },
   {
-    title: "Trucker Path App",
+    title: "Trucker Path app",
     description: "Truck stops, parking & fuel",
     url: "https://truckerpath.com/",
     icon: Navigation,
   },
   {
-    title: "DAT Load Board",
+    title: "DAT load board",
     description: "Find available freight",
     url: "https://www.dat.com/",
     icon: Truck,
   },
 ]
 
-const colorClasses = {
-  blue: "from-blue-500/10 to-blue-600/5 border-blue-500/20 text-blue-600",
-  orange: "from-orange-500/10 to-orange-600/5 border-orange-500/20 text-orange-600",
-  green: "from-green-500/10 to-green-600/5 border-green-500/20 text-green-600",
-  purple: "from-purple-500/10 to-purple-600/5 border-purple-500/20 text-purple-600",
-  red: "from-red-500/10 to-red-600/5 border-red-500/20 text-red-600",
-  indigo: "from-indigo-500/10 to-indigo-600/5 border-indigo-500/20 text-indigo-600",
-}
-
 export default function ResourcesPage() {
   return (
-    <div className="brand-page-shell min-h-screen">
-      <PageBreadcrumb pageName="Resources" category="Drivers" />
-      
-      {/* Hero Section */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-navy via-navy to-blue-900 text-white py-24">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-blue-500/20 via-transparent to-transparent" />
-        <div className="absolute -top-24 -right-24 w-96 h-96 bg-blue-400/10 rounded-full blur-3xl" />
-        <div className="absolute -bottom-24 -left-24 w-96 h-96 bg-orange/10 rounded-full blur-3xl" />
-        
-        <div className="container relative">
-          <div className="max-w-4xl mx-auto text-center">
-            <Badge className="mb-6 bg-white/20 backdrop-blur-md text-white border-white/30 px-5 py-2.5 text-sm font-bold">
-              <BookOpen className="h-4 w-4 mr-1.5 inline" />
-              Driver Resource Center
-            </Badge>
-            <h1 className="text-5xl md:text-6xl font-black mb-6 leading-tight">
-              Driver <span className="text-orange">reference desk</span>
-            </h1>
-            <p className="text-xl text-white/90 leading-relaxed max-w-3xl mx-auto">
-              The FMCSA rules you get asked about at a scale house, the DOT physical standards, and
-              an hours-of-service planner that does the clock arithmetic for you.
-            </p>
-          </div>
-        </div>
-      </section>
+    <div className="min-h-screen overflow-x-hidden bg-navy-950">
+      <AsphaltHero
+        breadcrumb={
+          <PageBreadcrumb
+            pageName="Resources"
+            category="Drivers"
+            className="!border-b-0 !bg-transparent !pb-0 !pt-4 !backdrop-blur-none [&>div]:px-0 [&_ol]:justify-start"
+          />
+        }
+        eyebrow="Driver resource center"
+        title="Driver reference desk"
+        description="The FMCSA rules you get asked about at a scale house, the DOT physical standards, and an hours-of-service planner that does the clock arithmetic for you."
+      />
 
-      {/* Quick Links */}
-      <section className="py-8 -mt-8 relative z-10">
+      <section aria-labelledby="quick-links-heading" className="bg-navy-950 py-section">
         <div className="container">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto">
-            {quickLinks.map((link) => {
-              const Icon = link.icon
-              return (
+          <h2
+            id="quick-links-heading"
+            className="font-display text-m-h3 font-bold text-white text-balance"
+          >
+            Look it up yourself
+          </h2>
+          <ul className="mt-6 grid list-none gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            {quickLinks.map((link, i) => (
+              <Reveal as="li" key={link.title} index={Math.min(i, 4)}>
                 <a
-                  key={link.title}
                   href={link.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="bg-white rounded-xl p-4 shadow-lg border border-gray-100 hover:shadow-xl hover:-translate-y-1 transition-all group"
+                  className="flex h-full flex-col rounded-m-3 border border-white/10 bg-white/5 p-4 transition-colors duration-base ease-entrance hover:border-white/30"
                 >
-                  <Icon className="h-6 w-6 text-navy mb-2 group-hover:text-orange transition-colors" />
-                  <h3 className="font-bold text-sm text-gray-900">{link.title}</h3>
-                  <p className="text-xs text-gray-500">{link.description}</p>
-                  <ExternalLink className="h-3 w-3 text-gray-400 mt-2" />
+                  <link.icon className="h-5 w-5 text-orange-300" aria-hidden />
+                  <span className="mt-3 font-display text-m-h4 font-bold text-white">
+                    {link.title}
+                  </span>
+                  <span className="mt-1 flex-1 text-m-body text-steel-200">{link.description}</span>
+                  <span className="mt-3 inline-flex items-center gap-1.5 text-m-body font-semibold text-steel-300">
+                    <span>Opens on their site</span>
+                    <ExternalLink className="h-3.5 w-3.5" aria-hidden />
+                  </span>
                 </a>
-              )
-            })}
-          </div>
+              </Reveal>
+            ))}
+          </ul>
         </div>
       </section>
 
-      {/* Emergency Contact Banner */}
-      <section className="py-6 bg-red-50 border-y border-red-100">
+      <section aria-labelledby="emergency-heading" className="bg-asphalt py-section-tight text-paper">
         <div className="container">
-          <div className="flex flex-col md:flex-row items-center justify-center gap-4 text-center md:text-left">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-red-500/15 flex items-center justify-center">
-                <Phone className="h-5 w-5 text-red-600" />
-              </div>
+          <div className="flex flex-col items-start gap-4 md:flex-row md:items-center md:justify-between">
+            <div className="flex items-start gap-3">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-signal/10">
+                <Phone className="h-5 w-5 text-signal-up" aria-hidden />
+              </span>
               <div>
-                {/* text-red-800/600 read as dark-on-dark: .brand-page-shell force-darkens
-                    the bg-red-50 bar but does not flip colored text — use light reds. */}
-                <p className="text-sm font-bold text-red-200">24/7 Emergency Dispatch</p>
-                <p className="text-xs text-red-300">Roadside assistance, accidents, breakdowns</p>
+                <h2
+                  id="emergency-heading"
+                  className="font-display text-m-h4 font-bold text-paper"
+                >
+                  {`${SUPPORT.hours} emergency dispatch`}
+                </h2>
+                <p className="mt-1 text-m-body text-paper/80">
+                  Roadside assistance, accidents, breakdowns.
+                </p>
               </div>
             </div>
-            <a 
+            <a
               href={`tel:${COMPANY_INFO.phoneFormatted}`}
-              className="px-6 py-2 bg-red-600 text-white font-bold rounded-lg hover:bg-red-700 transition-colors"
+              className="inline-flex min-h-[48px] items-center gap-2 text-m-lede font-semibold text-paper underline-offset-4 hover:text-signal-up hover:underline"
             >
-              {COMPANY_INFO.phone}
+              <span>Call</span>
+              <span className="font-mono tabular-nums">{COMPANY_INFO.phone}</span>
             </a>
           </div>
         </div>
@@ -502,102 +504,101 @@ export default function ResourcesPage() {
 
       {/* The one thing on this page that does the work for you: the HOS rules
           were already explained here in bullets, which still left the driver
-          doing clock arithmetic at a truck stop. */}
-      <section className="py-14">
+          doing clock arithmetic at a truck stop. The page's paper island. */}
+      <section aria-labelledby="clock-heading" className="bg-navy-950 py-section">
         <div className="container">
           <div className="mx-auto max-w-5xl">
-            <div className="mb-8 text-center">
-              <Badge className="mb-4 bg-orange-600 text-white px-4 py-2 text-sm font-bold">
-                <Timer className="h-4 w-4 mr-1.5 inline" />
-                Free tool
-              </Badge>
-              <h2 className="text-3xl md:text-4xl font-black text-gray-900 mb-3">
+            <Reveal>
+              <h2 id="clock-heading" className="font-display text-m-h2 font-bold text-white text-balance">
                 Work out your clock
               </h2>
-              <p className="mx-auto max-w-2xl text-gray-600">
+              <p className="mt-3 max-w-measure text-m-body text-steel-200">
                 Punch in when you came on duty and how much you&apos;ve driven. It gives you the
                 window, the break, the reset and what&apos;s left in your 70.
               </p>
+            </Reveal>
+            <div className="mt-8">
+              <HosClockCalculator />
             </div>
-            <HosClockCalculator />
           </div>
         </div>
       </section>
 
-      {/* Resource Categories */}
-      <section className="py-16">
+      <div className="bg-asphalt py-section text-paper">
         <div className="container">
-          {resourceCategories.map((category) => {
-            const Icon = category.icon
-            const colorClass = colorClasses[category.color as keyof typeof colorClasses]
-            
-            return (
-              <div key={category.title} className="mb-16 last:mb-0">
-                <div className="flex items-center gap-3 mb-8">
-                  <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${colorClass} flex items-center justify-center border`}>
-                    <Icon className="h-6 w-6" />
-                  </div>
-                  <h2 className="text-2xl md:text-3xl font-black text-gray-900">{category.title}</h2>
-                </div>
-                
-                <div className="grid md:grid-cols-2 gap-6">
-                  {category.resources.map((resource) => (
-                    <Card
-                      key={resource.title}
-                      className={`border-gray-200 ${
-                        resource.link ? "transition-all hover:border-gray-300 hover:shadow-lg" : ""
-                      }`}
-                    >
-                      <CardHeader>
-                        <CardTitle className="text-lg font-bold text-gray-900 flex items-center justify-between">
-                          {resource.title}
-                          {'external' in resource && resource.external && (
-                            <ExternalLink className="h-4 w-4 text-gray-400" />
-                          )}
-                        </CardTitle>
-                        <CardDescription className="text-gray-600">
-                          {resource.description}
-                        </CardDescription>
-                      </CardHeader>
-                      <CardContent>
-                        {resource.details && (
-                          <ul className="space-y-2 mb-4">
-                            {resource.details.map((detail, idx) => (
-                              <li key={idx} className="flex items-start gap-2 text-sm text-gray-700">
-                                <CheckCircle2 className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
-                                {detail}
-                              </li>
-                            ))}
-                          </ul>
-                        )}
-                        {resource.link && (
-                          ('external' in resource && resource.external) ? (
+          {resourceCategories.map((category) => (
+            <section
+              key={category.id}
+              aria-labelledby={`${category.id}-heading`}
+              className="mb-12 last:mb-0"
+            >
+              <h2
+                id={`${category.id}-heading`}
+                className="flex items-center gap-3 font-display text-m-h2 font-bold text-paper text-balance"
+              >
+                <category.icon className="h-6 w-6 shrink-0 text-signal-up" aria-hidden />
+                <span>{category.title}</span>
+              </h2>
+
+              <ul className="mt-6 grid list-none gap-4 md:grid-cols-2">
+                {category.resources.map((resource, i) => (
+                  <Reveal as="li" key={resource.title} index={Math.min(i, 4)}>
+                    <div className="flex h-full flex-col rounded-m-3 border border-white/10 bg-white/5 p-5">
+                      <h3 className="flex items-start justify-between gap-3 font-display text-m-h4 font-bold text-paper">
+                        <span>{resource.title}</span>
+                        {resource.external ? (
+                          <ExternalLink className="mt-1 h-4 w-4 shrink-0 text-paper/50" aria-hidden />
+                        ) : null}
+                      </h3>
+                      <p className="mt-2 max-w-measure text-m-body text-paper/80">
+                        {resource.description}
+                      </p>
+                      {resource.details ? (
+                        <ul className="mt-4 flex-1 list-none space-y-2">
+                          {resource.details.map((detail) => (
+                            <li
+                              key={detail}
+                              className="flex items-start gap-2 text-m-body text-paper/80"
+                            >
+                              <CheckCircle2 className="mt-1 h-4 w-4 shrink-0 text-paper/50" aria-hidden />
+                              <span>{detail}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <span className="flex-1" />
+                      )}
+                      {resource.link ? (
+                        <p className="mt-4">
+                          {resource.external ? (
                             <a
                               href={resource.link}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="inline-flex items-center gap-2 text-sm font-semibold text-orange-600 hover:text-orange-700"
+                              className="inline-flex min-h-[44px] items-center gap-2 text-m-body font-semibold text-paper underline-offset-4 hover:text-orange-300 hover:underline"
                             >
-                              Learn More <ExternalLink className="h-3 w-3" />
+                              <span>Read the rule</span>
+                              <ExternalLink className="h-3.5 w-3.5" aria-hidden />
                             </a>
                           ) : (
                             <Link
                               href={resource.link}
-                              className="inline-flex items-center gap-2 text-sm font-semibold text-orange-600 hover:text-orange-700"
+                              className="inline-flex min-h-[44px] items-center gap-2 text-m-body font-semibold text-paper underline-offset-4 hover:text-orange-300 hover:underline"
                             >
-                              View Resource →
+                              <span>View resource</span>
+                              <ArrowRight className="h-4 w-4" aria-hidden />
                             </Link>
-                          )
-                        )}
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              </div>
-            )
-          })}
+                          )}
+                        </p>
+                      ) : null}
+                    </div>
+                  </Reveal>
+                ))}
+              </ul>
+            </section>
+          ))}
         </div>
-      </section>
+      </div>
 
       <RelatedLinks
         tone="dark"
@@ -606,28 +607,33 @@ export default function ResourcesPage() {
         links={RESOURCE_LINKS}
       />
 
-      {/* CTA Section */}
-      <section className="py-16 bg-navy">
+      {/* The page's ONE closing block. */}
+      <section aria-labelledby="resources-apply-heading" className="bg-navy-950 py-section-tight">
         <div className="container">
-          <div className="max-w-3xl mx-auto text-center">
-            <h2 className="text-3xl md:text-4xl font-black text-white mb-4">
-              Need More Support?
+          <div className="mx-auto max-w-measure text-center">
+            <h2
+              id="resources-apply-heading"
+              className="font-display text-m-h2 font-bold text-white text-balance"
+            >
+              Need more support?
             </h2>
-            <p className="text-lg text-white/70 mb-8">
+            <p className="mt-3 text-m-body text-steel-200">
               Call dispatch — the same desk that books the loads answers the phone.
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <div className="mt-6 flex flex-wrap items-center justify-center gap-4">
               <Link
                 href="/apply"
-                className="px-8 py-4 bg-orange-600 hover:bg-orange-500 text-white font-bold rounded-xl transition-colors"
+                className="inline-flex min-h-[48px] items-center gap-2 rounded-fleet bg-orange-600 px-7 text-m-body font-semibold text-white transition-colors duration-base ease-entrance hover:bg-orange-700 hover:text-white"
               >
-                Apply to Drive With Us
+                <span>Apply to drive with us</span>
+                <ArrowRight className="h-4 w-4" aria-hidden />
               </Link>
               <a
                 href={`tel:${COMPANY_INFO.phoneFormatted}`}
-                className="px-8 py-4 bg-white/10 border border-white/20 text-white font-bold rounded-xl hover:bg-white/20 transition-colors"
+                className="inline-flex min-h-[48px] items-center gap-2 text-m-body font-semibold text-white underline-offset-4 hover:text-orange-300 hover:underline"
               >
-                Call {COMPANY_INFO.phone}
+                <span>or call</span>
+                <span className="font-mono tabular-nums">{COMPANY_INFO.phone}</span>
               </a>
             </div>
           </div>
@@ -636,4 +642,3 @@ export default function ResourcesPage() {
     </div>
   )
 }
-

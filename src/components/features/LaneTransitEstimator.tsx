@@ -13,6 +13,10 @@
  * costs more trust than it buys (lane, volume, accessorials and dates all move
  * it) — so this stays on the two things geometry and the hours-of-service rules
  * can actually settle.
+ *
+ * Renders as one paper island on the dark page ground (DIRECTION.md §3,
+ * archetype C): the inputs on the left, a hairline-framed instrument on the
+ * right with mono tabular figures, one red action at the bottom.
  */
 
 import { useMemo, useState } from "react"
@@ -27,6 +31,9 @@ import {
 } from "@/lib/lane-data"
 import { MARKET_DATA } from "@/lib/market-data"
 import { COMPANY_INFO } from "@/lib/constants"
+import { cn } from "@/lib/utils"
+import { Button } from "@/components/ui/button"
+import { inputVariants } from "@/components/ui/input"
 import { CountUp } from "@/components/shared/CountUp"
 
 const EQUIPMENT = [
@@ -57,6 +64,23 @@ function knownLane(from: string, to: string) {
     (l) => (l.from === from && l.to === to) || (l.from === to && l.to === from)
   )
 }
+
+/** Eyebrow labels: the one sanctioned use of caps below 14px — group captions
+ *  and instrument readout captions only, never a field's own label. ink-2, not
+ *  ink-3 — ink-3 only clears AA at 14px and up, and m-micro is under that. */
+const EYEBROW = "font-display text-m-micro font-bold uppercase tracking-[0.15em] text-ink-2"
+/** A <legend> names a group of controls, so it takes the eyebrow (the grammar
+ *  ProfitCalculator's Equipment legend already uses). */
+const LEGEND = `mb-1.5 block ${EYEBROW}`
+/** A field label is not an eyebrow: sentence-case body weight, matching the
+ *  quote form's labels so both widgets read as one form on /quote. */
+const LABEL = "mb-1.5 block text-m-body font-semibold text-ink"
+
+// Native <select>, not the Radix listbox: value/onChange drive the memo, and
+// thirty markets read better in the OS picker on a phone. The class string is
+// the Input primitive's own, retinted for paper — twMerge swaps the neutral
+// tokens for ink, so no `bg-white` is left for the page shell to remap.
+const SELECT = cn(inputVariants(), "border-ink/20 bg-paper text-ink shadow-none hover:border-ink/40")
 
 export function LaneTransitEstimator({ className }: { className?: string }) {
   const [origin, setOrigin] = useState("Kent, WA")
@@ -90,38 +114,31 @@ export function LaneTransitEstimator({ className }: { className?: string }) {
   const laneString = `${origin} → ${destination} (${equipmentMeta.label})`
   const quoteHref = `/quote?lane=${encodeURIComponent(laneString)}`
 
-  const selectClass =
-    "w-full min-h-[48px] rounded-xl border border-gray-300 bg-white px-4 py-3 text-gray-900 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500/20"
-
   return (
-    <div
-      className={`overflow-hidden rounded-3xl border border-gray-200 bg-white shadow-xl ${className ?? ""}`}
-    >
-      <div className="border-b border-gray-100 bg-gray-50 px-6 py-5 md:px-8">
-        <div className="flex items-center gap-3">
-          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-orange-600/10">
-            <Route className="h-5 w-5 text-orange-600" aria-hidden />
-          </span>
-          <div>
-            <h3 className="text-lg font-black text-gray-900">Lane &amp; transit-time estimator</h3>
-            <p className="text-sm text-gray-600">
-              Practical driving miles and a realistic delivery window, under real hours-of-service rules.
-            </p>
-          </div>
+    <div className={cn("rounded-m-3 border border-ink/15 bg-paper p-6 text-ink", className)}>
+      <div className="flex items-start gap-3">
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-signal/10">
+          <Route className="h-5 w-5 text-signal" aria-hidden />
+        </span>
+        <div>
+          <h3 className="font-display text-m-h4 font-bold text-ink">Lane &amp; transit-time estimator</h3>
+          <p className="mt-1 max-w-measure text-m-body text-ink-2">
+            Practical driving miles and a realistic delivery window, under real hours-of-service rules.
+          </p>
         </div>
       </div>
 
-      <div className="grid gap-6 p-6 md:grid-cols-2 md:p-8">
+      <div className="mt-6 grid gap-6 md:grid-cols-2">
         <div className="space-y-4">
           <div>
-            <label htmlFor="lane-origin" className="mb-1.5 block text-sm font-bold text-gray-900">
+            <label htmlFor="lane-origin" className={LABEL}>
               Picking up in
             </label>
             <select
               id="lane-origin"
               value={origin}
               onChange={(e) => setOrigin(e.target.value)}
-              className={selectClass}
+              className={SELECT}
             >
               {FREIGHT_MARKETS.map((m) => (
                 <option key={m.label} value={m.label}>
@@ -132,14 +149,14 @@ export function LaneTransitEstimator({ className }: { className?: string }) {
           </div>
 
           <div>
-            <label htmlFor="lane-destination" className="mb-1.5 block text-sm font-bold text-gray-900">
+            <label htmlFor="lane-destination" className={LABEL}>
               Delivering to
             </label>
             <select
               id="lane-destination"
               value={destination}
               onChange={(e) => setDestination(e.target.value)}
-              className={selectClass}
+              className={SELECT}
             >
               {FREIGHT_MARKETS.map((m) => (
                 <option key={m.label} value={m.label}>
@@ -150,7 +167,7 @@ export function LaneTransitEstimator({ className }: { className?: string }) {
           </div>
 
           <fieldset>
-            <legend className="mb-1.5 block text-sm font-bold text-gray-900">Equipment</legend>
+            <legend className={LEGEND}>Equipment</legend>
             <div className="grid grid-cols-3 gap-2">
               {EQUIPMENT.map((eq) => (
                 <button
@@ -158,11 +175,15 @@ export function LaneTransitEstimator({ className }: { className?: string }) {
                   type="button"
                   onClick={() => setEquipment(eq.id)}
                   aria-pressed={equipment === eq.id}
-                  className={`min-h-[44px] rounded-xl border px-3 py-2 text-sm font-bold transition-all duration-fast ease-entrance motion-safe:active:scale-[0.98] ${
+                  // The pressed key is ink, not red: the red on this island is
+                  // the one action below, and a filled red toggle beside it
+                  // would be a second one in the same viewport.
+                  className={cn(
+                    "min-h-[44px] rounded-fleet border px-3 py-2 text-m-body font-semibold transition-colors duration-fast ease-entrance",
                     equipment === eq.id
-                      ? "border-orange-600 bg-orange-600 text-white shadow-cta"
-                      : "border-gray-300 bg-white text-gray-700 hover:border-orange-400 hover:text-orange-600"
-                  }`}
+                      ? "border-ink bg-ink text-paper"
+                      : "border-ink/20 bg-paper text-ink-2 hover:border-ink/40 hover:text-ink"
+                  )}
                 >
                   {eq.label}
                 </button>
@@ -171,86 +192,95 @@ export function LaneTransitEstimator({ className }: { className?: string }) {
           </fieldset>
         </div>
 
-        <div className="rounded-2xl bg-[#0F1013] p-6 text-white">
+        {/* The instrument: hairline frame, mono figures (DIRECTION.md §4).
+            The CountUp figures are keyed on their own value: CountUp seeds its
+            display with useState and bails out of the effect under
+            prefers-reduced-motion, so without a remount it would keep showing
+            the previous lane's miles after the visitor changes markets. */}
+        <div className="rounded-m-2 border border-ink/15 p-5">
           {result ? (
             <>
               <div className="grid grid-cols-2 gap-5">
                 <div>
-                  <p className="text-xs font-bold uppercase tracking-[0.14em] text-white/50">
-                    Driving miles
+                  <p className={EYEBROW}>Driving miles</p>
+                  <p className="mt-1 font-mono text-m-h2 font-bold tabular-nums text-ink">
+                    <CountUp key={result.miles} value={result.miles} />
                   </p>
-                  <p className="mt-1 font-mono text-3xl font-black text-orange-400">
-                    <CountUp value={result.miles} />
-                  </p>
-                  <p className="mt-1 text-xs text-white/60">
+                  <p className="mt-1 text-m-micro text-ink-2">
                     {result.measured ? "Measured — we run this lane" : "Estimated ±5%"}
                   </p>
                 </div>
                 <div>
-                  <p className="text-xs font-bold uppercase tracking-[0.14em] text-white/50">
-                    Transit
-                  </p>
-                  <p className="mt-1 font-mono text-3xl font-black">
+                  <p className={EYEBROW}>Transit</p>
+                  <p className="mt-1 font-mono text-m-h2 font-bold tabular-nums text-ink">
                     {result.fast === result.slow ? (
                       <>
-                        <CountUp value={result.fast} />
-                        <span className="text-lg font-bold"> day{result.fast > 1 ? "s" : ""}</span>
+                        <CountUp key={result.fast} value={result.fast} />
+                        <span className="ml-1 font-sans text-m-body font-semibold text-ink-2">
+                          {result.fast > 1 ? "days" : "day"}
+                        </span>
                       </>
                     ) : (
                       <>
-                        {result.fast}–{result.slow}
-                        <span className="text-lg font-bold"> days</span>
+                        <span>{`${result.fast}–${result.slow}`}</span>
+                        <span className="ml-1 font-sans text-m-body font-semibold text-ink-2">days</span>
                       </>
                     )}
                   </p>
-                  <p className="mt-1 text-xs text-white/60">Door to door, solo driver</p>
+                  <p className="mt-1 text-m-micro text-ink-2">Door to door, solo driver</p>
                 </div>
               </div>
 
-              <dl className="mt-6 space-y-2.5 border-t border-white/10 pt-5 text-sm">
+              <dl className="mt-5 space-y-2.5 border-t border-ink/10 pt-5 text-m-body">
                 <div className="flex items-center justify-between gap-3">
-                  <dt className="flex items-center gap-2 text-white/70">
-                    <Clock className="h-4 w-4 text-white/40" aria-hidden /> Wheel time
+                  <dt className="flex items-center gap-2 text-ink-2">
+                    <Clock className="h-4 w-4 text-ink-3" aria-hidden />
+                    <span>Wheel time</span>
                   </dt>
-                  <dd className="font-mono font-bold tabular-nums">~{result.driveHours} hrs</dd>
+                  <dd className="font-mono font-semibold tabular-nums text-ink">{`~${result.driveHours} hrs`}</dd>
                 </div>
                 <div className="flex items-center justify-between gap-3">
-                  <dt className="flex items-center gap-2 text-white/70">
-                    <Truck className="h-4 w-4 text-white/40" aria-hidden /> 10-hr resets required
+                  <dt className="flex items-center gap-2 text-ink-2">
+                    <Truck className="h-4 w-4 text-ink-3" aria-hidden />
+                    <span>10-hr resets required</span>
                   </dt>
-                  <dd className="font-mono font-bold tabular-nums">{result.resets}</dd>
+                  <dd className="font-mono font-semibold tabular-nums text-ink">{result.resets}</dd>
                 </div>
                 {result.lane ? (
                   <div className="flex items-center justify-between gap-3">
-                    <dt className="flex items-center gap-2 text-white/70">
-                      <Repeat className="h-4 w-4 text-white/40" aria-hidden /> We run it
+                    <dt className="flex items-center gap-2 text-ink-2">
+                      <Repeat className="h-4 w-4 text-ink-3" aria-hidden />
+                      <span>We run it</span>
                     </dt>
-                    <dd className="font-bold text-green-400">{result.lane.frequency}</dd>
+                    <dd className="font-semibold text-ink">{result.lane.frequency}</dd>
                   </div>
                 ) : null}
               </dl>
 
-              <p className="mt-5 rounded-xl bg-white/5 p-3 text-xs leading-relaxed text-white/70">
+              <p className="mt-5 rounded-m-2 bg-ink/5 p-3 text-m-micro leading-relaxed text-ink-2">
                 {equipmentMeta.note}
               </p>
 
-              <Link
-                href={quoteHref}
-                className="mt-5 flex min-h-[48px] w-full items-center justify-center gap-2 rounded-xl bg-orange-600 px-5 py-3 font-bold uppercase tracking-wide text-white transition-all duration-fast ease-entrance hover:bg-orange-500 motion-safe:hover:-translate-y-0.5"
-              >
-                Quote this lane <ArrowRight className="h-4 w-4" aria-hidden />
-              </Link>
-              <p className="mt-3 text-center text-xs text-white/50">
-                Or call dispatch:{" "}
-                <a href={`tel:${COMPANY_INFO.phoneFormatted}`} className="font-semibold text-white/80 hover:underline">
-                  {COMPANY_INFO.phone}
+              <Button asChild size="lg" className="mt-5 w-full">
+                <Link href={quoteHref}>
+                  Quote this lane
+                  <ArrowRight className="h-4 w-4" aria-hidden />
+                </Link>
+              </Button>
+              <p className="mt-3 text-center text-m-body text-ink-2">
+                <span>Or call dispatch: </span>
+                <a
+                  href={`tel:${COMPANY_INFO.phoneFormatted}`}
+                  className="font-semibold text-ink underline-offset-4 hover:underline"
+                >
+                  <span className="font-mono tabular-nums">{COMPANY_INFO.phone}</span>
                 </a>
               </p>
             </>
           ) : (
-            <div className="flex h-full min-h-[240px] flex-col items-center justify-center text-center">
-              <MapPin className="h-8 w-8 text-white/30" aria-hidden />
-              <p className="mt-3 text-sm text-white/70">
+            <div className="flex h-full min-h-60 flex-col items-center justify-center text-center">
+              <MapPin className="h-8 w-8 text-ink-3" aria-hidden />
+              <p className="mt-3 text-m-body text-ink-2">
                 Pick two different markets to see miles and transit time.
               </p>
             </div>
@@ -258,11 +288,8 @@ export function LaneTransitEstimator({ className }: { className?: string }) {
         </div>
       </div>
 
-      <p className="border-t border-gray-100 bg-gray-50 px-6 py-4 text-xs leading-relaxed text-gray-500 md:px-8">
-        Estimates, not a rate confirmation. Miles are practical driving miles (great-circle × road
-        factor {ROAD_CIRCUITY}) except on lanes we already run weekly, where the measured distance is
-        used. Transit assumes one solo driver under 11-hour hours-of-service rules — team service and
-        expedited windows are available, ask dispatch.
+      <p className="mt-6 border-t border-ink/10 pt-4 text-m-micro leading-relaxed text-ink-2">
+        {`Estimates, not a rate confirmation. Miles are practical driving miles (great-circle × road factor ${ROAD_CIRCUITY}) except on lanes we already run weekly, where the measured distance is used. Transit assumes one solo driver under 11-hour hours-of-service rules — team service and expedited windows are available, ask dispatch.`}
       </p>
     </div>
   )

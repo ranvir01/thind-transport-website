@@ -21,11 +21,18 @@
  *
  * Renders a quiet confirmation when already running standalone, so a driver
  * who has the app isn't told to install it again.
+ *
+ * Every state is one paper island on the dark page ground — including the
+ * standalone confirmation, which used to be a bare cedar tint and therefore
+ * ink type on a navy section. The one action goes through the Button
+ * primitive: rounded-fleet, 48px, sentence case, and a hover that darkens
+ * rather than lightening the fill under white text.
  */
 
 import { useSyncExternalStore } from "react"
 import { Share, Smartphone, Check, ArrowRight } from "lucide-react"
 import { track } from "@vercel/analytics"
+import { Button } from "@/components/ui/button"
 
 type InstallEnv = "standalone" | "ios" | "browser"
 
@@ -41,22 +48,28 @@ function readInstallEnv(): InstallEnv {
 // quiet state — and the real environment is read on the client.
 const readServerInstallEnv = (): InstallEnv => "standalone"
 
+const ISLAND = "rounded-m-3 border border-ink/15 bg-paper p-5 text-ink"
 const stepCls = "flex gap-3 text-m-body text-ink-2"
 const numCls =
-  "mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-signal/10 font-mono text-m-micro font-bold text-signal"
+  "mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-signal/10 font-mono text-m-micro font-bold tabular-nums text-signal"
 
 function OpenAppCta({ label }: { label: string }) {
   return (
     // Plain <a>, not next/link: a soft navigation leaves the marketing
     // manifest active and iOS then offers to install the website. See
     // src/lib/cross-app-link.ts.
-    <a
-      href="/hub/get-app"
-      onClick={() => track("pwa_install_redirect")}
-      className="mt-4 inline-flex min-h-[44px] items-center gap-2 rounded-m-2 bg-signal px-6 py-3 font-display text-m-body font-bold uppercase tracking-wide text-paper transition-colors duration-base ease-entrance hover:bg-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-signal focus-visible:ring-offset-2 focus-visible:ring-offset-paper"
-    >
-      <Smartphone className="h-4 w-4" aria-hidden /> {label} <ArrowRight className="h-4 w-4" aria-hidden />
-    </a>
+    //
+    // hover:text-white is load-bearing on an anchor: the global
+    // `a:hover { color: var(--brand-accent-strong) }` in globals.css outranks
+    // the primitive's own .text-white utility, so without it the label repaints
+    // signal red on the darkened red fill (2.33:1) for as long as the pointer
+    // rests on the button.
+    <Button asChild size="lg" className="mt-5 hover:text-white">
+      <a href="/hub/get-app" onClick={() => track("pwa_install_redirect")}>
+        <Smartphone className="h-4 w-4" aria-hidden /> {label}{" "}
+        <ArrowRight className="h-4 w-4" aria-hidden />
+      </a>
+    </Button>
   )
 }
 
@@ -65,7 +78,7 @@ export function GetTheApp() {
 
   if (env === "standalone") {
     return (
-      <div className="flex items-center gap-3 rounded-m-3 border border-cedar/30 bg-cedar/5 p-4">
+      <div className={`${ISLAND} flex items-center gap-3`}>
         <Check className="h-5 w-5 shrink-0 text-cedar" aria-hidden />
         <p className="text-m-body text-ink-2">
           You&apos;re already running the app. Open it from your home screen any time — it works
@@ -77,8 +90,10 @@ export function GetTheApp() {
 
   if (env === "ios") {
     return (
-      <div className="rounded-m-3 border border-ink/15 bg-paper p-5">
-        <p className="font-display text-m-h4 font-bold text-ink">On iPhone — you&apos;re on the right page</p>
+      <div className={ISLAND}>
+        <p className="font-display text-m-h4 font-bold text-ink">
+          On iPhone — you&apos;re on the right page
+        </p>
         <ol className="mt-4 list-none space-y-3">
           <li className={stepCls}>
             <span className={numCls}>1</span>
@@ -102,7 +117,7 @@ export function GetTheApp() {
         </ol>
         {/* The one thing that genuinely cannot work: an in-app webview
             (Facebook, Gmail, Chrome for iOS) has no Add to Home Screen at all. */}
-        <p className="mt-4 text-m-small text-ink-3">
+        <p className="mt-4 max-w-measure text-m-body text-ink-3">
           No Share button? You&apos;re reading this inside another app — tap its menu, choose
           &ldquo;Open in Safari&rdquo;, and start again from step 1.
         </p>
@@ -114,7 +129,7 @@ export function GetTheApp() {
   // Android / desktop Chrome: the real install sheet lives on the driver
   // app's own page, where Chrome attributes it to the right manifest.
   return (
-    <div className="rounded-m-3 border border-ink/15 bg-paper p-5">
+    <div className={ISLAND}>
       <p className="font-display text-m-h4 font-bold text-ink">On Android</p>
       <ol className="mt-4 list-none space-y-3">
         <li className={stepCls}>

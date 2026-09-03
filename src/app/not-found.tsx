@@ -1,95 +1,59 @@
 import Link from "next/link"
-import Image from "next/image"
-import { Button } from "@/components/ui/button"
-import { TruckIcon, Home, Phone, FileText, ArrowLeft } from "lucide-react"
-import { COMPANY_INFO } from "@/lib/constants"
+import { ArrowRight } from "lucide-react"
+import { AsphaltHero } from "@/components/shared/AsphaltHero"
+
+/**
+ * 404. An asphalt band like every other page's hero: one red action back to
+ * the homepage, the number beside it as text, then the three pages people
+ * actually mistype their way toward.
+ *
+ * "Road Not Found!" is load-bearing and stays verbatim — three e2e scripts
+ * match on it (scripts/e2e-public-smoke.mjs and scripts/e2e-sweep.mjs treat it
+ * as a dead-screen marker, scripts/e2e-tenant-isolation-smoke.mjs asserts a
+ * cross-tenant probe lands here).
+ */
+const POPULAR = [
+  { href: "/pay-rates", label: "Driver pay rates and calculator" },
+  { href: "/apply", label: "Start an application" },
+  { href: "/contact", label: "Contact us" },
+] as const
 
 export default function NotFound() {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 flex items-center justify-center px-4">
-      <div className="max-w-2xl w-full text-center">
-        {/* Animated Truck Icon */}
-        <div className="relative mb-8">
-          <div className="flex justify-center">
-            <div className="relative">
-              <TruckIcon className="h-32 w-32 text-gray-300" />
-              <div className="absolute inset-0 flex items-center justify-center">
-                <span className="text-6xl font-black text-red-600">404</span>
-              </div>
-            </div>
-          </div>
-          <div className="mt-4 flex justify-center gap-2">
-            <div className="h-1 w-16 rounded-full bg-navy"></div>
-            <div className="h-1 w-16 rounded-full bg-orange-600"></div>
-            <div className="h-1 w-16 rounded-full bg-navy"></div>
-          </div>
-        </div>
+    <div className="min-h-screen overflow-x-hidden bg-navy-950">
+      <AsphaltHero
+        eyebrow="404"
+        title="Road Not Found!"
+        description="This route isn't on our map yet. Here's the way back — or call the office and we'll point you at the right page."
+        applyHref="/"
+        applyLabel="Back to home"
+      />
 
-        {/* Error Message */}
-        <h1 className="text-4xl font-black text-gray-900 mb-4">
-          Road Not Found!
-        </h1>
-        <p className="text-xl text-gray-600 mb-8">
-          Looks like this route isn't on our map yet. Let's get you back on track.
-        </p>
-
-        {/* Quick Actions */}
-        <div className="grid sm:grid-cols-2 gap-4 max-w-md mx-auto mb-8">
-          <Link href="/" className="group">
-            <div className="bg-white rounded-lg shadow-md p-6 hover:shadow-xl transition-all transform hover:-translate-y-1">
-              <Home className="h-8 w-8 text-orange-600 mx-auto mb-3" />
-              <h3 className="font-semibold text-gray-900 mb-1">Return Home</h3>
-              <p className="text-sm text-gray-600">Back to main page</p>
-            </div>
-          </Link>
-          <Link href="/apply" className="group">
-            <div className="bg-white rounded-lg shadow-md p-6 hover:shadow-xl transition-all transform hover:-translate-y-1">
-              <FileText className="h-8 w-8 text-green-600 mx-auto mb-3" />
-              <h3 className="font-semibold text-gray-900 mb-1">Apply Now</h3>
-              <p className="text-sm text-gray-600">Start earning today</p>
-            </div>
-          </Link>
-        </div>
-
-        {/* Contact Support */}
-        <div className="bg-slate-50 border border-slate-200 rounded-lg p-6 mb-8">
-          <p className="text-gray-700 mb-4">
-            Need help finding what you&apos;re looking for?
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button asChild variant="outline" className="border-gray-300 bg-white text-gray-900 hover:bg-gray-50 hover:text-gray-900">
-              <Link href="/">
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Go Back
-              </Link>
-            </Button>
-            <Button asChild>
-              <Link href={`tel:${COMPANY_INFO.phoneFormatted}`}>
-                <Phone className="h-4 w-4 mr-2" />
-                Call {COMPANY_INFO.phone}
-              </Link>
-            </Button>
+      <section aria-labelledby="popular-heading" className="bg-navy-950 py-section">
+        <div className="container">
+          <div className="mx-auto max-w-measure">
+            <h2
+              id="popular-heading"
+              className="font-display text-m-h3 font-bold text-white text-balance"
+            >
+              Pages people usually want
+            </h2>
+            <ul className="mt-6 list-none space-y-2">
+              {POPULAR.map((item) => (
+                <li key={item.href}>
+                  <Link
+                    href={item.href}
+                    className="inline-flex min-h-[44px] items-center gap-2 text-m-body font-semibold text-white underline-offset-4 hover:text-orange-300 hover:underline"
+                  >
+                    <span>{item.label}</span>
+                    <ArrowRight className="h-4 w-4 shrink-0" aria-hidden />
+                  </Link>
+                </li>
+              ))}
+            </ul>
           </div>
         </div>
-
-        {/* Popular Pages */}
-        <div className="text-left max-w-md mx-auto">
-          <h2 className="text-sm font-semibold text-gray-900 mb-3">
-            Popular pages you might be looking for:
-          </h2>
-          <div className="space-y-2">
-            <Link href="/pay-rates" className="block text-sm font-medium text-orange-700 hover:underline">
-              → Driver Pay Rates & Calculator
-            </Link>
-            <Link href="/apply" className="block text-sm font-medium text-orange-700 hover:underline">
-              → Start an application
-            </Link>
-            <Link href="/" className="block text-sm font-medium text-orange-700 hover:underline">
-              → Home Page
-            </Link>
-          </div>
-        </div>
-      </div>
+      </section>
     </div>
   )
 }

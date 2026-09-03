@@ -1,7 +1,53 @@
-"use client"
+import { COMPANY_INFO, SERVICES, STATS, SUPPORT } from "@/lib/constants"
 
-import { useState } from "react"
-import { COMPANY_INFO } from "@/lib/constants"
+/**
+ * Print proof for the MOO-format business card.
+ *
+ * The page chrome around the proof is on the site's tokens like every other
+ * marketing surface. The two card faces are NOT: they are a facsimile of what
+ * the printer receives, so their colours live in one INK map below and must
+ * match the artwork in /public/branding, not the marketing palette. That is
+ * why this file stays out of the token-lint scope list.
+ *
+ * The front/back toggle is gone: it duplicated both faces in the DOM (the
+ * "Full Preview" grid rendered them a second time) purely to hide one of them,
+ * which is the only reason this component was a client component at all. Both
+ * faces now render once, side by side, with no JavaScript.
+ */
+
+/** print artwork — exact ink */
+const INK = {
+  navy: "#17181B",
+  orange: "#FF9500",
+  cardFront: "#1a1f2e",
+  skyTop: "#0a1628",
+  skyMid: "#0f2744",
+  skyBottom: "#1a3a5c",
+  /** Horizon haze, already at its 30% print value. */
+  horizonGlow: "#2a4a6a4d",
+  road: "#1c1c1c",
+  lane: "#FFB340",
+  trailerTop: "#FF9500",
+  trailerBottom: "#E07800",
+  trailerEdge: "#CC7700",
+  cabTop: "#FFa520",
+  cabBottom: "#E68600",
+  cabSheen: "#FFD080",
+  headlight: "#FFEEBB",
+  tailLight: "#FF3333",
+  glass: "#0a1628",
+  glassEdge: "#ffffff2e",
+  glassSheen: "#ffffff0d",
+  groundShadow: "#00000033",
+  deck: "#333",
+  chrome: "#777",
+  chromeDark: "#555",
+  chromeLight: "#888",
+  tyre: "#1a1a1a",
+  tyreRim: "#444",
+  tyreInner: "#222",
+  tyreHub: "#2a2a2a",
+} as const
 
 // Only the tagline and website are card-specific; the rest shadowed
 // COMPANY_INFO with a second copy of the same three facts.
@@ -15,7 +61,7 @@ const CARD = {
 
 function MiniTruck() {
   return (
-    <svg viewBox="0 0 28 14" fill="currentColor" className="w-[3.2%] h-auto">
+    <svg viewBox="0 0 28 14" fill="currentColor" className="h-auto w-[3.2%]">
       <rect x="0" y="3" width="16" height="8" rx="1" />
       <path d="M16 5h5l3 4v2h-8V5z" />
       <circle cx="5" cy="12.5" r="1.8" />
@@ -26,43 +72,52 @@ function MiniTruck() {
 
 function CardFront() {
   return (
-    <div className="relative w-full aspect-[3.46/2.32] rounded-xl overflow-hidden shadow-2xl bg-[#1a1f2e]" style={{ containerType: "inline-size" }}>
-      <div className="absolute top-0 right-0 w-[40%] h-[65%]">
-        <div className="absolute inset-0 bg-gradient-to-bl from-orange/[0.06] to-transparent" />
-        <div className="absolute top-0 left-0 w-[2px] h-full bg-orange/20 rotate-[20deg] origin-top-left" />
+    <div
+      className="relative aspect-[3.46/2.32] w-full overflow-hidden rounded-m-3 shadow-m-e5"
+      style={{ containerType: "inline-size", backgroundColor: INK.cardFront }}
+    >
+      <div className="absolute right-0 top-0 h-[65%] w-[40%]">
+        <div
+          className="absolute inset-0"
+          style={{ backgroundImage: `linear-gradient(to bottom left, ${INK.orange}0f, transparent)` }}
+        />
+        <div
+          className="absolute left-0 top-0 h-full w-0.5 origin-top-left rotate-[20deg]"
+          style={{ backgroundColor: `${INK.orange}33` }}
+        />
       </div>
 
-      <div className="relative z-10 h-full flex flex-col">
+      <div className="relative z-10 flex h-full flex-col">
         {/* Main content: left text, right QR */}
-        <div className="flex-1 flex justify-between p-[6%] pb-[2%]">
+        <div className="flex flex-1 justify-between p-[6%] pb-[2%]">
           {/* Left column */}
-          <div className="flex flex-col justify-between flex-1 min-w-0 pr-[5%]">
+          <div className="flex min-w-0 flex-1 flex-col justify-between pr-[5%]">
             <div>
-              <p className="text-white font-extrabold leading-tight" style={{ fontSize: "clamp(1rem, 3.8cqi, 1.8rem)" }}>Owner / Dispatcher:</p>
-              <h3 className="text-white font-black tracking-tight leading-none mt-[0.15em]" style={{ fontSize: "clamp(1.2rem, 5cqi, 2.4rem)" }}>[{CARD.owner}]</h3>
+              <p className="font-extrabold leading-tight text-white" style={{ fontSize: "clamp(1rem, 3.8cqi, 1.8rem)" }}>Owner / Dispatcher:</p>
+              <h3 className="mt-[0.15em] font-black leading-none tracking-tight text-white" style={{ fontSize: "clamp(1.2rem, 5cqi, 2.4rem)" }}>[{CARD.owner}]</h3>
             </div>
 
             <div className="mt-auto" style={{ fontSize: "clamp(0.7rem, 2.6cqi, 1.2rem)" }}>
               <p className="leading-[1.7]">
-                <span className="text-orange font-bold">Cell: </span>
+                <span className="font-bold" style={{ color: INK.orange }}>Cell: </span>
                 <span className="text-white">{CARD.phone}</span>
               </p>
               <p className="leading-[1.7]">
-                <span className="text-orange font-bold">Email: </span>
+                <span className="font-bold" style={{ color: INK.orange }}>Email: </span>
                 <span className="text-white">{CARD.email}</span>
               </p>
               <p className="leading-[1.7]">
-                <span className="text-orange font-bold">Website: </span>
+                <span className="font-bold" style={{ color: INK.orange }}>Website: </span>
                 <span className="text-white">{CARD.website}</span>
               </p>
             </div>
           </div>
 
           {/* Right column: QR */}
-          <div className="flex flex-col items-end flex-shrink-0 w-[28%]">
-            <p className="text-white/70 font-semibold tracking-wide text-right mb-[4%]" style={{ fontSize: "clamp(0.5rem, 1.8cqi, 0.85rem)" }}>to website</p>
-            <div className="w-full aspect-square bg-white rounded-md shadow-lg shadow-black/30 p-[6%]">
-              <div className="w-full h-full bg-white grid grid-cols-7 grid-rows-7 gap-[1px] p-[5%]">
+          <div className="flex w-[28%] flex-shrink-0 flex-col items-end">
+            <p className="mb-[4%] text-right font-semibold tracking-wide text-white/70" style={{ fontSize: "clamp(0.5rem, 1.8cqi, 0.85rem)" }}>to website</p>
+            <div className="aspect-square w-full rounded-m-1 bg-white p-[6%] shadow-m-e3">
+              <div className="grid h-full w-full grid-cols-7 grid-rows-7 gap-[1px] bg-white p-[5%]">
                 <QRPattern />
               </div>
             </div>
@@ -70,11 +125,11 @@ function CardFront() {
         </div>
 
         {/* Orange bar */}
-        <div className="bg-orange-600 px-[6%] py-[2.5%]">
-          <p className="text-navy font-extrabold tracking-wide text-center" style={{ fontSize: "clamp(0.55rem, 2cqi, 0.95rem)" }}>
-            24/7 Dispatch &bull; Dry Van &bull; Reefer &bull; Flatbed &bull; Serving 48 States
+        <div className="px-[6%] py-[2.5%]" style={{ backgroundColor: INK.orange }}>
+          <p className="text-center font-extrabold tracking-wide text-navy" style={{ fontSize: "clamp(0.55rem, 2cqi, 0.95rem)" }}>
+            {`${SUPPORT.hours} Dispatch • ${SERVICES.types[2]} • ${SERVICES.types[1]} • ${SERVICES.types[0]} • Serving ${STATS.statesCovered} States`}
           </p>
-          <div className="flex items-center justify-center gap-[2%] mt-[0.4%]">
+          <div className="mt-[0.4%] flex items-center justify-center gap-[2%]">
             {Array.from({ length: 10 }).map((_, i) => (
               <span key={i} className="flex items-center gap-[1%]">
                 <MiniTruck />
@@ -90,11 +145,23 @@ function CardFront() {
 
 function CardBack() {
   return (
-    <div className="relative w-full aspect-[3.46/2.32] rounded-xl overflow-hidden shadow-2xl" style={{ containerType: "inline-size" }}>
-      <div className="absolute inset-0 bg-gradient-to-b from-[#0a1628] via-[#0f2744] to-[#1a3a5c]" />
+    <div
+      className="relative aspect-[3.46/2.32] w-full overflow-hidden rounded-m-3 shadow-m-e5"
+      style={{ containerType: "inline-size" }}
+    >
+      <div
+        className="absolute inset-0"
+        style={{ backgroundImage: `linear-gradient(to bottom, ${INK.skyTop}, ${INK.skyMid}, ${INK.skyBottom})` }}
+      />
 
-      <div className="absolute bottom-[20%] left-0 right-0 h-[25%] bg-gradient-to-t from-[#2a4a6a]/30 to-transparent" />
-      <div className="absolute bottom-[18%] left-1/2 -translate-x-1/2 w-[140%] h-[6%] bg-orange/[0.05] rounded-[50%] blur-2xl" />
+      <div
+        className="absolute bottom-[20%] left-0 right-0 h-[25%]"
+        style={{ backgroundImage: `linear-gradient(to top, ${INK.horizonGlow}, transparent)` }}
+      />
+      <div
+        className="absolute bottom-[18%] left-1/2 h-[6%] w-[140%] -translate-x-1/2 rounded-full blur-2xl"
+        style={{ backgroundColor: `${INK.orange}0d` }}
+      />
 
       {/* Stars */}
       <div className="absolute inset-0">
@@ -104,46 +171,54 @@ function CardBack() {
           { x: 61, y: 1, o: 0.4 }, { x: 71, y: 5, o: 0.35 }, { x: 79, y: 3, o: 0.5 },
           { x: 87, y: 8, o: 0.25 }, { x: 92, y: 2, o: 0.4 }, { x: 49, y: 4, o: 0.3 },
         ].map((s, i) => (
-          <div key={i} className="absolute w-[1px] h-[1px] bg-white rounded-full" style={{ left: `${s.x}%`, top: `${s.y}%`, opacity: s.o }} />
+          <div key={i} className="absolute h-[1px] w-[1px] rounded-full bg-white" style={{ left: `${s.x}%`, top: `${s.y}%`, opacity: s.o }} />
         ))}
       </div>
 
       {/* Road */}
       <div className="absolute bottom-0 left-0 right-0 h-[28%]">
-        <svg viewBox="0 0 1000 300" preserveAspectRatio="none" className="absolute inset-0 w-full h-full">
-          <path d="M0 80 Q250 40 500 30 Q750 20 1000 0 L1000 300 L0 300Z" fill="#1c1c1c" />
-          <path d="M0 80 Q250 40 500 30 Q750 20 1000 0" stroke="#FF9500" strokeWidth="2" fill="none" opacity="0.4" />
-          <path d="M0 170 Q250 140 500 130 Q750 120 1000 105" stroke="#FFB340" strokeWidth="2" strokeDasharray="40 25" fill="none" opacity="0.3" />
+        <svg viewBox="0 0 1000 300" preserveAspectRatio="none" className="absolute inset-0 h-full w-full">
+          <path d="M0 80 Q250 40 500 30 Q750 20 1000 0 L1000 300 L0 300Z" fill={INK.road} />
+          <path d="M0 80 Q250 40 500 30 Q750 20 1000 0" stroke={INK.orange} strokeWidth="2" fill="none" opacity="0.4" />
+          <path d="M0 170 Q250 140 500 130 Q750 120 1000 105" stroke={INK.lane} strokeWidth="2" strokeDasharray="40 25" fill="none" opacity="0.3" />
         </svg>
       </div>
 
-      <div className="relative z-10 h-full flex flex-col">
+      <div className="relative z-10 flex h-full flex-col">
         {/* Top: Company name */}
-        <div className="text-center pt-[4%] px-[5%]">
-          <h3 className="text-white font-black tracking-tight leading-none" style={{ fontSize: "clamp(1.3rem, 5.5cqi, 2.3rem)" }}>
-            THIND <span className="text-orange">TRANSPORT</span>
+        <div className="px-[5%] pt-[4%] text-center">
+          <h3 className="font-black leading-none tracking-tight text-white" style={{ fontSize: "clamp(1.3rem, 5.5cqi, 2.3rem)" }}>
+            THIND <span style={{ color: INK.orange }}>TRANSPORT</span>
           </h3>
-          <div className="mx-auto w-[30%] h-[2px] bg-gradient-to-r from-transparent via-orange to-transparent rounded-full mt-[1.5%]" />
-          <p className="text-white/35 tracking-[0.35em] mt-[1%] font-medium" style={{ fontSize: "clamp(0.4rem, 1.4cqi, 0.6rem)" }}>{CARD.tagline}</p>
+          <div
+            className="mx-auto mt-[1.5%] h-0.5 w-[30%] rounded-full"
+            style={{
+              backgroundImage: `linear-gradient(to right, transparent, ${INK.orange}, transparent)`,
+            }}
+          />
+          <p className="mt-[1%] font-medium tracking-[0.35em] text-white/35" style={{ fontSize: "clamp(0.4rem, 1.4cqi, 0.6rem)" }}>{CARD.tagline}</p>
         </div>
 
         {/* Center: Truck scene */}
-        <div className="flex-1 flex items-center justify-center relative">
+        <div className="relative flex flex-1 items-center justify-center">
           <TruckScene />
         </div>
 
         {/* Bottom: Orange bar */}
-        <div className="bg-orange-600 px-[5%] py-[2%] flex items-center justify-between">
+        <div
+          className="flex items-center justify-between px-[5%] py-[2%]"
+          style={{ backgroundColor: INK.orange }}
+        >
           <div className="flex items-center gap-[2%] text-navy" style={{ fontSize: "clamp(0.4rem, 1.4cqi, 0.6rem)" }}>
-            <span className="font-extrabold tracking-wider">FLATBED</span>
+            <span className="font-extrabold tracking-wider">{SERVICES.types[0].toUpperCase()}</span>
             <span className="text-navy/40">&bull;</span>
-            <span className="font-extrabold tracking-wider">DRY VAN</span>
+            <span className="font-extrabold tracking-wider">{SERVICES.types[2].toUpperCase()}</span>
             <span className="text-navy/40">&bull;</span>
-            <span className="font-extrabold tracking-wider">REEFER</span>
+            <span className="font-extrabold tracking-wider">{SERVICES.types[1].toUpperCase()}</span>
             <span className="text-navy/40">&bull;</span>
-            <span className="font-extrabold tracking-wider">48 STATES</span>
+            <span className="font-extrabold tracking-wider">{`${STATS.statesCovered} STATES`}</span>
           </div>
-          <span className="text-navy/60 font-bold tracking-wider" style={{ fontSize: "clamp(0.35rem, 1.2cqi, 0.55rem)" }}>THINDTRANSPORT.COM</span>
+          <span className="font-bold tracking-wider text-navy/60" style={{ fontSize: "clamp(0.35rem, 1.2cqi, 0.55rem)" }}>{CARD.website.toUpperCase()}</span>
         </div>
       </div>
     </div>
@@ -155,16 +230,16 @@ function TruckScene() {
     <svg viewBox="0 0 600 220" className="w-[90%]" fill="none" xmlns="http://www.w3.org/2000/svg">
       <defs>
         <linearGradient id="bodyGrad" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#FF9500" />
-          <stop offset="100%" stopColor="#E07800" />
+          <stop offset="0%" stopColor={INK.trailerTop} />
+          <stop offset="100%" stopColor={INK.trailerBottom} />
         </linearGradient>
         <linearGradient id="cabGrad" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#FFa520" />
-          <stop offset="100%" stopColor="#E68600" />
+          <stop offset="0%" stopColor={INK.cabTop} />
+          <stop offset="100%" stopColor={INK.cabBottom} />
         </linearGradient>
         <linearGradient id="headlightGlow" x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0%" stopColor="#FFEEBB" stopOpacity="0.6" />
-          <stop offset="100%" stopColor="#FFEEBB" stopOpacity="0" />
+          <stop offset="0%" stopColor={INK.headlight} stopOpacity="0.6" />
+          <stop offset="100%" stopColor={INK.headlight} stopOpacity="0" />
         </linearGradient>
         <filter id="glow">
           <feGaussianBlur stdDeviation="3" result="b" />
@@ -241,34 +316,34 @@ function TruckScene() {
 
       {/* === CENTER: THE TRUCK === */}
       <g transform="translate(260, 86)">
-        <ellipse cx="100" cy="84" rx="130" ry="6" fill="rgba(0,0,0,0.2)" />
-        <rect x="2" y="56" width="152" height="6" rx="1" fill="#333" />
+        <ellipse cx="100" cy="84" rx="130" ry="6" fill={INK.groundShadow} />
+        <rect x="2" y="56" width="152" height="6" rx="1" fill={INK.deck} />
 
         {/* Trailer */}
         <rect x="0" y="6" width="156" height="52" rx="3" fill="url(#bodyGrad)" />
-        <rect x="0" y="6" width="156" height="52" rx="3" stroke="#CC7700" strokeWidth="0.8" fill="none" />
+        <rect x="0" y="6" width="156" height="52" rx="3" stroke={INK.trailerEdge} strokeWidth="0.8" fill="none" />
         {[22, 44, 66, 88, 110, 132].map((x) => (
-          <line key={x} x1={x} y1="8" x2={x} y2="56" stroke="#CC7700" strokeWidth="0.4" opacity="0.25" />
+          <line key={x} x1={x} y1="8" x2={x} y2="56" stroke={INK.trailerEdge} strokeWidth="0.4" opacity="0.25" />
         ))}
         <rect x="0" y="6" width="156" height="9" rx="3" fill="white" opacity="0.06" />
 
-        <text x="78" y="31" fontFamily="Inter, system-ui, sans-serif" fontSize="12" fontWeight="900" fill="#17181B" textAnchor="middle" letterSpacing="0.5">THIND</text>
-        <rect x="44" y="34" width="68" height="1.5" rx="0.75" fill="#17181B" opacity="0.2" />
-        <text x="78" y="48" fontFamily="Inter, system-ui, sans-serif" fontSize="7" fontWeight="700" fill="#17181B" textAnchor="middle" letterSpacing="3">TRANSPORT</text>
+        <text x="78" y="31" fontFamily="Inter, system-ui, sans-serif" fontSize="12" fontWeight="900" fill={INK.navy} textAnchor="middle" letterSpacing="0.5">THIND</text>
+        <rect x="44" y="34" width="68" height="1.5" rx="0.75" fill={INK.navy} opacity="0.2" />
+        <text x="78" y="48" fontFamily="Inter, system-ui, sans-serif" fontSize="7" fontWeight="700" fill={INK.navy} textAnchor="middle" letterSpacing="3">TRANSPORT</text>
 
         {/* Fifth wheel */}
-        <rect x="154" y="22" width="8" height="30" rx="1.5" fill="#777" />
-        <rect x="156" y="27" width="4" height="20" rx="1" fill="#555" />
+        <rect x="154" y="22" width="8" height="30" rx="1.5" fill={INK.chrome} />
+        <rect x="156" y="27" width="4" height="20" rx="1" fill={INK.chromeDark} />
 
         {/* Cab */}
         <path d="M160 12 L184 12 Q204 12 214 26 L224 48 Q226 54 226 58 L226 62 Q226 64 224 64 L160 64 L160 12Z" fill="url(#cabGrad)" />
-        <path d="M160 12 L184 12 Q204 12 214 26 L224 48 Q226 54 226 58 L226 62 Q226 64 224 64 L160 64 L160 12Z" stroke="#CC7700" strokeWidth="0.8" fill="none" />
-        <line x1="160" y1="60" x2="226" y2="60" stroke="#FFD080" strokeWidth="1" opacity="0.3" />
+        <path d="M160 12 L184 12 Q204 12 214 26 L224 48 Q226 54 226 58 L226 62 Q226 64 224 64 L160 64 L160 12Z" stroke={INK.trailerEdge} strokeWidth="0.8" fill="none" />
+        <line x1="160" y1="60" x2="226" y2="60" stroke={INK.cabSheen} strokeWidth="1" opacity="0.3" />
 
         {/* Windshield */}
-        <path d="M172 15 L194 15 Q208 15 216 28 L222 46 L222 52 Q222 54 220 54 L172 54 L172 15Z" fill="#0a1628" opacity="0.82" />
-        <path d="M172 15 L194 15 Q208 15 216 28 L222 46" stroke="rgba(255,255,255,0.18)" strokeWidth="0.8" fill="none" />
-        <path d="M176 18 L190 18 Q200 18 208 28 L212 36" stroke="rgba(255,255,255,0.05)" strokeWidth="4" fill="none" strokeLinecap="round" />
+        <path d="M172 15 L194 15 Q208 15 216 28 L222 46 L222 52 Q222 54 220 54 L172 54 L172 15Z" fill={INK.glass} opacity="0.82" />
+        <path d="M172 15 L194 15 Q208 15 216 28 L222 46" stroke={INK.glassEdge} strokeWidth="0.8" fill="none" />
+        <path d="M176 18 L190 18 Q200 18 208 28 L212 36" stroke={INK.glassSheen} strokeWidth="4" fill="none" strokeLinecap="round" />
 
         {/* Driver in cab */}
         <g opacity="0.15">
@@ -278,41 +353,41 @@ function TruckScene() {
         </g>
 
         {/* Headlights */}
-        <rect x="225" y="42" width="4" height="10" rx="1.5" fill="#FFEEBB" opacity="0.95" filter="url(#glow)" />
-        <rect x="225" y="56" width="4" height="5" rx="1" fill="#FF3333" opacity="0.8" />
-        <rect x="228" y="60" width="5" height="6" rx="1" fill="#888" />
+        <rect x="225" y="42" width="4" height="10" rx="1.5" fill={INK.headlight} opacity="0.95" filter="url(#glow)" />
+        <rect x="225" y="56" width="4" height="5" rx="1" fill={INK.tailLight} opacity="0.8" />
+        <rect x="228" y="60" width="5" height="6" rx="1" fill={INK.chromeLight} />
 
         {/* Mirror */}
-        <rect x="228" y="22" width="3" height="9" rx="1" fill="#555" />
-        <rect x="229" y="23" width="2" height="6" rx="0.5" fill="#888" />
+        <rect x="228" y="22" width="3" height="9" rx="1" fill={INK.chromeDark} />
+        <rect x="229" y="23" width="2" height="6" rx="0.5" fill={INK.chromeLight} />
 
         {/* Exhaust */}
-        <rect x="166" y="-4" width="3.5" height="18" rx="1.5" fill="#777" />
-        <rect x="173" y="-1" width="3.5" height="15" rx="1.5" fill="#777" />
+        <rect x="166" y="-4" width="3.5" height="18" rx="1.5" fill={INK.chrome} />
+        <rect x="173" y="-1" width="3.5" height="15" rx="1.5" fill={INK.chrome} />
         <circle cx="168" cy="-8" r="3" fill="white" opacity="0.03" />
         <circle cx="175" cy="-5" r="2.5" fill="white" opacity="0.025" />
 
         {/* Fuel tank */}
-        <rect x="160" y="52" width="18" height="10" rx="3" fill="#555" stroke="#666" strokeWidth="0.5" />
+        <rect x="160" y="52" width="18" height="10" rx="3" fill={INK.chromeDark} stroke={INK.chrome} strokeWidth="0.5" />
 
         {/* Wheels */}
         {[30, 50, 122, 142].map((cx) => (
           <g key={cx}>
-            <circle cx={cx} cy="66" r="10" fill="#1a1a1a" stroke="#444" strokeWidth="0.8" />
-            <circle cx={cx} cy="66" r="7" fill="#222" />
-            <circle cx={cx} cy="66" r="4.5" fill="#2a2a2a" />
-            <circle cx={cx} cy="66" r="2" fill="#555" />
+            <circle cx={cx} cy="66" r="10" fill={INK.tyre} stroke={INK.tyreRim} strokeWidth="0.8" />
+            <circle cx={cx} cy="66" r="7" fill={INK.tyreInner} />
+            <circle cx={cx} cy="66" r="4.5" fill={INK.tyreHub} />
+            <circle cx={cx} cy="66" r="2" fill={INK.chromeDark} />
           </g>
         ))}
         <g>
-          <circle cx="202" cy="66" r="11" fill="#1a1a1a" stroke="#444" strokeWidth="0.8" />
-          <circle cx="202" cy="66" r="8" fill="#222" />
-          <circle cx="202" cy="66" r="5" fill="#2a2a2a" />
-          <circle cx="202" cy="66" r="2.5" fill="#555" />
+          <circle cx="202" cy="66" r="11" fill={INK.tyre} stroke={INK.tyreRim} strokeWidth="0.8" />
+          <circle cx="202" cy="66" r="8" fill={INK.tyreInner} />
+          <circle cx="202" cy="66" r="5" fill={INK.tyreHub} />
+          <circle cx="202" cy="66" r="2.5" fill={INK.chromeDark} />
         </g>
 
-        <rect x="55" y="66" width="4" height="7" rx="0.5" fill="#333" />
-        <rect x="147" y="66" width="4" height="7" rx="0.5" fill="#333" />
+        <rect x="55" y="66" width="4" height="7" rx="0.5" fill={INK.deck} />
+        <rect x="147" y="66" width="4" height="7" rx="0.5" fill={INK.deck} />
       </g>
 
       {/* === RIGHT ZONE: DESTINATION / BUSINESS === */}
@@ -376,107 +451,124 @@ function QRPattern() {
   return (
     <>
       {p.flat().map((v, i) => (
-        <div key={i} className={`rounded-[0.5px] ${v ? "bg-navy" : "bg-white"}`} />
+        <div key={i} className={v ? "bg-navy" : "bg-white"} />
       ))}
     </>
   )
 }
 
+/** The printer's spec sheet. Ink values come from INK so the sheet and the
+ *  proof above it cannot drift apart. */
+const SPECS = [
+  { label: "Format", value: "MOO Standard (Landscape)", mono: false },
+  { label: "Bleed size", value: '3.46" x 2.32"', mono: true },
+  { label: "Trim size", value: '3.30" x 2.16"', mono: true },
+  { label: "Safe area", value: '3.14" x 2.02"', mono: true },
+  { label: "Primary colour", value: `${INK.navy} (Navy)`, mono: true },
+  { label: "Accent colour", value: `${INK.orange} (Safety Orange)`, mono: true },
+  { label: "Font", value: "Inter (800/700/500)", mono: false },
+  { label: "Minimum font size", value: "8pt (print)", mono: true },
+  { label: "Colour mode", value: "CMYK print / RGB web", mono: false },
+] as const
+
+const DOWNLOADS = [
+  { href: "/branding/business-card-front.svg", label: "Front (SVG)" },
+  { href: "/branding/business-card-back.svg", label: "Back (SVG)" },
+  { href: "/branding/thind-transport-logo.svg", label: "Logo (SVG)" },
+] as const
+
+const CAPTION = "font-display text-m-micro font-bold uppercase tracking-[0.15em] text-steel-300"
+
 export function BusinessCardShowcase() {
-  const [activeView, setActiveView] = useState<"front" | "back">("front")
-
   return (
-    <section className="min-h-screen bg-gradient-to-b from-neutral-50 to-white py-16 sm:py-24">
-      <div className="container px-4 max-w-6xl mx-auto">
-        <div className="text-center mb-12 sm:mb-16">
-          <span className="inline-block px-4 py-1.5 rounded-full bg-orange/10 text-orange font-semibold text-sm mb-4">Brand Assets</span>
-          <h1 className="text-3xl sm:text-5xl font-black text-navy mb-4">
-            Business Card <span className="text-orange">Design</span>
-          </h1>
-          <p className="text-steel/70 text-lg max-w-2xl mx-auto">
-            Professional MOO-format business card for Thind Transport. Designed for print with a focus on clarity, professionalism, and brand recognition.
+    <>
+      <section aria-labelledby="card-proof-heading" className="bg-navy-950 py-section">
+        <div className="container">
+          <h2
+            id="card-proof-heading"
+            className="font-display text-m-h2 font-bold text-white text-balance"
+          >
+            The proof, both sides
+          </h2>
+          <p className="mt-3 max-w-measure text-m-body text-steel-200">
+            {`MOO-format card for ${COMPANY_INFO.name}, laid out for print: contact details on the front, the brand on the back.`}
           </p>
-        </div>
 
-        <div className="flex justify-center gap-2 mb-8">
-          {(["front", "back"] as const).map((v) => (
-            <button
-              key={v}
-              onClick={() => setActiveView(v)}
-              className={`px-6 py-2.5 rounded-lg text-sm font-semibold transition-all ${
-                activeView === v
-                  ? "bg-navy text-white shadow-brand"
-                  : "bg-white text-steel border border-steel/20 hover:border-orange/40 hover:text-orange"
-              }`}
-            >
-              {v === "front" ? "Front (Contact)" : "Back (Brand)"}
-            </button>
-          ))}
-        </div>
-
-        <div className="max-w-2xl mx-auto mb-16">
-          <div className="transition-all duration-500">
-            {activeView === "front" ? <CardFront /> : <CardBack />}
+          <div className="mx-auto mt-8 grid max-w-5xl gap-8 md:grid-cols-2">
+            <figure>
+              <figcaption className={`${CAPTION} mb-3`}>Front (contact)</figcaption>
+              <CardFront />
+            </figure>
+            <figure>
+              <figcaption className={`${CAPTION} mb-3`}>Back (brand)</figcaption>
+              <CardBack />
+            </figure>
           </div>
-          <p className="text-center text-steel/50 text-sm mt-4">
+
+          <p className="mx-auto mt-6 max-w-measure text-m-micro text-steel-300">
             MOO Standard: 3.46&quot; x 2.32&quot; (Bleed) &mdash; 3.30&quot; x 2.16&quot; (Trim) &mdash; 3.14&quot; x 2.02&quot; (Safe)
           </p>
         </div>
+      </section>
 
-        <div className="mb-16">
-          <h2 className="text-xl font-bold text-navy text-center mb-6">Full Preview</h2>
-          <div className="grid md:grid-cols-2 gap-6 max-w-5xl mx-auto">
-            <div>
-              <p className="text-sm font-semibold text-steel/60 text-center mb-3 tracking-wider">FRONT</p>
-              <CardFront />
-            </div>
-            <div>
-              <p className="text-sm font-semibold text-steel/60 text-center mb-3 tracking-wider">BACK</p>
-              <CardBack />
-            </div>
+      <section aria-labelledby="card-specs-heading" className="bg-asphalt py-section">
+        <div className="container">
+          <div className="mx-auto max-w-4xl rounded-m-3 border border-ink/15 bg-paper p-6 text-ink md:p-8">
+            <h2
+              id="card-specs-heading"
+              className="font-display text-m-h2 font-bold text-ink text-balance"
+            >
+              Specifications
+            </h2>
+            <dl className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {SPECS.map((s) => (
+                <div key={s.label} className="rounded-m-2 border border-ink/15 p-4">
+                  <dt className="font-display text-m-micro font-bold uppercase tracking-[0.15em] text-ink-2">
+                    {s.label}
+                  </dt>
+                  <dd
+                    className={`mt-1 text-m-body font-semibold text-ink ${s.mono ? "font-mono tabular-nums" : ""}`}
+                  >
+                    {s.value}
+                  </dd>
+                </div>
+              ))}
+            </dl>
           </div>
         </div>
+      </section>
 
-        <div className="max-w-4xl mx-auto">
-          <h2 className="text-xl font-bold text-navy text-center mb-8">Specifications</h2>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {[
-              { label: "Format", value: "MOO Standard (Landscape)" },
-              { label: "Bleed Size", value: '3.46" x 2.32"' },
-              { label: "Trim Size", value: '3.30" x 2.16"' },
-              { label: "Safe Area", value: '3.14" x 2.02"' },
-              { label: "Primary Color", value: "#17181B (Navy)" },
-              { label: "Accent Color", value: "#FF9500 (Safety Orange)" },
-              { label: "Font", value: "Inter (800/700/500)" },
-              { label: "Min Font Size", value: "8pt (print)" },
-              { label: "Color Mode", value: "CMYK Print / RGB Web" },
-            ].map((s) => (
-              <div key={s.label} className="bg-white rounded-lg border border-steel/10 p-4 shadow-sm">
-                <p className="text-[10px] font-semibold text-steel/50 tracking-widest mb-1">{s.label.toUpperCase()}</p>
-                <p className="text-sm font-semibold text-navy">{s.value}</p>
-              </div>
-            ))}
+      <section aria-labelledby="card-downloads-heading" className="bg-navy-950 py-section-tight">
+        <div className="container">
+          <div className="mx-auto max-w-measure">
+            <h2
+              id="card-downloads-heading"
+              className="font-display text-m-h3 font-bold text-white text-balance"
+            >
+              Source files
+            </h2>
+            <p className="mt-3 text-m-body text-steel-200">
+              The artwork itself, for the printer or anyone laying out a new piece.
+            </p>
+            <ul className="mt-6 flex list-none flex-wrap gap-3">
+              {DOWNLOADS.map((d) => (
+                <li key={d.href}>
+                  <a
+                    href={d.href}
+                    download
+                    className="inline-flex min-h-[48px] items-center gap-2 rounded-fleet border border-white/20 bg-white/5 px-5 text-m-body font-semibold text-white transition-colors duration-base ease-entrance hover:border-white/40 hover:text-white"
+                  >
+                    <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden>
+                      <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />
+                    </svg>
+                    <span>{d.label}</span>
+                  </a>
+                </li>
+              ))}
+            </ul>
           </div>
         </div>
-
-        <div className="text-center mt-12">
-          <h3 className="text-lg font-bold text-navy mb-4">Download Assets</h3>
-          <div className="flex flex-wrap justify-center gap-3">
-            {[
-              { href: "/branding/business-card-front.svg", label: "Front (SVG)", style: "bg-navy" },
-              { href: "/branding/business-card-back.svg", label: "Back (SVG)", style: "bg-navy" },
-              { href: "/branding/thind-transport-logo.svg", label: "Logo (SVG)", style: "bg-orange-600" },
-            ].map((d) => (
-              <a key={d.href} href={d.href} download className={`inline-flex items-center gap-2 px-5 py-2.5 ${d.style} text-white rounded-lg text-sm font-semibold hover:opacity-90 transition-opacity shadow-brand`}>
-                <svg className="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />
-                </svg>
-                {d.label}
-              </a>
-            ))}
-          </div>
-        </div>
-      </div>
-    </section>
+      </section>
+    </>
   )
 }

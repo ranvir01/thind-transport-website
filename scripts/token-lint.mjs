@@ -44,16 +44,62 @@ import { readFileSync, readdirSync, statSync } from "node:fs"
 import { join } from "node:path"
 
 const SCOPE = [
+  // Marketing components and routes that have been swept onto the m-* tokens.
+  // A path lands here the moment its file is raw-hex/px free, and never leaves:
+  // this list is the ratchet that stops the sweep from rotting.
   "src/components/home/AudienceSelector.tsx",
   "src/components/home/HomeTimeLanes.tsx",
   "src/components/home/OperationSection.tsx",
   "src/components/home/ThindPromise.tsx",
   "src/components/ui/Reveal.tsx",
+  "src/components/shared/AsphaltHero.tsx",
+  "src/components/shared/FAQAccordion.tsx",
+  "src/components/shared/link-sets.ts",
   "src/components/features/GetTheApp.tsx",
   "src/components/features/WhySwitch.tsx",
-  "src/app/brokers",
+  "src/components/features/PayTable.tsx",
+  "src/components/features/ProfitCalculator.tsx",
+  "src/components/features/JobDetailsDialog.tsx",
+  "src/components/features/LaneTransitEstimator.tsx",
+  "src/components/features/ShipperQuoteForm.tsx",
+  "src/components/features/QuoteFormWithLane.tsx",
+  "src/components/features/RouteMapVisualization.tsx",
+  "src/components/features/AvailableTrucksStrip.tsx",
+  "src/components/features/BrokerPacketForm.tsx",
+  "src/components/features/FreightClassCalculator.tsx",
+  "src/components/features/FuelSavingsCalculator.tsx",
+  "src/components/features/ScheduleMeetingForm.tsx",
+  "src/components/application/ApplicationForm.tsx",
+  "src/components/application/PreQualificationForm.tsx",
+  "src/components/application/apply-progress.ts",
+  "src/components/cinematic/Navbar.tsx",
+  "src/components/fleet",
+  "src/app/about",
   "src/app/app",
+  "src/app/apply/page.tsx",
+  "src/app/benefits",
+  "src/app/brokers",
+  "src/app/business-card/page.tsx",
+  "src/app/cdl-jobs",
+  "src/app/contact/page.tsx",
   "src/app/drivers",
+  "src/app/fleet/page.tsx",
+  "src/app/fuel-program",
+  "src/app/loadoff",
+  "src/app/not-found.tsx",
+  "src/app/owner-operators",
+  "src/app/pay-breakdown",
+  "src/app/pay-rates",
+  "src/app/pre-qualify/page.tsx",
+  "src/app/privacy/page.tsx",
+  "src/app/quote",
+  "src/app/resources",
+  "src/app/routes",
+  "src/app/schedule-meeting/page.tsx",
+  "src/app/shippers",
+  "src/app/tools/freight-class-calculator",
+  "src/app/trust",
+  "src/app/veterans",
 ]
 
 const HUB_SCOPE = [
@@ -89,16 +135,53 @@ function* files(path) {
   }
 }
 
-/** Strip comments the way the marketing rule always has: prose is not code.
- *  A next/image `sizes="(max-width: 768px) 100vw, 45vw"` hint is a browser
- *  media-query string, not a design value — it goes too. */
+/**
+ * Blank out every comment in a file, keeping the line count intact so the
+ * reported line numbers stay true.
+ *
+ * Line-at-a-time stripping only ever caught JSDoc (`*`-prefixed) continuation
+ * lines, so the middle of a JSX block comment — `{/* the table is wider than
+ * the island at 390px *␘/}` — read as code and the linter flagged prose that
+ * explains a value as if it painted one. Prose is not code, however it is
+ * indented.
+ */
+function stripComments(text) {
+  let out = ""
+  let i = 0
+  // "code" | "line" | "block" | "s" | "d" | "t"  (the last three are strings)
+  let state = "code"
+  while (i < text.length) {
+    const c = text[i]
+    const next = text[i + 1]
+    if (state === "code") {
+      if (c === "/" && next === "/") { state = "line"; out += "  "; i += 2; continue }
+      if (c === "/" && next === "*") { state = "block"; out += "  "; i += 2; continue }
+      if (c === '"') state = "d"
+      else if (c === "'") state = "s"
+      else if (c === "`") state = "t"
+      out += c; i++; continue
+    }
+    if (state === "line") {
+      if (c === "\n") { state = "code"; out += c } else out += " "
+      i++; continue
+    }
+    if (state === "block") {
+      if (c === "*" && next === "/") { state = "code"; out += "  "; i += 2; continue }
+      out += c === "\n" ? c : " "
+      i++; continue
+    }
+    // inside a string literal: copy through, honouring escapes
+    if (c === "\\") { out += text.slice(i, i + 2); i += 2; continue }
+    if ((state === "d" && c === '"') || (state === "s" && c === "'") || (state === "t" && c === "`")) state = "code"
+    out += c; i++
+  }
+  return out
+}
+
+/** A next/image `sizes="(max-width: 768px) 100vw, 45vw"` hint is a browser
+ *  media-query string, not a design value — it is not a violation either. */
 function codeOf(line) {
-  const trimmed = line.trimStart()
-  if (trimmed.startsWith("*") || trimmed.startsWith("/*")) return null
-  return line
-    .replace(/\/\/.*$/, "")
-    .replace(/\/\*.*?\*\//g, "")
-    .replace(/\bsizes=(["'])[^"']*\1/g, "sizes=…")
+  return line.replace(/\bsizes=(["'`])[^"'`]*\1/g, "sizes=…")
 }
 
 /**
@@ -135,7 +218,7 @@ const add = (bucket, file, line, msg) => {
 for (const root of SCOPE) {
   for (const file of files(root)) {
     if (!/\.(tsx|ts|css)$/.test(file)) continue
-    const lines = readFileSync(file, "utf8").split("\n")
+    const lines = stripComments(readFileSync(file, "utf8")).split("\n")
     lines.forEach((line, i) => {
       const code = codeOf(line)
       if (code === null) return
@@ -153,7 +236,7 @@ for (const root of SCOPE) {
 for (const root of HUB_SCOPE) {
   for (const file of files(root)) {
     if (!/\.(tsx|ts|css)$/.test(file) || isHubExcluded(file)) continue
-    const lines = readFileSync(file, "utf8").split("\n")
+    const lines = stripComments(readFileSync(file, "utf8")).split("\n")
     lines.forEach((line, i) => {
       const code = codeOf(line)
       if (code === null) return

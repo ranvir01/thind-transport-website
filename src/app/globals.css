@@ -982,3 +982,65 @@
   opacity: 0.05;
   background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="180" height="180"><filter id="g"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2"/></filter><rect width="100%25" height="100%25" filter="url(%23g)"/></svg>');
 }
+
+/* ---- D2 chrome ---- */
+/*
+ * Entrance for the two pieces of navigation chrome that appear over the page:
+ * the desktop dropdown panel and the mobile drawer.
+ *
+ * Both are conditionally rendered, so before `@starting-style` there was no
+ * "before-open" state for the browser to interpolate from and the panels had
+ * to be driven by a keyframe animation. These two classes give it one, and
+ * `transition-behavior: allow-discrete` lets `display` participate so the
+ * element stays painted for the same 200ms on the way back out wherever the
+ * close is a display toggle rather than an unmount.
+ *
+ * Progressive enhancement by construction: a browser that does not know
+ * `@starting-style` drops the rule and keeps today's instant show/hide, and
+ * the whole block sits inside `prefers-reduced-motion: no-preference` so a
+ * reduced-motion visitor gets that same instant version. Nothing about the
+ * open/close state, the focus trap or the aria attributes depends on any of
+ * it — this is presentation only.
+ *
+ * Duration is the `base` rung of the motion ladder (200ms) with the
+ * `entrance` curve — the same pair `animate-backdrop-in` already runs, so the
+ * drawer and the scrim behind it finish together instead of 40ms apart. The
+ * dropdown lifts by --m-chrome-lift (0.375rem = the `1.5` spacing step,
+ * declared once rather than typed as px at each use); the drawer keeps the
+ * full-width slide from the right edge it has always had.
+ */
+:root {
+  --m-chrome-lift: 0.375rem;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .chrome-panel-in,
+  .chrome-drawer-in {
+    opacity: 1;
+    transition-property: opacity, transform, display;
+    transition-duration: 200ms;
+    transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+    transition-behavior: allow-discrete;
+  }
+
+  /* Dropdown drops out of the header; drawer slides in from the right edge. */
+  .chrome-panel-in {
+    transform: translateY(0);
+  }
+
+  .chrome-drawer-in {
+    transform: translateX(0);
+  }
+
+  @starting-style {
+    .chrome-panel-in {
+      opacity: 0;
+      transform: translateY(calc(-1 * var(--m-chrome-lift)));
+    }
+
+    .chrome-drawer-in {
+      opacity: 0;
+      transform: translateX(100%);
+    }
+  }
+}
