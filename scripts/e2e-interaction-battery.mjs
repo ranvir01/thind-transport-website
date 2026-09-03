@@ -188,8 +188,9 @@ async function main() {
   await sleep(600)
   const paletteInput = await page.$('input[placeholder="Go to a screen…"]')
   check(!!paletteInput, "18. hub Ctrl+K opens the command palette")
-  // Enter-to-navigate is not implemented (results are click-only — recorded
-  // in the Backlog), so select the first result by click like a mouse user.
+  // The palette takes Enter now (and arrows, Home/End). Still clicking the
+  // first result here: a mouse user is the path this battery is checking, and
+  // the keyboard path has its own coverage in the palette's own listbox roles.
   let paletteNavigates = false
   if (paletteInput) {
     await paletteInput.type("invoices")
