@@ -4,7 +4,7 @@ import { requirePermissionPage } from "@/lib/hub/session"
 import { can } from "@/lib/hub/permissions"
 import { fmtCents, fmtCentsExact } from "@/lib/hub/types"
 import { advanceBalances } from "@/lib/hub/advances-core"
-import { Panel, PageHeader, BackLink } from "@/components/hub/ui"
+import { Panel, PageHeader, BackLink, Pill, moneyCls, type PillTone } from "@/components/hub/ui"
 import { AdvanceForm } from "@/components/hub/MoneyForms"
 import { AdvanceDecideButtons } from "@/components/hub/AdvanceDecideButtons"
 import { cn } from "@/lib/utils"
@@ -12,11 +12,12 @@ import { formatHubDateShort } from "@/lib/hub/format-dates"
 
 export const dynamic = "force-dynamic"
 
-const STATUS_PILL: Record<string, string> = {
-  pending: "bg-surface-2 text-fg-2 border-border-strong",
-  outstanding: "bg-warn-soft text-warn border-warn-soft",
-  applied: "bg-ok-soft text-ok border-ok-soft",
-  cancelled: "bg-bad-soft text-bad border-bad-soft",
+/** Advance status → Pill tone. Outstanding is money the driver still owes back. */
+const STATUS_TONE: Record<string, PillTone> = {
+  pending: "neutral",
+  outstanding: "warn",
+  applied: "ok",
+  cancelled: "bad",
 }
 
 export default async function AdvancesPage() {
@@ -46,7 +47,7 @@ export default async function AdvancesPage() {
                     <p className="text-body-xs text-fg-3">recovers next settlement</p>
                   )}
                 </div>
-                <span className="shrink-0 font-mono text-sm font-medium text-accent-text tabular-nums">{fmtCents(b.exposure_cents)}</span>
+                <span className={cn(moneyCls, "shrink-0 text-sm text-accent-text")}>{fmtCents(b.exposure_cents)}</span>
               </li>
             ))}
           </ul>
@@ -69,10 +70,10 @@ export default async function AdvancesPage() {
                   </p>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
-                  <span className={cn("inline-flex rounded-full border px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wider", STATUS_PILL[advance.status])}>
+                  <Pill tone={STATUS_TONE[advance.status] ?? "neutral"} size="xs" className="uppercase tracking-wide">
                     {advance.status === "pending" ? "driver asked" : advance.status}
-                  </span>
-                  <span className="font-mono font-medium text-accent-text tabular-nums">{fmtCentsExact(advance.amount_cents)}</span>
+                  </Pill>
+                  <span className={cn(moneyCls, "text-accent-text")}>{fmtCentsExact(advance.amount_cents)}</span>
                   {advance.status === "pending" && can(user.role, "money:approve") ? (
                     <AdvanceDecideButtons id={advance.id} />
                   ) : null}

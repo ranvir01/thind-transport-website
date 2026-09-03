@@ -2,12 +2,14 @@
 
 /**
  * Today-screen stat tile — the 2×2 data-above-the-fold grid.
- * 30px semibold value (mono for money), 13px label, tap-through, tone badge
- * only when the number demands attention, count-up on first paint only.
+ * 30px semibold value (mono + tabular for money AND counts, so the count-up
+ * never jitters), 13px label, tap-through, tone badge only when the number
+ * demands attention, count-up on first paint only.
  */
 import { useEffect, useRef, useState } from "react"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
+import { Pill, moneyCls } from "@/components/hub/ui"
 
 function useCountUp(target: number, durationMs = 600): number {
   const [value, setValue] = useState(0)
@@ -72,33 +74,22 @@ export function StatTile({
   const showBadge = value > 0 && tone !== "neutral" && toneLabel
 
   return (
+    // Three fixed rows (eyebrow / value / delta) so the value line sits at
+    // the same height in every tile whether or not a badge or hint follows.
     <Link
       href={href}
-      className="block rounded-card border border-border bg-surface p-4 shadow-card hover:bg-hover"
+      className="grid grid-rows-[auto_auto_auto] content-start rounded-card border border-border bg-surface p-4 shadow-card hover:bg-hover"
     >
-      <span className="block text-[13px] font-medium text-fg-3">{label}</span>
-      <span
-        className={cn(
-          "mt-1 block text-[30px] font-semibold leading-tight tracking-tight tabular-nums text-fg",
-          money && "font-mono"
-        )}
-      >
+      <span className="text-[13px] font-medium text-fg-3">{label}</span>
+      <span className={cn(moneyCls, "mt-1 text-[30px] font-semibold leading-tight tracking-tight")}>
         {display}
       </span>
       {showBadge ? (
-        <span
-          className={cn(
-            "mt-1.5 inline-flex rounded-pill px-2 py-0.5 text-[11px] font-semibold",
-            tone === "warn" && "bg-warn-soft text-warn",
-            tone === "bad" && "bg-bad-soft text-bad",
-            tone === "ok" && "bg-ok-soft text-ok",
-            tone === "accent" && "bg-accent-soft text-accent-text"
-          )}
-        >
+        <Pill tone={tone} size="xs" className="mt-1.5 justify-self-start">
           {toneLabel}
-        </span>
+        </Pill>
       ) : value === 0 && zeroHint ? (
-        <span className="mt-1.5 block text-[12px] text-fg-3">{zeroHint}</span>
+        <span className="mt-1.5 text-[12px] text-fg-3">{zeroHint}</span>
       ) : null}
     </Link>
   )

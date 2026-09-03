@@ -6,8 +6,9 @@ import { listTrucks } from "@/lib/hub/fleet"
 import { requirePermissionPage } from "@/lib/hub/session"
 import { can } from "@/lib/hub/permissions"
 import { fmtCents, fmtCentsExact } from "@/lib/hub/types"
-import { Panel, PageHeader, EmptyState } from "@/components/hub/ui"
+import { Panel, PageHeader, EmptyState, moneyCls, tableHeadCls } from "@/components/hub/ui"
 import { UnassignedTollsPanel } from "@/components/hub/UnassignedTollsPanel"
+import { cn } from "@/lib/utils"
 
 export const dynamic = "force-dynamic"
 
@@ -61,15 +62,15 @@ export default async function TollsPage() {
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-4">
             <Panel className="p-4">
               <span className="text-label text-fg-3 uppercase">Toll spend</span>
-              <p className="mt-2 font-mono text-2xl font-medium text-fg tabular-nums">{fmtCents(totalCents)}</p>
+              <p className={cn(moneyCls, "mt-2 text-2xl")}>{fmtCents(totalCents)}</p>
             </Panel>
             <Panel className="p-4">
               <span className="text-label text-fg-3 uppercase">Transactions</span>
-              <p className="mt-2 font-mono text-2xl font-medium text-fg tabular-nums">{totalTransactions.toLocaleString()}</p>
+              <p className={cn(moneyCls, "mt-2 text-2xl")}>{totalTransactions.toLocaleString()}</p>
             </Panel>
             <Panel className="p-4">
               <span className="text-label text-fg-3 uppercase">Unmatched</span>
-              <p className={`mt-2 font-mono text-2xl font-medium tabular-nums ${unassignedCount > 0 ? "text-warn" : "text-fg"}`}>
+              <p className={cn(moneyCls, "mt-2 text-2xl", unassignedCount > 0 ? "text-warn" : "text-fg")}>
                 {unassignedCount.toLocaleString()}
               </p>
             </Panel>
@@ -79,9 +80,9 @@ export default async function TollsPage() {
 
           <Panel className="overflow-x-auto mb-4">
             <h2 className="text-[13.5px] font-semibold text-fg p-4 pb-2">Per truck</h2>
-            <table className="w-full text-sm">
+            <table className="hub-table w-full text-sm">
               <thead>
-                <tr className="border-b border-border text-left text-label text-fg-3 uppercase">
+                <tr className={tableHeadCls}>
                   <th className="px-4 py-2">Truck</th>
                   <th className="px-4 py-2 text-right">Transactions</th>
                   <th className="px-4 py-2 text-right">Spend</th>
@@ -90,9 +91,9 @@ export default async function TollsPage() {
               <tbody>
                 {byTruck.map((row) => (
                   <tr key={row.truck_id ?? "none"} className="border-b border-border">
-                    <td className="px-4 py-2 font-semibold text-fg">{row.truck_unit ? `#${row.truck_unit}` : "Unmatched"}</td>
-                    <td className="px-4 py-2 text-right text-fg-2">{row.transactions.toLocaleString()}</td>
-                    <td className="px-4 py-2 text-right text-accent-text font-semibold">{fmtCents(Number(row.total_cents))}</td>
+                    <td className={cn("px-4 py-2", moneyCls, "font-semibold")}>{row.truck_unit ? `#${row.truck_unit}` : "Unmatched"}</td>
+                    <td className={cn("px-4 py-2 text-right", moneyCls, "text-fg-2")}>{row.transactions.toLocaleString()}</td>
+                    <td className={cn("px-4 py-2 text-right", moneyCls, "font-semibold text-accent-text")}>{fmtCents(Number(row.total_cents))}</td>
                   </tr>
                 ))}
               </tbody>
@@ -112,7 +113,7 @@ export default async function TollsPage() {
                     {tx.truck_unit ? ` · #${tx.truck_unit}` : " · unmatched"}
                   </p>
                 </div>
-                <span className="font-mono font-medium text-accent-text tabular-nums shrink-0">{fmtCentsExact(tx.amount_cents)}</span>
+                <span className={cn(moneyCls, "shrink-0 text-accent-text")}>{fmtCentsExact(tx.amount_cents)}</span>
               </div>
             ))}
           </Panel>

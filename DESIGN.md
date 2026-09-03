@@ -62,7 +62,7 @@ Rules:
 Durations: `fast` 120ms (press/hover/toggle) · `standard` 220ms (dropdowns/tabs/toasts) · `slow` 320ms (sheets/pages).
 Curves: `ease-standard` cubic-bezier(.2,0,0,1) · `ease-decelerate` (.05,.7,.1,1) enter · `ease-accelerate` (.3,0,.8,.15) exit · `ease-entrance` (.16,1,.3,1) spring.
 - Compositor props only (transform/opacity). Never animate height/top/width.
-- Page: `.hub-route-enter` (260ms rise) via `(office)/template.tsx`. Lists: `.hub-stagger` (30ms/item, first paint only, cap 8). Tab bar: `.hub-tab-pop` spring. Sheets: `.hub-sheet-content`. Success: `.hub-check-draw`. Milestones: firsts only, off-switch in avatar menu.
+- Page: `.hub-route-enter` (260ms rise) on HubShell's section-keyed wrapper — fires only when the primary section changes, so a sub-route click inside Money does not re-animate the page (`(office)/template.tsx` stays a server component). Lists: `.hub-stagger` (30ms/item, first paint only, cap 8). Tab bar: `.hub-tab-pop` spring. Sheets: `.hub-sheet-content`. Success: `.hub-check-draw`. Milestones: firsts only, off-switch in avatar menu.
 - Press: global `active:scale(0.97)+opacity` on every tappable (`touch-action: manipulation` + the passive touchstart enabler for iOS); buttons add `.press-sink` (translateY 1px + inset shadow).
 - `prefers-reduced-motion`: globals collapse all animation to 0.01ms; demo auto-advance still runs (a slideshow timer is not motion).
 

@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import {
@@ -36,7 +36,7 @@ const SECTION_ICONS: Record<string, LucideIcon> = {
  */
 function NavCount({ n }: { n: number }) {
   return (
-    <span className="ml-1.5 inline-flex min-w-[18px] items-center justify-center rounded-pill bg-accent px-1.5 py-[1px] text-[10.5px] font-bold text-accent-fg align-middle">
+    <span className="ml-1.5 inline-flex min-w-[18px] items-center justify-center rounded-pill bg-accent px-1.5 py-[1px] text-[11px] font-bold text-accent-fg align-middle">
       {n > 9 ? "9+" : n}
     </span>
   )
@@ -74,7 +74,14 @@ export function HubShell({
     return () => window.removeEventListener("scroll", onScroll)
   }, [])
   const sections = hubPrimarySections(smallCarrier)
-  const section = sections.find((s) => s.match(pathname)) ?? sections[0]!
+  const matched = sections.find((s) => s.match(pathname))
+  const section = matched ?? sections[0]!
+  // Page-entrance key: the primary section, or — for utility routes that
+  // belong to none (/hub/settings/*, /hub/help, …) — the first segment after
+  // /hub, so sibling pages under it swap without the rise but Settings → Help
+  // still rises. Mirrors what (office)/template.tsx used to compute before the
+  // entrance moved here (see the note on the keyed wrapper below).
+  const routeKey = matched ? matched.id : (pathname.split("/")[2] ?? "hub")
   const isOwner = user.role === "owner"
   const groups = hubUtilityGroups(smallCarrier)
     .map((g) => ({ ...g, links: g.links.filter((l) => !l.ownerOnly || isOwner) }))
@@ -97,8 +104,20 @@ export function HubShell({
   )
   const [setupOpen, setSetupOpen] = useState(!setupComplete)
 
+  // Mobile sub-nav: the active chip can sit past the right edge of the snap
+  // row (Money has seven pages). Centre it on every route change; smooth only
+  // when the user hasn't asked for reduced motion.
+  const activeSubRef = useRef<HTMLAnchorElement>(null)
+  useEffect(() => {
+    if (typeof window === "undefined") return
+    const el = activeSubRef.current
+    if (!el || typeof el.scrollIntoView !== "function") return
+    const smooth = window.matchMedia("(prefers-reduced-motion: no-preference)").matches
+    el.scrollIntoView({ inline: "center", block: "nearest", behavior: smooth ? "smooth" : "auto" })
+  }, [pathname])
+
   return (
-    <div className="hauldesk-shell min-h-screen bg-bg text-fg">
+    <div className="hauldesk-shell min-h-screen bg-bg text-fg transition-colors duration-fast">
       <header
         className={cn(
           "sticky top-0 z-40 flex h-[calc(3.5rem+env(safe-area-inset-top,0px))] items-center gap-2 border-b border-border bg-surface px-3 pt-[env(safe-area-inset-top,0px)] transition-shadow duration-standard md:px-6",
@@ -153,6 +172,7 @@ export function HubShell({
               <Link
                 key={link.href}
                 href={link.href}
+                ref={active ? activeSubRef : undefined}
                 aria-current={active ? "page" : undefined}
                 className={cn(
                   "relative shrink-0 px-3 py-2.5 text-[13.5px] transition-colors duration-fast",
@@ -326,13 +346,23 @@ export function HubShell({
             the bar is ~67px, plus env(safe-area-inset-bottom) (~34px on an
             installed iPhone PWA). A flat pb-28 left only ~11px of margin
             there — enough today, but not a property anyone could rely on. */}
-        <main className="flex-1 min-w-0 px-4 py-5 md:px-8 md:py-8 pb-[calc(7rem+env(safe-area-inset-bottom))] md:pb-8 max-w-[1400px]">
-          <HubTourHost />
-          {children}
+        <main className="flex-1 min-w-0 px-4 py-5 md:px-8 md:py-8 pb-[calc(7rem+env(safe-area-inset-bottom))] md:pb-8">
+          <div className="mx-auto w-full max-w-[1400px]">
+            <HubTourHost />
+            {/* Page entrance (.hub-route-enter, DESIGN.md "Motion"). Keyed on
+                the route section so React remounts this wrapper — the only way
+                to replay a CSS animation on an element that otherwise persists
+                across navigations — which gates the rise to section changes.
+                HubTourHost stays outside the key so a running tour is never
+                remounted mid-step. */}
+            <div key={routeKey} className="hub-route-enter">
+              {children}
+            </div>
+          </div>
         </main>
       </div>
 
-      {/* Mobile tab bar: icons above 10px labels, active = accent + heavier stroke */}
+      {/* Mobile tab bar: icons above 11px labels, active = accent + heavier stroke */}
       <nav
         data-bottom-bar="office"
         className="hub-tabbar md:hidden fixed bottom-0 inset-x-0 z-40 pb-[env(safe-area-inset-bottom)] pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)]"
@@ -367,13 +397,11 @@ export function HubShell({
                       active ? "hub-tab-pop text-accent-text" : "text-fg-3"
                     )}
                     strokeWidth={active ? 2.3 : 1.9}
-                    fill={active ? "currentColor" : "none"}
-                    fillOpacity={active ? 0.16 : 0}
                   />
                 </span>
                 <span
                   className={cn(
-                    "text-[10.5px] transition-colors duration-fast",
+                    "text-[11px] transition-colors duration-fast",
                     active ? "font-bold text-accent-text" : "font-semibold text-fg-3"
                   )}
                 >

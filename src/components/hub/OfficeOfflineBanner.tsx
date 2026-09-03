@@ -45,7 +45,8 @@ export function OfficeOfflineBanner() {
   }, [router, refreshCount])
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- navigator.onLine is unavailable during SSR; this syncs the hydration-safe "online" default to the real value once on the client.
+    // navigator.onLine is unavailable during SSR; this syncs the hydration-safe
+    // "online" default to the real value once on the client.
     if (!navigator.onLine) setState("offline")
     const timer = setTimeout(() => {
       refreshCount()
@@ -79,7 +80,11 @@ export function OfficeOfflineBanner() {
   if (state === "online" && pending === 0) return null
 
   return (
-    <div className="fixed top-14 inset-x-0 z-50 mx-auto max-w-lg px-4 pt-2">
+    <div
+      role="status"
+      aria-live="polite"
+      className="fixed top-[calc(3.5rem+env(safe-area-inset-top,0px))] inset-x-0 z-50 mx-auto max-w-lg px-4 pt-2"
+    >
       <p className="flex items-center gap-2 rounded-card border border-warn bg-surface px-3 py-2 text-body-xs font-semibold text-warn shadow-card">
         {state === "offline" ? (
           <>

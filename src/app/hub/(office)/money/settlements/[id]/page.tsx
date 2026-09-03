@@ -7,11 +7,19 @@ import { summarizePayRules } from "@/lib/hub/pay-rules"
 import { requirePermissionPage } from "@/lib/hub/session"
 import { can } from "@/lib/hub/permissions"
 import { fmtCentsExact } from "@/lib/hub/types"
-import { Panel, PageHeader, BackLink } from "@/components/hub/ui"
+import { Panel, PageHeader, BackLink, Pill, moneyCls, type PillTone } from "@/components/hub/ui"
 import { SettlementActions } from "@/components/hub/MoneyActions"
 import { formatHubDateShort } from "@/lib/hub/format-dates"
+import { cn } from "@/lib/utils"
 
 export const dynamic = "force-dynamic"
+
+/** Line kind → Pill tone: money in is green, money out is red. */
+const LINE_TONE: Record<string, PillTone> = {
+  earning: "ok",
+  reimbursement: "info",
+  deduction: "bad",
+}
 
 export default async function SettlementDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const user = await requirePermissionPage("money:read")
@@ -60,19 +68,15 @@ export default async function SettlementDetailPage({ params }: { params: Promise
             {lines.map((line) => (
               <li key={line.id} className="flex items-center justify-between gap-3 py-2.5 text-sm">
                 <div className="min-w-0">
-                  <span className={`mr-2 inline-flex rounded-md px-1.5 py-0.5 text-[10px] font-bold uppercase border ${
-                    line.kind === "earning" ? "bg-ok-soft text-ok border-ok-soft"
-                    : line.kind === "reimbursement" ? "bg-info-soft text-info border-info-soft"
-                    : "bg-bad-soft text-bad border-bad-soft"
-                  }`}>
+                  <Pill tone={LINE_TONE[line.kind] ?? "bad"} size="xs" className="mr-2 uppercase tracking-wide">
                     {line.kind}
-                  </span>
+                  </Pill>
                   <span className="text-fg-2">{line.label}</span>
                   {line.source_type === "load" && line.source_id ? (
                     <Link href={`/hub/loads/${line.source_id}`} className="ml-2 text-body-xs text-accent-text">view load</Link>
                   ) : null}
                 </div>
-                <span className={`font-semibold shrink-0 ${line.kind === "deduction" ? "text-bad" : "text-fg"}`}>
+                <span className={cn(moneyCls, "shrink-0 font-semibold", line.kind === "deduction" ? "text-bad" : "text-fg")}>
                   {line.kind === "deduction" ? "−" : ""}{fmtCentsExact(line.amount_cents)}
                 </span>
               </li>
@@ -84,11 +88,11 @@ export default async function SettlementDetailPage({ params }: { params: Promise
           <Panel className="p-4 md:p-5">
             <h2 className="text-[13.5px] font-semibold text-fg mb-3">Totals</h2>
             <dl className="space-y-2 text-sm">
-              <div className="flex justify-between"><dt className="text-fg-2">Gross</dt><dd className="text-fg font-semibold">{fmtCentsExact(settlement.gross_cents)}</dd></div>
-              <div className="flex justify-between"><dt className="text-fg-2">Deductions</dt><dd className="text-bad font-semibold">−{fmtCentsExact(settlement.deductions_cents)}</dd></div>
+              <div className="flex justify-between"><dt className="text-fg-2">Gross</dt><dd className={cn(moneyCls, "font-semibold")}>{fmtCentsExact(settlement.gross_cents)}</dd></div>
+              <div className="flex justify-between"><dt className="text-fg-2">Deductions</dt><dd className={cn(moneyCls, "font-semibold text-bad")}>−{fmtCentsExact(settlement.deductions_cents)}</dd></div>
               <div className="flex justify-between border-t border-border pt-2">
                 <dt className="text-fg font-bold">Net pay</dt>
-                <dd className="text-accent-text font-semibold text-lg">{fmtCentsExact(settlement.net_cents)}</dd>
+                <dd className={cn(moneyCls, "text-lg font-semibold text-accent-text")}>{fmtCentsExact(settlement.net_cents)}</dd>
               </div>
             </dl>
           </Panel>

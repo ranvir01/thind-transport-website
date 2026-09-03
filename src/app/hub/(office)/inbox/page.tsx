@@ -75,12 +75,7 @@ export default async function InboxPage() {
 
                   <div className="mt-3 flex flex-wrap gap-1.5">
                     {summary.map((chip) => (
-                      <span
-                        key={chip}
-                        className="inline-flex items-center rounded-pill bg-surface-2 px-2.5 py-[3px] text-[11.5px] font-semibold text-fg-2"
-                      >
-                        {chip}
-                      </span>
+                      <Pill key={chip}>{chip}</Pill>
                     ))}
                   </div>
 

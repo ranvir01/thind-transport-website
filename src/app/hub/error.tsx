@@ -64,7 +64,7 @@ export default function HubError({
         style={{ "--driver-accent": "#F2A900" } as React.CSSProperties}
       >
         <section className="driver-card w-full max-w-md p-6 text-center">
-          <p className="text-[11px] font-bold uppercase tracking-[0.25em] text-steel-400">
+          <p className="text-[11px] font-bold uppercase tracking-[0.25em] text-steel-300">
             {PRODUCT.shortName}
           </p>
           <h1 className="mt-2 text-xl font-semibold text-white">Something went wrong</h1>
@@ -93,7 +93,7 @@ export default function HubError({
         <h1 className="mt-2 text-lg font-semibold text-fg">Something went wrong</h1>
         <p className="mt-2 text-sm text-fg-2">{copy}</p>
         {error.digest ? (
-          <p className="mt-2 font-mono text-[10px] text-fg-3">Ref: {error.digest}</p>
+          <p className="mt-2 font-mono text-[11px] text-fg-3">Ref: {error.digest}</p>
         ) : null}
         <div className="mt-6 flex flex-col gap-2 sm:flex-row sm:justify-center">
           <button type="button" onClick={() => reset()} className={btnPrimaryCls}>

@@ -1,6 +1,6 @@
 import { requirePermissionPage } from "@/lib/hub/session"
 import { listTasks, recentCompletedTasks } from "@/lib/hub/tasks"
-import { PageHeader, EmptyState } from "@/components/hub/ui"
+import { PageHeader, EmptyState, btnSecondaryCls } from "@/components/hub/ui"
 import { QuickAddTask, TaskItem } from "@/components/hub/TasksBoard"
 import type { Task } from "@/lib/hub/types"
 
@@ -43,7 +43,7 @@ export default async function TasksPage() {
         title="Tasks"
         subtitle="The office's sticky notes, minus the sticky notes. Recurring chores roll themselves forward."
       />
-      <div className="mb-4">
+      <div id="task-quick-add" className="mb-4">
         <QuickAddTask />
       </div>
 
@@ -51,6 +51,11 @@ export default async function TasksPage() {
         <EmptyState
           title="All clear"
           hint="Add your morning routine as a repeating checklist — automations will drop urgent items here on their own."
+          action={
+            <a href="#task-quick-add" className={btnSecondaryCls}>
+              Add a task
+            </a>
+          }
         />
       ) : (
         <div className="space-y-5">
@@ -80,7 +85,7 @@ export default async function TasksPage() {
           </h2>
           <ul className="space-y-1">
             {completed.map((task) => (
-              <li key={task.id} className="flex items-center justify-between gap-2 rounded-lg bg-white/[0.02] px-3 py-2 text-sm">
+              <li key={task.id} className="flex items-center justify-between gap-2 rounded-control bg-surface-2 px-3 py-2 text-sm">
                 <span className="text-fg-3 line-through truncate">{task.title}</span>
                 <span className="shrink-0 text-[11px] text-fg-3">
                   {task.completed_by_name ?? ""}

@@ -6,9 +6,10 @@ import { requireOfficeUser } from "@/lib/hub/session"
 import { RecurringLanesPanel } from "@/components/hub/RecurringLanesPanel"
 import { RowLink } from "@/components/hub/RowLink"
 import { LOAD_STATUSES, STATUS_LABELS, fmtCents, loadTotalCents, type LoadStatus } from "@/lib/hub/types"
+import { cn } from "@/lib/utils"
 import {
   btnPrimaryCls,
-  btnSecondaryCls,
+  Button,
   EmptyState,
   fieldCls,
   linkAccentCls,
@@ -20,6 +21,11 @@ import {
 } from "@/components/hub/ui"
 
 export const dynamic = "force-dynamic"
+
+/** Raw invoice_status enum → sentence case: 12px uppercase sits off the type ladder. */
+function invoiceStatusLabel(status: string): string {
+  return status.charAt(0).toUpperCase() + status.slice(1).replace(/_/g, " ")
+}
 
 export default async function LoadsPage({
   searchParams,
@@ -69,20 +75,25 @@ export default async function LoadsPage({
             </option>
           ))}
         </select>
-        <button type="submit" className={btnSecondaryCls}>
+        <Button type="submit" variant="secondary" className="h-11 md:h-9">
           Filter
-        </button>
+        </Button>
       </form>
 
       {loads.length === 0 ? (
         <EmptyState
           title="No loads match"
           hint="Adjust the filters, book a new load, or import your spreadsheet history."
+          action={
+            <Link href="/hub/loads/new" className={btnPrimaryCls}>
+              <Plus className="h-4 w-4" /> New load
+            </Link>
+          }
         />
       ) : (
         <>
           <Panel className="hidden overflow-x-auto md:block">
-            <table className="min-w-[900px] w-full text-sm">
+            <table className="hub-table min-w-[900px] w-full text-sm">
               <thead>
                 <tr className={tableHeadCls}>
                   <th className="px-4 py-3">Ref</th>
@@ -102,7 +113,7 @@ export default async function LoadsPage({
                     className="cursor-pointer border-b border-border last:border-0 hover:bg-hover"
                   >
                     <td className="px-4 py-3">
-                      <Link href={`/hub/loads/${load.id}`} className={`font-mono text-sm ${linkAccentCls}`}>
+                      <Link href={`/hub/loads/${load.id}`} className={cn(moneyCls, "text-sm", linkAccentCls)}>
                         {load.reference}
                       </Link>
                       {load.customer_reference ? (
@@ -122,8 +133,8 @@ export default async function LoadsPage({
                       {load.driver_name ?? "Unassigned"}
                       {load.truck_unit ? ` · #${load.truck_unit}` : ""}
                     </td>
-                    <td className="px-4 py-3 text-xs font-medium uppercase text-fg-3">
-                      {load.invoice_status ?? (load.settlement_id ? "settled" : "—")}
+                    <td className="px-4 py-3 text-xs font-medium text-fg-3">
+                      {load.invoice_status ? invoiceStatusLabel(load.invoice_status) : load.settlement_id ? "Settled" : "—"}
                     </td>
                     <td className={`px-4 py-3 text-right text-base ${moneyCls}`}>{fmtCents(loadTotalCents(load))}</td>
                   </RowLink>
@@ -137,7 +148,7 @@ export default async function LoadsPage({
               <Link key={load.id} href={`/hub/loads/${load.id}`} className="block">
                 <Panel className="p-3.5 transition-colors hover:bg-hover">
                   <div className="flex items-center justify-between gap-2">
-                    <span className="font-mono text-sm font-semibold text-fg">{load.reference}</span>
+                    <span className={cn(moneyCls, "text-sm font-semibold")}>{load.reference}</span>
                     <StatusBadge status={load.status} />
                   </div>
                   <p className="mt-1 text-sm text-fg-2">

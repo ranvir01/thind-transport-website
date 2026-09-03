@@ -3,7 +3,8 @@ import { ChevronLeft, ChevronRight, Route, Plus } from "lucide-react"
 import { requirePermissionPage } from "@/lib/hub/session"
 import { plannerData, weekStartOf } from "@/lib/hub/planner"
 import { fmtCents } from "@/lib/hub/types"
-import { PageHeader, Panel, EmptyState } from "@/components/hub/ui"
+import { PageHeader, Panel, EmptyState, moneyCls } from "@/components/hub/ui"
+import { cn } from "@/lib/utils"
 import { PlannerGrid } from "@/components/hub/PlannerGrid"
 
 export const dynamic = "force-dynamic"
@@ -94,7 +95,7 @@ export default async function PlannerPage({
           </p>
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
             {data.backhaul.map((hint) => (
-              <div key={hint.truckUnit} className="rounded-card border border-border bg-white/[0.03] p-3">
+              <Panel key={hint.truckUnit} nested className="p-3">
                 <p className="text-[11px] font-bold uppercase tracking-wider text-accent-text">
                   #{hint.truckUnit} · empty in {hint.market}
                 </p>
@@ -115,7 +116,7 @@ export default async function PlannerPage({
                           <span className="text-fg-3"> · {lane.loads_count}×</span>
                         </span>
                         <span
-                          className="shrink-0 font-mono font-medium text-accent-text tabular-nums"
+                          className={cn(moneyCls, "shrink-0 text-accent-text")}
                           title={`Est. margin ${fmtCents(marginCents)} over ${laneMiles.toLocaleString()} loaded mi`}
                         >
                           {marginPerMile != null
@@ -132,7 +133,7 @@ export default async function PlannerPage({
                 >
                   Book something like this →
                 </Link>
-              </div>
+              </Panel>
             ))}
           </div>
         </Panel>

@@ -10,7 +10,7 @@ import {
   wallHref,
 } from "./wall-filter"
 import { requirePermissionPage } from "@/lib/hub/session"
-import { Panel, PageHeader, ExpiryPill, Pill, type PillTone } from "@/components/hub/ui"
+import { Panel, PageHeader, ExpiryPill, Pill, EmptyState, type PillTone } from "@/components/hub/ui"
 import { AddComplianceItemForm, ResolveItemButton } from "@/components/hub/ComplianceForms"
 import { RenewalPacketPanel } from "@/components/hub/RenewalPacketPanel"
 import { latestRenewalPacket } from "@/lib/hub/renewal-packet"
@@ -148,10 +148,22 @@ export default async function CompliancePage({
           <Link href="/hub/compliance" className="underline hover:text-accent-text">clear filter</Link>
         </p>
       ) : null}
+      {filtered && visible.length === 0 ? (
+        <EmptyState
+          title="Nothing matches this filter."
+          hint="The wall is filtered. Clear it to see every driver, truck, trailer, and company item."
+          action={
+            <Link
+              href="/hub/compliance"
+              className="inline-flex min-h-[44px] items-center rounded-control border border-border-strong bg-surface px-5 text-sm font-semibold text-fg-2 hover:bg-hover"
+            >
+              Clear filter
+            </Link>
+          }
+        />
+      ) : null}
+      {visible.length === 0 ? null : (
       <Panel className="divide-y divide-border">
-        {filtered && visible.length === 0 ? (
-          <p className="p-6 text-center text-body-sm text-fg-2">Nothing matches this filter.</p>
-        ) : null}
         {visible.map((entry, i) => (
           <div key={i} className="flex items-center gap-3 p-3">
             <span className={cn("h-2.5 w-2.5 shrink-0 rounded-full", COLOR_DOT[entry.color])} />
@@ -170,6 +182,7 @@ export default async function CompliancePage({
           </div>
         ))}
       </Panel>
+      )}
       <p className="mt-3 text-body-xs text-fg-3">
         Annual inspections per 49 CFR 396.17 · DQ files per 49 CFR 391.51 · daily scan emails the office at 60/30/7 days.
       </p>

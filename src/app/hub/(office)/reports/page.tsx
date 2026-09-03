@@ -13,7 +13,7 @@ import { fmtPerMile, perMile as perMileOf } from "@/lib/hub/pnl-per-mile"
 import { HelpTip } from "@/components/hub/HelpTip"
 import { requirePermissionPage } from "@/lib/hub/session"
 import { fmtCents } from "@/lib/hub/types"
-import { Panel, PageHeader, fieldCls } from "@/components/hub/ui"
+import { Panel, PageHeader, fieldCls, moneyCls, tableHeadCls } from "@/components/hub/ui"
 import { cn } from "@/lib/utils"
 
 export const dynamic = "force-dynamic"
@@ -178,22 +178,18 @@ export default async function ReportsPage({
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-3">
         <Panel className="p-4">
           <span className="text-label text-fg-3 uppercase">Operating cost / mi</span>
-          <p className="mt-2 font-mono text-xl font-medium text-fg tabular-nums">{perMile(kpis.cpmCents)}</p>
+          <p className={cn(moneyCls, "mt-2 text-xl")}>{perMile(kpis.cpmCents)}</p>
           <p className="mt-0.5 text-[11px] text-fg-3">fuel + maint + expenses</p>
         </Panel>
         <Panel className="p-4">
           <span className="text-label text-fg-3 uppercase">Revenue / loaded mi</span>
-          <p className="mt-2 font-mono text-xl font-medium text-fg tabular-nums">{perMile(kpis.rpmCents)}</p>
+          <p className={cn(moneyCls, "mt-2 text-xl")}>{perMile(kpis.rpmCents)}</p>
         </Panel>
         <Panel className="p-4">
           <span className="text-label text-fg-3 uppercase">
             {hasDriverPay ? "Operating ratio" : "Op. ratio, pre-pay"}
           </span>
-          <p
-            className={`mt-2 font-mono text-xl font-medium tabular-nums ${
-              !hasDriverPay ? "text-fg" : operatingRatio != null && operatingRatio < 100 ? "text-ok" : "text-bad"
-            }`}
-          >
+          <p className={cn(moneyCls, "mt-2 text-xl", !hasDriverPay ? "text-fg" : operatingRatio != null && operatingRatio < 100 ? "text-ok" : "text-bad")}>
             {pct(operatingRatio)}
           </p>
           <p className="mt-0.5 text-[11px] text-fg-3">
@@ -202,7 +198,7 @@ export default async function ReportsPage({
         </Panel>
         <Panel className="p-4">
           <span className="text-label text-fg-3 uppercase">Deadhead</span>
-          <p className="mt-2 font-mono text-xl font-medium text-fg tabular-nums">{deadheadValue}</p>
+          <p className={cn(moneyCls, "mt-2 text-xl")}>{deadheadValue}</p>
           <p className="mt-0.5 text-[11px] text-fg-3">{kpis.totalMiles > 0 ? `${kpis.totalMiles.toLocaleString()} mi total` : "add miles to loads"}</p>
           {deadheadBlankLoads > 0 && (
             <p className="mt-0.5 text-[11px] text-warn">
@@ -214,11 +210,7 @@ export default async function ReportsPage({
           <span className="text-label text-fg-3 uppercase">
             {hasDriverPay ? "Net margin" : "Margin before driver pay"}
           </span>
-          <p
-            className={`mt-2 font-mono text-xl font-medium tabular-nums ${
-              !hasDriverPay ? "text-fg" : margin != null && margin >= 0 ? "text-ok" : "text-bad"
-            }`}
-          >
+          <p className={cn(moneyCls, "mt-2 text-xl", !hasDriverPay ? "text-fg" : margin != null && margin >= 0 ? "text-ok" : "text-bad")}>
             {pct(margin)}
           </p>
           <p className="mt-0.5 text-[11px] text-fg-3">
@@ -230,18 +222,18 @@ export default async function ReportsPage({
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-6 gap-3 mb-4">
-        <Panel className="p-4"><span className="text-label text-fg-3 uppercase">Revenue</span><p className="mt-2 text-xl font-semibold text-accent-text">{fmtCents(totals.revenue)}</p></Panel>
-        <Panel className="p-4"><span className="text-label text-fg-3 uppercase">Fuel</span><p className="mt-2 font-semibold text-xl text-fg">{fmtCents(totals.fuel)}</p></Panel>
-        <Panel className="p-4"><span className="text-label text-fg-3 uppercase">Maintenance</span><p className="mt-2 font-semibold text-xl text-fg">{fmtCents(totals.maintenance)}</p></Panel>
+        <Panel className="p-4"><span className="text-label text-fg-3 uppercase">Revenue</span><p className={cn(moneyCls, "mt-2 text-xl font-semibold text-accent-text")}>{fmtCents(totals.revenue)}</p></Panel>
+        <Panel className="p-4"><span className="text-label text-fg-3 uppercase">Fuel</span><p className={cn(moneyCls, "mt-2 text-xl font-semibold")}>{fmtCents(totals.fuel)}</p></Panel>
+        <Panel className="p-4"><span className="text-label text-fg-3 uppercase">Maintenance</span><p className={cn(moneyCls, "mt-2 text-xl font-semibold")}>{fmtCents(totals.maintenance)}</p></Panel>
         <Panel className="p-4">
           <span className="text-label text-fg-3 uppercase">Tolls</span>
-          <p className="mt-2 font-semibold text-xl text-fg">{fmtCents(totals.tolls)}</p>
+          <p className={cn(moneyCls, "mt-2 text-xl font-semibold")}>{fmtCents(totals.tolls)}</p>
           <Link href="/hub/fuel/tolls" className="mt-0.5 block text-[11px] font-semibold text-accent-text hover:underline">
             Reconcile →
           </Link>
         </Panel>
-        <Panel className="p-4"><span className="text-label text-fg-3 uppercase">Other</span><p className="mt-2 font-semibold text-xl text-fg">{fmtCents(totals.other)}</p></Panel>
-        <Panel className="p-4"><span className="text-label text-fg-3 uppercase">Net</span><p className={`mt-2 text-xl font-semibold ${totals.net >= 0 ? "text-ok" : "text-bad"}`}>{fmtCents(totals.net)}</p></Panel>
+        <Panel className="p-4"><span className="text-label text-fg-3 uppercase">Other</span><p className={cn(moneyCls, "mt-2 text-xl font-semibold")}>{fmtCents(totals.other)}</p></Panel>
+        <Panel className="p-4"><span className="text-label text-fg-3 uppercase">Net</span><p className={cn(moneyCls, "mt-2 text-xl font-semibold", totals.net >= 0 ? "text-ok" : "text-bad")}>{fmtCents(totals.net)}</p></Panel>
       </div>
 
       {/* Deadhead: what dispatch typed vs what the fuel card measured. The two
@@ -261,7 +253,7 @@ export default async function ReportsPage({
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
         <Panel className="p-4">
           <span className="text-label text-fg-3 uppercase">Typed (dispatch)</span>
-          <p className="mt-2 font-mono text-xl font-medium text-fg tabular-nums">
+          <p className={cn(moneyCls, "mt-2 text-xl")}>
             {deadhead.fleet.typedDeadheadPct == null ? "—" : `${deadhead.fleet.typedDeadheadPct}%`}
           </p>
           <p className="mt-1 text-body-xs text-fg-3">{deadhead.fleet.typedDeadheadMiles.toLocaleString()} mi typed on loads</p>
@@ -270,7 +262,7 @@ export default async function ReportsPage({
           <span className={cn("text-label uppercase", (deadhead.fleet.measuredDeadheadPct ?? 0) > (deadhead.fleet.typedDeadheadPct ?? 0) + 3 ? "text-warn" : "text-fg-3")}>
             Measured (fuel × MPG)
           </span>
-          <p className={cn("mt-2 font-mono text-xl font-medium tabular-nums", (deadhead.fleet.measuredDeadheadPct ?? 0) > (deadhead.fleet.typedDeadheadPct ?? 0) + 3 ? "text-warn" : "text-fg")}>
+          <p className={cn(moneyCls, "mt-2 text-xl", (deadhead.fleet.measuredDeadheadPct ?? 0) > (deadhead.fleet.typedDeadheadPct ?? 0) + 3 ? "text-warn" : "text-fg")}>
             {deadhead.fleet.measuredDeadheadPct == null ? "—" : `${deadhead.fleet.measuredDeadheadPct}%`}
           </p>
           <p className="mt-1 text-body-xs text-fg-3">
@@ -294,9 +286,9 @@ export default async function ReportsPage({
       </div>
       {deadhead.trucks.length > 0 ? (
         <Panel className="mb-6 overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="hub-table w-full text-sm">
             <thead>
-              <tr className="border-b border-border text-left text-label uppercase text-fg-3">
+              <tr className={tableHeadCls}>
                 <th className="p-3">Truck</th>
                 <th className="p-3 text-right">Loaded mi</th>
                 <th className="p-3 text-right">Typed deadhead</th>
@@ -308,15 +300,15 @@ export default async function ReportsPage({
             <tbody>
               {deadhead.trucks.map((t) => (
                 <tr key={t.truckId} className="border-b border-border last:border-0">
-                  <td className="p-3 font-semibold text-fg">{t.truckUnit}</td>
-                  <td className="p-3 text-right font-mono tabular-nums text-fg-2">{t.loadedMiles.toLocaleString()}</td>
-                  <td className="p-3 text-right font-mono tabular-nums text-fg-2">
+                  <td className={cn("p-3", moneyCls, "font-semibold")}>{t.truckUnit}</td>
+                  <td className={cn("p-3 text-right", moneyCls, "text-fg-2")}>{t.loadedMiles.toLocaleString()}</td>
+                  <td className={cn("p-3 text-right", moneyCls, "text-fg-2")}>
                     {t.estimate.typedDeadheadPct == null ? "—" : `${t.estimate.typedDeadheadPct}%`}
                   </td>
-                  <td className={cn("p-3 text-right font-mono tabular-nums", (t.estimate.measuredDeadheadPct ?? 0) > (t.estimate.typedDeadheadPct ?? 0) + 3 ? "text-warn" : "text-fg-2")}>
+                  <td className={cn("p-3 text-right", moneyCls, (t.estimate.measuredDeadheadPct ?? 0) > (t.estimate.typedDeadheadPct ?? 0) + 3 ? "text-warn" : "text-fg-2")}>
                     {t.estimate.measuredDeadheadPct == null ? "—" : `${t.estimate.measuredDeadheadPct}%`}
                   </td>
-                  <td className="p-3 text-right font-mono tabular-nums text-fg-2">{t.gallons.toLocaleString()}</td>
+                  <td className={cn("p-3 text-right", moneyCls, "text-fg-2")}>{t.gallons.toLocaleString()}</td>
                   <td className={cn("p-3 text-right text-body-xs", t.estimate.confidence === "good" ? "text-ok" : t.estimate.confidence === "thin" ? "text-warn" : "text-fg-3")}>
                     {t.estimate.confidence}
                   </td>
@@ -328,9 +320,9 @@ export default async function ReportsPage({
       ) : null}
 
       <Panel className="overflow-x-auto">
-        <table className="w-full text-sm">
+        <table className="hub-table w-full text-sm">
           <thead>
-            <tr className="border-b border-border text-left text-label text-fg-3 uppercase">
+            <tr className={tableHeadCls}>
               <th className="px-4 py-3">Truck</th>
               <th className="px-4 py-3 text-right">Revenue</th>
               <th className="px-4 py-3 text-right">Fuel</th>
@@ -348,18 +340,18 @@ export default async function ReportsPage({
               const pm = perMileOf(row)
               return (
                 <tr key={row.truck_id} className="border-b border-border">
-                  <td className="px-4 py-2.5 font-bold text-fg">#{row.unit_number}</td>
-                  <td className="px-4 py-2.5 text-right text-accent-text font-semibold">{fmtCents(Number(row.revenue_cents))}</td>
-                  <td className="px-4 py-2.5 text-right text-fg-2">{fmtCents(Number(row.fuel_cents))}</td>
-                  <td className="px-4 py-2.5 text-right text-fg-2">{fmtCents(Number(row.maintenance_cents))}</td>
-                  <td className="px-4 py-2.5 text-right text-fg-2">{fmtCents(Number(row.toll_cents))}</td>
-                  <td className="px-4 py-2.5 text-right text-fg-2">{fmtCents(Number(row.other_expense_cents))}</td>
-                  <td className={`px-4 py-2.5 text-right font-semibold ${row.net_cents >= 0 ? "text-ok" : "text-bad"}`}>
+                  <td className={cn(moneyCls, "px-4 py-2.5 font-bold text-fg")}>#{row.unit_number}</td>
+                  <td className={cn("px-4 py-2.5 text-right", moneyCls, "font-semibold text-accent-text")}>{fmtCents(Number(row.revenue_cents))}</td>
+                  <td className={cn("px-4 py-2.5 text-right", moneyCls, "text-fg-2")}>{fmtCents(Number(row.fuel_cents))}</td>
+                  <td className={cn("px-4 py-2.5 text-right", moneyCls, "text-fg-2")}>{fmtCents(Number(row.maintenance_cents))}</td>
+                  <td className={cn("px-4 py-2.5 text-right", moneyCls, "text-fg-2")}>{fmtCents(Number(row.toll_cents))}</td>
+                  <td className={cn("px-4 py-2.5 text-right", moneyCls, "text-fg-2")}>{fmtCents(Number(row.other_expense_cents))}</td>
+                  <td className={cn("px-4 py-2.5 text-right", moneyCls, "font-semibold", row.net_cents >= 0 ? "text-ok" : "text-bad")}>
                     {fmtCents(row.net_cents)}
                   </td>
-                  <td className="px-4 py-2.5 text-right font-mono tabular-nums text-fg-2">{fmtPerMile(pm?.rpmCents ?? null)}</td>
-                  <td className="px-4 py-2.5 text-right font-mono tabular-nums text-fg-2">{pm ? fmtPerMile(pm.operatingCpmCents) : "—"}</td>
-                  <td className={`px-4 py-2.5 text-right font-mono tabular-nums font-semibold ${pm && pm.marginPerMileCents != null && pm.marginPerMileCents < 0 ? "text-bad" : "text-fg-2"}`}>
+                  <td className={cn("px-4 py-2.5 text-right", moneyCls, "text-fg-2")}>{fmtPerMile(pm?.rpmCents ?? null)}</td>
+                  <td className={cn("px-4 py-2.5 text-right", moneyCls, "text-fg-2")}>{pm ? fmtPerMile(pm.operatingCpmCents) : "—"}</td>
+                  <td className={cn("px-4 py-2.5 text-right", moneyCls, "font-semibold", pm && pm.marginPerMileCents != null && pm.marginPerMileCents < 0 ? "text-bad" : "text-fg-2")}>
                     {fmtPerMile(pm?.marginPerMileCents ?? null)}
                   </td>
                 </tr>
@@ -383,9 +375,9 @@ export default async function ReportsPage({
       </div>
       {/* Panel does not forward data-* props; the testid lives on the table. */}
       <Panel className="overflow-x-auto">
-        <table className="w-full text-sm" data-testid="driver-pnl">
+        <table className="hub-table w-full text-sm" data-testid="driver-pnl">
           <thead>
-            <tr className="border-b border-border text-left text-label text-fg-3 uppercase">
+            <tr className={tableHeadCls}>
               <th className="px-4 py-3">Driver</th>
               <th className="px-4 py-3 text-right">Loads</th>
               <th className="px-4 py-3 text-right">Revenue</th>
@@ -404,15 +396,15 @@ export default async function ReportsPage({
               return (
                 <tr key={row.driver_id} className="border-b border-border">
                   <td className="px-4 py-2.5 font-bold text-fg">{row.driver_name}</td>
-                  <td className="px-4 py-2.5 text-right font-mono tabular-nums text-fg-2">{row.loads}</td>
-                  <td className="px-4 py-2.5 text-right text-accent-text font-semibold">{fmtCents(revenue)}</td>
-                  <td className="px-4 py-2.5 text-right font-mono tabular-nums text-fg-2">{Number(row.loaded_miles ?? 0).toLocaleString()}</td>
-                  <td className="px-4 py-2.5 text-right font-mono tabular-nums text-fg-2">{fmtPerMile(pm?.rpmCents ?? null)}</td>
-                  <td className="px-4 py-2.5 text-right text-fg-2" title={pay == null ? "No settlement with a period end in this range" : undefined}>
+                  <td className={cn("px-4 py-2.5 text-right", moneyCls, "text-fg-2")}>{row.loads}</td>
+                  <td className={cn("px-4 py-2.5 text-right", moneyCls, "font-semibold text-accent-text")}>{fmtCents(revenue)}</td>
+                  <td className={cn("px-4 py-2.5 text-right", moneyCls, "text-fg-2")}>{Number(row.loaded_miles ?? 0).toLocaleString()}</td>
+                  <td className={cn("px-4 py-2.5 text-right", moneyCls, "text-fg-2")}>{fmtPerMile(pm?.rpmCents ?? null)}</td>
+                  <td className={cn("px-4 py-2.5 text-right", moneyCls, "text-fg-2")} title={pay == null ? "No settlement with a period end in this range" : undefined}>
                     {pay == null ? "—" : fmtCents(pay)}
                   </td>
-                  <td className="px-4 py-2.5 text-right font-mono tabular-nums text-fg-2">{fmtPerMile(pm?.payCpmCents ?? null)}</td>
-                  <td className={`px-4 py-2.5 text-right font-semibold ${pay != null && revenue - pay < 0 ? "text-bad" : "text-fg-2"}`}>
+                  <td className={cn("px-4 py-2.5 text-right", moneyCls, "text-fg-2")}>{fmtPerMile(pm?.payCpmCents ?? null)}</td>
+                  <td className={cn("px-4 py-2.5 text-right", moneyCls, "font-semibold", pay != null && revenue - pay < 0 ? "text-bad" : "text-fg-2")}>
                     {pay == null ? "—" : fmtCents(revenue - pay)}
                   </td>
                 </tr>
@@ -443,9 +435,9 @@ export default async function ReportsPage({
         </Panel>
       ) : (
         <Panel className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="hub-table w-full text-sm">
             <thead>
-              <tr className="border-b border-border text-left text-label text-fg-3 uppercase">
+              <tr className={tableHeadCls}>
                 <th className="px-4 py-3">Lane</th>
                 <th className="px-4 py-3 text-right">Loads</th>
                 <th className="px-4 py-3 text-right">Revenue</th>
@@ -463,9 +455,9 @@ export default async function ReportsPage({
                   <td className="px-4 py-2.5 font-semibold text-fg">
                     {lane.origin_city}, {lane.origin_state} → {lane.dest_city}, {lane.dest_state}
                   </td>
-                  <td className="px-4 py-2.5 text-right text-fg-2">{lane.loads_count}</td>
-                  <td className="px-4 py-2.5 text-right text-accent-text font-semibold">{fmtCents(Number(lane.revenue_cents))}</td>
-                  <td className="px-4 py-2.5 text-right text-fg-2">
+                  <td className={cn("px-4 py-2.5 text-right", moneyCls, "text-fg-2")}>{lane.loads_count}</td>
+                  <td className={cn("px-4 py-2.5 text-right", moneyCls, "font-semibold text-accent-text")}>{fmtCents(Number(lane.revenue_cents))}</td>
+                  <td className={cn("px-4 py-2.5 text-right", moneyCls, "text-fg-2")}>
                     {lane.avg_rpm_cents ? `$${(lane.avg_rpm_cents / 100).toFixed(2)}` : "—"}
                   </td>
                   {/* Deadhead is charged inside Est. margin — shown so a lane can be judged on it.
@@ -473,9 +465,11 @@ export default async function ReportsPage({
                       unfilled lane can't read as a perfect empty-mile-free run (and note that its
                       margin is charged for the miles we know about only). */}
                   <td
-                    className={`px-4 py-2.5 text-right ${
+                    className={cn(
+                      "px-4 py-2.5 text-right",
+                      moneyCls,
                       lane.deadhead_missing_loads > 0 || lane.deadhead_miles > 0 ? "text-warn" : "text-fg-3"
-                    }`}
+                    )}
                     title={
                       lane.deadhead_missing_loads > 0
                         ? `${lane.deadhead_missing_loads} load${lane.deadhead_missing_loads === 1 ? "" : "s"} left deadhead blank — real empty miles are higher, and est. margin does not charge for them`
@@ -485,7 +479,7 @@ export default async function ReportsPage({
                     {lane.deadhead_missing_loads > 0 ? "≥ " : ""}
                     {lane.deadhead_miles.toLocaleString()} mi
                   </td>
-                  <td className={`px-4 py-2.5 text-right font-semibold ${Number(lane.margin_cents) >= 0 ? "text-ok" : "text-bad"}`}>
+                  <td className={cn("px-4 py-2.5 text-right", moneyCls, "font-semibold", Number(lane.margin_cents) >= 0 ? "text-ok" : "text-bad")}>
                     {fmtCents(Number(lane.margin_cents))}
                   </td>
                 </tr>

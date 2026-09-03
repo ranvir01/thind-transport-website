@@ -123,8 +123,11 @@ async function main() {
       hasOperatingCost: text.includes("operating cost / mi"),
       hasRevenuePerLoaded: text.includes("revenue / loaded mi"),
       hasLoadedShare: /loaded\s+\d+(\.\d+)?%/.test(text),
-      revenueBarCount: document.querySelectorAll(".bg-accent.rounded-t-md").length,
-      arLegendCount: [...document.querySelectorAll("span.h-2.w-2.rounded-sm")].filter((el) =>
+      // data-testid, not the utility classes: these two counts used to key on
+      // `.rounded-t-md` and `.h-2.w-2.rounded-sm`, so a radius sweep silently
+      // zeroed them. The page now carries stable hooks.
+      revenueBarCount: document.querySelectorAll('[data-testid="revenue-bar"]').length,
+      arLegendCount: [...document.querySelectorAll('[data-testid="ar-legend-swatch"]')].filter((el) =>
         /current|1-30|31-60|61-90|90\+/i.test(el.parentElement?.textContent ?? "")
       ).length,
       backLink: [...document.querySelectorAll("a")].some((a) => a.getAttribute("href") === "/hub/reports"),

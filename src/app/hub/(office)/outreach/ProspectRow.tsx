@@ -31,7 +31,7 @@ function CopyBtn({ text, label }: { text: string; label: string }) {
         try { await navigator.clipboard.writeText(text); setDone(true); setTimeout(() => setDone(false), 1500) }
         catch { toast.error("Copy failed") }
       }}
-      className="inline-flex items-center gap-1 rounded-lg border border-border-strong px-2 py-1 text-body-xs font-semibold text-fg-2 hover:bg-hover"
+      className="inline-flex items-center gap-1 rounded-control border border-border-strong px-2 py-1 text-body-xs font-semibold text-fg-2 hover:bg-hover"
     >
       {done ? <Check className="h-3.5 w-3.5 text-ok" /> : <Copy className="h-3.5 w-3.5" />} {label}
     </button>
@@ -46,6 +46,10 @@ export function ProspectRow({ prospect }: { prospect: Prospect }) {
   const [body, setBody] = useState(prospect.draft_body ?? "")
   const [sms, setSms] = useState("")
   const [callScript, setCallScript] = useState("")
+
+  /** Per-prospect so the ids stay unique down a list of rows. */
+  const subjectId = `draft-subject-${prospect.id}`
+  const bodyId = `draft-body-${prospect.id}`
 
   const hasDraft = Boolean(subject && body)
   const suppressed = prospect.status === "unsubscribed" || prospect.status === "bounced"
@@ -82,6 +86,10 @@ export function ProspectRow({ prospect }: { prospect: Prospect }) {
     })
 
   const telHref = prospect.phone ? `tel:${prospect.phone.replace(/[^0-9+]/g, "")}` : null
+  /** What the row calls this prospect — also the accessible name of the
+   *  icon-only mail/call links, which a screen reader otherwise announces as
+   *  bare "link" (axe `link-name`, serious) or reads the raw href aloud. */
+  const who = prospect.contact_name || prospect.company || prospect.email || "Unknown"
   const meta = [
     prospect.company, prospect.mc_number && `MC ${prospect.mc_number}`,
     prospect.lane, prospect.equipment, prospect.source,
@@ -92,7 +100,7 @@ export function ProspectRow({ prospect }: { prospect: Prospect }) {
       <div className="flex flex-wrap items-center gap-3">
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            <span className="font-semibold text-fg">{prospect.contact_name || prospect.company || prospect.email || "Unknown"}</span>
+            <span className="font-semibold text-fg">{who}</span>
             <Pill tone={STATUS_TONE[prospect.status]}>{prospect.status}</Pill>
           </div>
           {meta && <p className="mt-0.5 text-body-xs text-fg-3">{meta}</p>}
@@ -101,20 +109,28 @@ export function ProspectRow({ prospect }: { prospect: Prospect }) {
 
         <div className="flex shrink-0 flex-wrap items-center gap-2">
           {prospect.email && (
-            <a href={`mailto:${prospect.email}`} className="inline-flex min-h-[36px] items-center gap-1 rounded-lg border border-border-strong px-2.5 text-body-xs font-semibold text-fg-2 hover:bg-hover">
-              <Mail className="h-3.5 w-3.5" />
+            <a
+              href={`mailto:${prospect.email}`}
+              aria-label={`Email ${who}`}
+              className="inline-flex min-h-[36px] items-center gap-1 rounded-control border border-border-strong px-2.5 text-body-xs font-semibold text-fg-2 hover:bg-hover"
+            >
+              <Mail className="h-3.5 w-3.5" aria-hidden />
             </a>
           )}
           {telHref && (
-            <a href={telHref} className="inline-flex min-h-[36px] items-center gap-1 rounded-lg border border-border-strong px-2.5 text-body-xs font-semibold text-fg-2 hover:bg-hover">
-              <Phone className="h-3.5 w-3.5" />
+            <a
+              href={telHref}
+              aria-label={`Call ${prospect.contact_name || prospect.company || prospect.phone}`}
+              className="inline-flex min-h-[36px] items-center gap-1 rounded-control border border-border-strong px-2.5 text-body-xs font-semibold text-fg-2 hover:bg-hover"
+            >
+              <Phone className="h-3.5 w-3.5" aria-hidden />
             </a>
           )}
           {!suppressed && (
             <button
               onClick={hasDraft ? () => setOpen((o) => !o) : generate}
               disabled={pending}
-              className="inline-flex min-h-[36px] items-center gap-1.5 rounded-lg bg-accent px-3 text-body-xs font-bold text-accent-fg hover:bg-accent-hover disabled:opacity-60"
+              className="inline-flex min-h-[36px] items-center gap-1.5 rounded-control bg-accent px-3 text-body-xs font-bold text-accent-fg hover:bg-accent-hover disabled:opacity-60"
             >
               {pending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
               {hasDraft ? (open ? "Hide draft" : "Review draft") : "Draft"}
@@ -125,27 +141,29 @@ export function ProspectRow({ prospect }: { prospect: Prospect }) {
 
       {open && hasDraft && (
         <div className="mt-3 rounded-card border border-border bg-surface-2 p-3">
-          <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-fg-3">Subject</label>
+          <label htmlFor={subjectId} className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-fg-3">Subject</label>
           <input
+            id={subjectId}
             value={subject}
             onChange={(e) => setSubject(e.target.value)}
-            className="mb-2 w-full rounded-lg border border-border-strong bg-surface p-2 text-body-sm text-fg focus:border-accent focus:outline-none"
+            className="mb-2 w-full rounded-control border border-border-strong bg-surface p-2 text-body-sm text-fg focus:border-accent"
           />
-          <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-fg-3">Message</label>
+          <label htmlFor={bodyId} className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-fg-3">Message</label>
           <textarea
+            id={bodyId}
             value={body}
             onChange={(e) => setBody(e.target.value)}
             rows={12}
-            className="w-full rounded-lg border border-border-strong bg-surface p-2 font-mono text-body-xs leading-relaxed text-fg focus:border-accent focus:outline-none"
+            className="w-full rounded-control border border-border-strong bg-surface p-2 font-mono text-body-xs leading-relaxed text-fg focus:border-accent"
           />
           <div className="mt-2 flex flex-wrap items-center gap-2">
-            <button onClick={save} disabled={pending} className="inline-flex min-h-[36px] items-center gap-1.5 rounded-lg border border-border-strong px-3 text-body-xs font-semibold text-fg hover:bg-hover disabled:opacity-60">
+            <button onClick={save} disabled={pending} className="inline-flex min-h-[36px] items-center gap-1.5 rounded-control border border-border-strong px-3 text-body-xs font-semibold text-fg hover:bg-hover disabled:opacity-60">
               Save
             </button>
-            <button onClick={generate} disabled={pending} className="inline-flex min-h-[36px] items-center gap-1.5 rounded-lg border border-border-strong px-3 text-body-xs font-semibold text-fg-2 hover:bg-hover disabled:opacity-60">
+            <button onClick={generate} disabled={pending} className="inline-flex min-h-[36px] items-center gap-1.5 rounded-control border border-border-strong px-3 text-body-xs font-semibold text-fg-2 hover:bg-hover disabled:opacity-60">
               <Sparkles className="h-3.5 w-3.5" /> Regenerate
             </button>
-            <button onClick={send} disabled={pending} className="inline-flex min-h-[36px] items-center gap-1.5 rounded-lg bg-accent px-3 text-body-xs font-bold text-accent-fg hover:bg-accent-hover disabled:opacity-60">
+            <button onClick={send} disabled={pending} className="inline-flex min-h-[36px] items-center gap-1.5 rounded-control bg-accent px-3 text-body-xs font-bold text-accent-fg hover:bg-accent-hover disabled:opacity-60">
               {pending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />} Approve &amp; send
             </button>
             <CopyBtn text={`${subject}\n\n${body}`} label="Copy email" />
@@ -159,14 +177,14 @@ export function ProspectRow({ prospect }: { prospect: Prospect }) {
       {(prospect.status === "sent" || prospect.status === "replied") && (
         <div className="mt-2 flex flex-wrap items-center gap-2">
           {prospect.status === "sent" && (
-            <button onClick={() => setStatus("replied", "Marked replied")} disabled={pending} className="inline-flex items-center gap-1 rounded-lg border border-ok-soft px-2.5 py-1 text-body-xs font-semibold text-ok hover:bg-ok-soft disabled:opacity-60">
+            <button onClick={() => setStatus("replied", "Marked replied")} disabled={pending} className="inline-flex items-center gap-1 rounded-control border border-ok-soft px-2.5 py-1 text-body-xs font-semibold text-ok hover:bg-ok-soft disabled:opacity-60">
               <Reply className="h-3.5 w-3.5" /> They replied
             </button>
           )}
-          <button onClick={() => setStatus("converted", "Converted")} disabled={pending} className="inline-flex items-center gap-1 rounded-lg border border-ok-soft px-2.5 py-1 text-body-xs font-semibold text-ok hover:bg-ok-soft disabled:opacity-60">
+          <button onClick={() => setStatus("converted", "Converted")} disabled={pending} className="inline-flex items-center gap-1 rounded-control border border-ok-soft px-2.5 py-1 text-body-xs font-semibold text-ok hover:bg-ok-soft disabled:opacity-60">
             <UserCheck className="h-3.5 w-3.5" /> Converted
           </button>
-          <button onClick={() => setStatus("unsubscribed", "Opted out")} disabled={pending} className="inline-flex items-center gap-1 rounded-lg border border-border-strong px-2.5 py-1 text-body-xs font-semibold text-fg-3 hover:bg-hover disabled:opacity-60">
+          <button onClick={() => setStatus("unsubscribed", "Opted out")} disabled={pending} className="inline-flex items-center gap-1 rounded-control border border-border-strong px-2.5 py-1 text-body-xs font-semibold text-fg-3 hover:bg-hover disabled:opacity-60">
             <Ban className="h-3.5 w-3.5" /> Opted out
           </button>
         </div>

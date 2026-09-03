@@ -117,7 +117,7 @@ export default async function ApplicantDetailPage({ params }: { params: Promise<
               <p className="text-body-xs text-fg-3 mb-2">
                 Submitted through the public DOT wizard — the full payload rides along into the DQ file.
               </p>
-              <pre className="max-h-64 overflow-auto rounded-lg bg-black/30 p-3 text-[11px] text-fg-2">
+              <pre className="max-h-64 overflow-auto rounded-control bg-surface-2 p-3 text-[11px] text-fg-2">
                 {JSON.stringify(applicant.application, null, 2)}
               </pre>
             </Panel>
