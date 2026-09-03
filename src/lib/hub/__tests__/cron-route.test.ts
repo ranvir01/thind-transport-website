@@ -19,7 +19,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 // CREDENTIALS_KEY (CI does; a bare local shell doesn't) throw a TypeError
 // inside the route and the drift test reads 500 while local reads 200.
 vi.mock("@/lib/hub/db", () => ({ query: vi.fn(), queryOne: vi.fn(async () => null) }))
-vi.mock("@/lib/hub/compliance", () => ({ complianceEntries: vi.fn() }))
+vi.mock("@/lib/hub/compliance", () => ({ runComplianceAlerts: vi.fn() }))
 vi.mock("@/lib/hub/invoices", () => ({ runOverdueReminders: vi.fn() }))
 vi.mock("@/lib/hub/detention", () => ({ runDetentionAlerts: vi.fn() }))
 vi.mock("@/lib/hub/tasks", () => ({ runTaskAutomations: vi.fn() }))
@@ -38,7 +38,7 @@ vi.mock("@/lib/hub/migrate", () => ({ runMigrations: vi.fn() }))
 vi.mock("@/lib/mailer", () => ({ createMailTransport: vi.fn(), mailFrom: vi.fn() }))
 
 import { query } from "@/lib/hub/db"
-import { complianceEntries } from "@/lib/hub/compliance"
+import { runComplianceAlerts } from "@/lib/hub/compliance"
 import { runOverdueReminders } from "@/lib/hub/invoices"
 import { runDetentionAlerts } from "@/lib/hub/detention"
 import { runTaskAutomations } from "@/lib/hub/tasks"
@@ -102,7 +102,7 @@ beforeEach(() => {
     runner.mockReset().mockResolvedValue({ inserted: 1, skipped: 0 })
   }
   vi.mocked(runHosViolationAlerts).mockReset().mockResolvedValue({ checked: 0, alerted: 0 })
-  vi.mocked(complianceEntries).mockReset().mockResolvedValue([])
+  vi.mocked(runComplianceAlerts).mockReset().mockResolvedValue({ alerts: 0, notified: false, emailed: false } as never)
   vi.mocked(getCarrierSettings).mockReset().mockResolvedValue({
     notifications: { officeEmail: null },
   } as never)
@@ -176,7 +176,7 @@ describe("GET /api/hub/cron/health — read-only report for the prod smoke", () 
     await call("health")
     // No carrier loop, no adapters, and above all no INSERT: a monitoring read
     // that writes its own sync rows would pollute the very table it reports on.
-    expect(complianceEntries).not.toHaveBeenCalled()
+    expect(runComplianceAlerts).not.toHaveBeenCalled()
     expect(runEfsSync).not.toHaveBeenCalled()
     expect(syncLogCalls()).toHaveLength(0)
   })
