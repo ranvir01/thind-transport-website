@@ -54,7 +54,7 @@ export const CinematicHero = () => {
           <div className="flex flex-col sm:flex-row sm:items-center flex-wrap gap-x-6 gap-y-3 mb-6">
             <Link
               href="#calculator"
-              className="group inline-flex min-h-[52px] items-center justify-center gap-2 rounded-fleet bg-orange-600 px-7 text-base font-semibold text-white transition-colors hover:bg-orange-500 active:bg-orange-700"
+              className="group inline-flex min-h-[52px] items-center justify-center gap-2 rounded-fleet bg-orange-600 px-7 text-base font-semibold text-white transition-colors hover:bg-orange-700 active:bg-orange-700"
             >
               <TrendingUp className="h-5 w-5" aria-hidden />
               See what you&apos;d earn

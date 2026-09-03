@@ -17,8 +17,11 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        /** The brand red at the AA-safe fill shade (#C42820, 5.5:1 with white). */
-        default: "bg-orange-600 text-white hover:bg-orange-500 active:bg-orange-700",
+        /** The brand red at the AA-safe fill shade (#C42820, 5.7:1 with white).
+         *  Hover DARKENS: orange-500 is 4.4:1 and orange-400 3.4:1 with white,
+         *  so lightening on hover dropped the label below AA for as long as the
+         *  pointer sat on the button. orange-700 is 7.9:1. */
+        default: "bg-orange-600 text-white hover:bg-orange-700 active:bg-orange-800",
         primary: "bg-navy text-white border border-white/10 hover:bg-navy-600 active:bg-navy-700",
         secondary: "bg-white text-navy border border-steel-200 hover:bg-steel-50 active:bg-steel-100",
         outline: "border border-white/20 bg-white/5 text-white hover:bg-white/10 hover:border-white/35 active:bg-white/15",

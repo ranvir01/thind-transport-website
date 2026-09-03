@@ -289,7 +289,7 @@ export default function FieldMapperPage() {
             <Button
               size="sm"
               onClick={() => setAddMode(!addMode)}
-              className={`min-h-[44px] text-white ${addMode ? "bg-green-700 hover:bg-green-800" : "bg-orange-600 hover:bg-orange-500"}`}
+              className={`min-h-[44px] text-white ${addMode ? "bg-green-700 hover:bg-green-800" : "bg-orange-600 hover:bg-orange-700"}`}
             >
               {addMode ? "✓ Click PDF to Add" : "+ Add Field"}
             </Button>
