@@ -1,4 +1,6 @@
 import { query } from "./db"
+import { notifyRoles } from "./notify"
+import { getCarrierSettings } from "./settings"
 import { iftaFilingComplianceEntries } from "./ifta"
 import { form2290ComplianceEntries } from "./hvut-compliance"
 import { filingsComplianceEntries } from "./filings-compliance"
@@ -211,4 +213,116 @@ export function summarize(entries: ComplianceEntry[]): ComplianceSummary {
     amber: entries.filter((e) => e.color === "amber").length,
     green: entries.filter((e) => e.color === "green").length,
   }
+}
+
+/**
+ * The entries the daily scan pages the office about: the 60/30/7-day warnings,
+ * plus anything actually overdue.
+ *
+ * "Overdue" is the entry's own red, not just a due date in the past. Entries
+ * whose module knows the obligation is already met keep their date and go
+ * green — a filed IFTA quarter is the common one — and on a bare date test
+ * every filed quarter was mailed out as "(EXPIRED)" every single day, forever.
+ */
+export function alertableEntries(entries: ComplianceEntry[], now = new Date()): ComplianceEntry[] {
+  return entries.filter((entry) => {
+    if (!entry.due) return false
+    const days = Math.ceil((new Date(entry.due).getTime() - now.getTime()) / 86400000)
+    if (days < 0) return entry.color === "red"
+    return days === 60 || days === 30 || days === 7
+  })
+}
+
+export interface ComplianceAlertRun {
+  alerts: number
+  /** An in-app notification was written this run (false = nothing to say, or
+   *  a run in the last 20h already said it). */
+  notified: boolean
+  emailed: boolean
+  /** Why no email went out, when none did. */
+  reason?: "no_alerts" | "no_office_email" | "not_configured" | "deduped"
+}
+
+/**
+ * The daily compliance-scan cron, extracted from the route so it reads like
+ * every other job there.
+ *
+ * In-app FIRST, email second, and deliberately so: the office email was the
+ * only channel until now, and production SMTP has twice sat on a rejected
+ * Gmail app password for a week at a time (535-5.7.8, 2026-08-07→08-13 and
+ * again 08-28→09-03). Every one of those runs computed its expiry warnings
+ * and then threw them away with the failed send — DOT credentials aged out
+ * with nobody told. A notification row costs one INSERT and survives SMTP.
+ *
+ * The mail failure still throws, on purpose: the run has to stay red so
+ * /api/hub/cron/health and the Vercel cron dashboard keep showing the broken
+ * credential instead of quietly passing on the in-app copy.
+ */
+export async function runComplianceAlerts(
+  carrierId: string,
+  carrierName: string
+): Promise<ComplianceAlertRun> {
+  const alerts = alertableEntries(await complianceEntries(carrierId))
+  if (alerts.length === 0) return { alerts: 0, notified: false, emailed: false, reason: "no_alerts" }
+
+  const lines = alerts.map(
+    (a) => `• ${a.name} — ${a.kind}: due ${a.due}${a.color === "red" ? " (EXPIRED)" : ""}`
+  )
+  const notified = await notifyComplianceAlerts(carrierId, alerts.length, lines)
+
+  const { officeEmail } = (await getCarrierSettings(carrierId)).notifications
+  if (!officeEmail) return { alerts: alerts.length, notified, emailed: false, reason: "no_office_email" }
+
+  // Dynamic so nodemailer stays out of the module graph of /hub/compliance,
+  // which imports this file for the page itself.
+  const { createMailTransport, isEmailConfigured, mailFrom } = await import("@/lib/mailer")
+  if (!isEmailConfigured()) {
+    return { alerts: alerts.length, notified, emailed: false, reason: "not_configured" }
+  }
+
+  try {
+    await createMailTransport().sendMail({
+      from: mailFrom(`${carrierName} Compliance`),
+      to: officeEmail,
+      subject: `Compliance alerts: ${alerts.length} item(s) need attention`,
+      text: lines.join("\n"),
+    })
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "unknown"
+    throw new Error(
+      `compliance alert email failed (${alerts.length} alert(s) delivered in-app instead): ${message}`
+    )
+  }
+  return { alerts: alerts.length, notified, emailed: true }
+}
+
+/**
+ * One summary notification per carrier per run, deduped over 20 hours so a
+ * hand-triggered re-run on top of the daily cron does not double-page the
+ * office (same window runHosViolationAlerts uses).
+ */
+async function notifyComplianceAlerts(
+  carrierId: string,
+  count: number,
+  lines: string[]
+): Promise<boolean> {
+  const recent = await query(
+    `SELECT 1 FROM hub.notifications
+     WHERE carrier_id = $1 AND kind = 'compliance_alert'
+       AND created_at > NOW() - INTERVAL '20 hours'
+     LIMIT 1`,
+    [carrierId]
+  )
+  if (recent.length > 0) return false
+
+  const shown = lines.slice(0, 5)
+  await notifyRoles(carrierId, ["owner", "dispatcher"], {
+    kind: "compliance_alert",
+    title: `${count} compliance item(s) need attention`,
+    body: [...shown, lines.length > shown.length ? `…and ${lines.length - shown.length} more` : ""]
+      .filter(Boolean)
+      .join("\n"),
+    link: "/hub/compliance",
+  })
+  return true
 }
