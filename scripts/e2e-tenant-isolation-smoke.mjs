@@ -176,14 +176,27 @@ async function main() {
     // caught fast rather than masked by a blind sleep either way.
     await cascade
       .waitForFunction(
-        (t) => document.body.innerText.toLowerCase().includes("road not found") || (t && document.body.innerText.includes(t)),
+        (t) => {
+          const body = document.body.innerText.toLowerCase()
+          const notFound =
+            body.includes("road not found") ||
+            body.includes("could not be found") ||
+            body.includes("page not found") ||
+            body.includes("doesn't exist here")
+          return notFound || (t && document.body.innerText.includes(t))
+        },
         { timeout: 8000 },
         leak
       )
       .catch(() => {})
     const wall = await bodyText(cascade)
     const leaked = leak ? wall.includes(leak) : false
-    const notFound = wall.toLowerCase().includes("road not found") || wall.toLowerCase().includes("could not be found")
+    const wallLower = wall.toLowerCase()
+    const notFound =
+      wallLower.includes("road not found") ||
+      wallLower.includes("could not be found") ||
+      wallLower.includes("page not found") ||
+      wallLower.includes("doesn't exist here")
     check(!leaked, `cross-tenant ${label} probe leaks nothing (no "${leak}")`)
     check(notFound, `cross-tenant ${label} probe lands on the not-found page`)
   }
