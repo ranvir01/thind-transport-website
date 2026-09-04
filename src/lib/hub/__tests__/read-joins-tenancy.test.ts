@@ -12,7 +12,8 @@ vi.mock("../db", () => ({
   hubDb: vi.fn(),
 }))
 
-// Digest early-returns without an office email; stub settings so its stats SQL runs.
+// Digest computes stats before the office-email gate so the in-app fallback
+// can fire without an address; stub settings so the mailer path stays quiet.
 vi.mock("../settings", () => ({
   getCarrier: vi.fn(async () => ({ name: "Test Carrier" })),
   getCarrierSettings: vi.fn(async () => ({ notifications: { officeEmail: "office@example.com" } })),

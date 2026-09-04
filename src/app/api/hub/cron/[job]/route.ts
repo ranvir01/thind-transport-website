@@ -172,7 +172,8 @@ export async function GET(
         for (const p of providers) runs[p] = await runUniversalSync(p, carrier.id)
         results[carrier.id] = runs
       } else if (job === "owner-digest") {
-        // Phase 6: the Monday-morning numbers email.
+        // Monday numbers land in-app first and email second (see sendOwnerDigest):
+        // a rejected SMTP credential must not take the weekly digest with it.
         results[carrier.id] = await sendOwnerDigest(carrier.id)
       } else if (job === "random-testing") {
         // Roadmap: 49 CFR 382.305 quarterly random drug/alcohol pool — daily

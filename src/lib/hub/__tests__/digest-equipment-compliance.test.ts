@@ -28,8 +28,10 @@ vi.mock("../settings", () => ({
     notifications: { officeEmail: "office@thind.test" },
   })),
 }))
+vi.mock("../notify", () => ({ notifyRoles: vi.fn(async () => undefined) }))
 vi.mock("@/lib/mailer", () => ({
   createMailTransport: vi.fn(() => ({ sendMail })),
+  isEmailConfigured: vi.fn(() => true),
   mailFrom: vi.fn(() => "fleet@thind.test"),
 }))
 
@@ -109,15 +111,16 @@ describe("sendOwnerDigest — equipment compliance", () => {
     expect(body).not.toContain("EXPIRED")
   })
 
-  it("no office email on file → nothing sent", async () => {
-    // Guard the early return still holds after the change.
+  it("no office email on file → nothing emailed (in-app still lands)", async () => {
+    // Stats still compute — the Monday numbers must not depend on an address.
+    queryOneMock.mockResolvedValue({ ...baseStats })
     const settings = await import("../settings")
     vi.mocked(settings.getCarrierSettings).mockResolvedValueOnce({
       notifications: { officeEmail: "" },
     } as Awaited<ReturnType<typeof settings.getCarrierSettings>>)
 
     const res = await sendOwnerDigest(CARRIER)
-    expect(res.sent).toBe(false)
+    expect(res).toEqual({ sent: false, notified: true, emailed: false, reason: "no_office_email" })
     expect(sendMail).not.toHaveBeenCalled()
   })
 })
