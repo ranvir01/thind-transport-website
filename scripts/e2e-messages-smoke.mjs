@@ -180,7 +180,9 @@ async function main() {
   check(driverList.includes(officeMarker), "driver list previews the office marker")
   const unreadBadge = await driver.evaluate((marker) => {
     const row = [...document.querySelectorAll("li a")].find((a) => a.innerText.includes(marker))
-    return row ? /\d/.test(row.querySelector("span.rounded-full")?.textContent ?? "") : false
+    return row
+      ? /\d/.test(row.querySelector("span.rounded-full, span.rounded-pill")?.textContent ?? "")
+      : false
   }, officeMarker)
   check(unreadBadge, "driver list shows an unread badge on the direct thread")
   await shot(driver, "03-driver-list-unread")
