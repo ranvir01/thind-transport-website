@@ -45,7 +45,7 @@ describe("HomeTimeLanes sources pay from PAY_RATES", () => {
   })
 
   it("derives the same-rate copy from the constants instead of asserting it", () => {
-    // "Same $0.63/mile" is only true while every company lane pays the same;
+    // "Same $0.65/mile" is only true while every company lane pays the same;
     // the component must compute that, never type the claim.
     expect(src).toContain("SAME_RATE")
     expect(src).not.toMatch(/Same \$0\.\d\d/)
@@ -53,7 +53,7 @@ describe("HomeTimeLanes sources pay from PAY_RATES", () => {
   })
 
   it("published OTR and O/O constants are the figures the cards interpolate", () => {
-    expect(PAY_RATES.companyDriver.otr.perMile).toBe("$0.63")
+    expect(PAY_RATES.companyDriver.otr.perMile).toBe("$0.65")
     expect(PAY_RATES.companyDriver.otr.annual).toBe("$69K-$82K")
     expect(PAY_RATES.ownerOperator.perMile).toBe("$2.50-$3.50")
     expect(PAY_RATES.ownerOperator.annualGross).toBe("$150K-$250K")

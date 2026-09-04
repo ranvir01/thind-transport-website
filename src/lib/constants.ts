@@ -40,17 +40,17 @@ export const PAY_RATES = {
   },
   companyDriver: {
     local: {
-      perMile: "$0.63",
+      perMile: "$0.65",
       annual: "$57K-$63K",
       homeTime: "Daily",
     },
     regional: {
-      perMile: "$0.63",
+      perMile: "$0.65",
       annual: "$63K-$73K",
       homeTime: "Weekly",
     },
     otr: {
-      perMile: "$0.63",
+      perMile: "$0.65",
       annual: "$69K-$82K",
       homeTime: "2-3 weeks",
     },
