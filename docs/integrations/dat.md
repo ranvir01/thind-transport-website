@@ -53,15 +53,17 @@ confidence than a pure guess, but still not a developer packet.
 
 - **Two-level token auth, not per-request Basic.** DAT's official RESTful API FAQ describes
   the flow as: (1) a **service account** (dedicated email + password, provisioned once per
-  organization) authenticates the *organization*; (2) a **regular user's email** is then
-  authenticated on top of the org auth to identify *who* is making requests. So the
-  `serviceAccountEmail`/`password` fields on the `dat` registry entry were right but
-  **insufficient** — a third `actingUserEmail` field now ships on the registry entry
-  (2026-07-20, this pass) and `datSource().search()` refuses (`"dat is not connected"`) until
-  all three are present, so a real setup can't silently half-configure. `dat.ts`'s per-request
-  Basic-auth construction on the service account is still a placeholder — swapping it for the
-  real token exchange (org token → user token → Bearer) needs the actual token endpoint paths,
-  still unconfirmed (see Open questions).
+  organization) authenticates the *organization* via `POST {identity}/access/v1/token/organization`
+  → organization `accessToken`; (2) a **regular user's email** is exchanged on top via
+  `POST {identity}/access/v1/token/user` (Bearer org token) → user `accessToken`; (3) freight
+  calls (e.g. load search) send `Authorization: Bearer {user accessToken}`. The
+  `serviceAccountEmail`/`password`/`actingUserEmail` fields on the registry entry map to this
+  flow; `datSource().search()` refuses until all three are present and names any that are
+  missing. Token paths are modeled from public identity-API documentation (see Open questions)
+  and re-fetched on every search (~30-minute expiry). Identity host defaults to
+  `https://identity.api.dat.com`; when `DAT_API_BASE` points at staging freight
+  (`freight.api.staging.dat.com`), identity follows to `identity.api.staging.dat.com`.
+  Override either host with `DAT_IDENTITY_API_BASE`.
 - **2026-07-20 correction: service accounts hold NO seats/services.** The FAQ is explicit —
   "service accounts do not and should not have any services assigned to them." All seat
   requirements (Connexion + load board, +RateView for rate requests) attach to the **acting
@@ -181,14 +183,14 @@ facing surface for it at all (it's a tested library function, not a feature yet)
 - Design + build the dispatcher-facing search panel (criteria form → results list) and a
   "book this posting" button that calls `datPostingToLoadDraft` + a customer picker, then
   `createLoad()` — likely office-lane UI territory once designed, coordinate via `Backlog:`.
-- Auth flow is now known in outline (two-level service-account → user token, see above);
-  the remaining #1 blocker to flipping `registry.ts`'s `dat` entry from `stub` to `live` is
-  the developer packet: exact token endpoints/headers, the real search path + response
-  field names, and rate limits. Request via developersupport@dat.com (needs MC number).
+- Auth flow is implemented in outline (two-level service-account → user token → Bearer, see
+  above); the remaining blocker to flipping `registry.ts`'s `dat` entry from `stub` to `live` is
+  confirming the modeled token/search paths and response field names against a real developer
+  packet or staging credentials. Request via developersupport@dat.com (needs MC number).
 - ~~Registry change needed: add an acting-user email credential field~~ — done 2026-07-20:
   `actingUserEmail` field ships on the `dat` registry entry, `datSource().search()` requires
-  it. The request itself still authenticates with organization Basic auth only (placeholder)
-  until the token-exchange endpoints are confirmed.
+  it. ~~Per-request Basic auth placeholder~~ — replaced 2026-09 with modeled token exchange
+  (`/access/v1/token/organization` + `/access/v1/token/user` on the identity host).
 - ~~Confirm whether the RateView Combo Pro/Premium requirement applies to the base search/post
   API or only rate-request calls~~ — **resolved 2026-07-24: rate-request calls only.** The base
   load-board search/post API (what this adapter uses) needs only any load board tier + Connexion
