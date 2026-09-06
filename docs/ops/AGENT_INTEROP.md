@@ -123,10 +123,20 @@ The rules that follow from that outage:
    context outside the repo, an `install` script that isn't there — and it checks the opt-in
    Dockerfile even while nothing references it. CI runs it in the `unit` job.
 2. **Cursor keeps its own server-side copy of the environment, and runs that — not the repo's.**
-   After changing either file, open the environment in Cursor and re-import from the repository. Two
-   tells that you are looking at a stale copy: a `transferring dockerfile: NNNB` line whose byte count
-   does not match `wc -c .cursor/Dockerfile`, or any Docker build at all while environment.json
-   declares none.
+   After changing either file, open the environment in Cursor and re-import from the repository
+   (or Save a tested snapshot+`install` proposal). Two tells that you are looking at a stale copy:
+   a `transferring dockerfile: NNNB` line whose byte count does not match
+   `wc -c .cursor/Dockerfile` (the check now prints that size), or any Docker build at all while
+   environment.json declares none.
+
+   Evidence, 2026-08-19: personal environment `5241c374-0579-442f-bf88-309dbcbe37f3` was still
+   running recurring SYSTEM builds of the July fragment. Newest log
+   (`bld-20260819-d11f8ed9-2492-4048-b2e7-d76a5a8cd62a`) transferred a **418-byte** Dockerfile
+   that starts at `RUN apt-get` and died with `ERROR: failed to solve: no build stage in current
+   context`. Repo `.cursor/Dockerfile` is 3934 bytes and starts with `FROM ubuntu:24.04`;
+   `.cursor/environment.json` on `main` (`f36b46df`) declares no `build` at all. The repo fix
+   is inert until the dashboard copy is replaced. Every scheduled automation on that environment
+   then ERROR'd in ~8s with `setupStatus: null` — that is a dead fleet, not an empty backlog.
 3. **Land environment changes on `main` first, then fast-forward the fleet branches.** An agent
    booted on `claude/lane-*` or the integrator reads the config *on that branch*. A fix that exists
    only on `main` leaves every other branch unbootable:
@@ -161,6 +171,9 @@ doing" — which is how three weeks passed with no Cursor agent able to start.
 - `npm run agent:branches` — pending work nobody has merged.
 - The `:17`/`:47` drain Action is the liveness signal that does not depend on Cursor: if its runs are
   green and `main` is still moving, publishing works even when every agent is down.
+- A scheduled Cursor automation that ERROR's in under a minute with `setupStatus: null` is an
+  environment-build death (stale Dockerfile), not "nothing needed doing". Check the environment
+  build log before assuming the backlog is empty.
 
 If two consecutive runs of a scheduled agent produce nothing, check the platform before assuming the
 backlog is empty: a Cursor automation that cannot boot its environment reports no error into this
