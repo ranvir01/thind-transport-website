@@ -28,6 +28,11 @@ but the sandbox-default base URL is unchanged. qbo/dat registry labels are corre
 (`CREDENTIALS_KEY` unset, nothing activatable) and every dollar figure are unverified against
 current state — re-check before acting on them.
 
+**DAT auth pass 2026-09-06:** `101fc4c3` replaced the organization Basic-auth placeholder with
+the two-level identity flow (`dat.ts:153-179` org token → user token, `:195-197` Bearer on
+freight search). Registry remains `status: "stub"` (`registry.ts:92`). Token/search paths are
+still unconfirmed against real DAT staging — do not flip the registry live.
+
 ---
 
 ## 0. The one finding that outranks the table
@@ -86,13 +91,15 @@ All adapter paths below are `src/lib/hub/integrations/` unless stated otherwise.
 | truckercloud | live | real call, **guessed** token endpoint/shape | `src/lib/hub/telematics.ts:140-151`; `docs/integrations/truckercloud.md:9-11` — vendor 403s, "auth model / token endpoint / rate limits / sandbox are still guesses" |
 | efs / wex | live | real call to an endpoint **that does not exist** | `efs.ts:64` `feed.efsllc.com/v1`, `wex.ts:69` `api.wexinc.com/fleet/v1` — contradicted by their own file headers, `efs.ts:11-19` and `wex.ts:11-21`: the real feed is a daily SFTP CSV, no REST. The working path is the signed file drop. |
 | comdata | live | **placeholder REST call**, same as EFS/WEX | `comdata.ts:81` `api.comdata.com/fleet/v1`. `docs/integrations/comdata.md:27-28` states flatly: "`comdataSource().pull()` is a placeholder REST call, not a SOAP client". Corpay's real machine channel is SOAP Web Services 2.1 (`comdata.md:22-32`), which this repo does not speak. Working path is the file drop. |
-| dat | live | **placeholder auth — will 401** | `dat.ts:127-136`: "the request below still sends organization Basic auth only (placeholder) … until DAT's developer packet confirms the token endpoints". Pasting real credentials produces HTTP 401, not loads. |
+| dat | stub | **two-level token built, staging-unverified** | `dat.ts:153-179` POSTs org then user tokens; `:195-197` sends `Authorization: Bearer` on `/loads/search`. Missing-cred errors name the field (`:132-138`). Paths modeled from public identity docs (`docs/integrations/dat.md`); not confirmed against real DAT staging. |
 | truckstop | live | right protocol, **guessed response tags, sandbox default** | `truckstop.ts:242-250` speaks real SOAP 1.1; but `parseLoadSearchResponse` (`:193-214`) greps for an assumed `<LoadSearchResult>` tag (`:187-189`) and returns `[]` on a miss — a wrong element name yields **zero results with no error**. Default base is `https://testws.truckstop.com` (`:230`), the sandbox. |
 
 **Net: 3 providers are genuinely paste-a-key (terminal, mailbox, qbo). 4 need a forwarder built
 (efs, wex, comdata — all three are file-drop-only — and factor, which needs a real base URL).
-3 will silently or loudly fail on first contact (dat, truckstop, truckercloud).** The registry's
-`live`/`stub` field does not encode this and should gain a third value.
+2 will silently or loudly fail on first contact (truckstop, truckercloud).** DAT's token
+exchange is built (`101fc4c3`) but staging-unverified — first contact may still 401 if the
+public-doc paths are wrong. The registry's `live`/`stub` field does not encode this and should
+gain a third value.
 
 ---
 
@@ -106,7 +113,7 @@ or inference as marked. Hours = your hours, after `CREDENTIALS_KEY` is set.
 | **mailbox** (IMAP) | real call — IMAP + XOAUTH2 both shipped | Gmail app password, **or** M365 tenant+client ID/secret, **or** Google service-account JSON (`registry.ts:67-75`) | Gmail account settings; or M365/Workspace admin | **free** (uses a mailbox you own) | **$195** | 130 loads × 2 docs × 2 min filing × $45/hr = $390; halved for miss rate: `extractReference` (`mailbox.ts:15`) takes the **first** `/\b[A-Z]{2,5}-\d{2,7}\b/` token in the subject, so a subject leading with the broker's own reference resolves to a load that does not exist (`mailbox.ts:56-59` looks up `upper(reference)` exact) and the mail is filed as unmatched | **1** |
 | **terminal** (TruckX ELD) | real call, confirmed endpoint | `apiKey` + `connectionToken` (`registry.ts:49-50`) | withterminal.com, authorize TruckX | free/dev tier to start (`creds-shopping-list.md:11` — **list price, unverified**) | **$475** | 9.3 owner-hr/mo × $45 = $420 (IFTA jurisdiction-mile prep 2 hr/mo + 20 min/day "where's my truck" × 22 days), plus $55/mo expected IFTA-error avoidance (assumes one $2,000 assessment per 12 quarters) | **3** |
 | **qbo** | real call, both directions, complete | `clientId`, `clientSecret`, `refreshToken`, `realmId` (`registry.ts:133-136`) | developer.intuit.com app + **OAuth Playground** to mint the first refresh token by hand (`qbo.ts:145-147` confirms "the owner repeating the manual auth-code exchange" is the only path) | QBO plan you already pay for + free dev app | **$244** | 130 invoices/mo (the standing load assumption, 1 invoice per load) × (90 s keying invoice + 60 s keying payment) = 5.4 hr × $45. **MISSING: real monthly invoice count from the QBO invoice register** | **3** |
-| **dat** | **placeholder auth — 401** | `serviceAccountEmail`, `password`, `actingUserEmail` (`registry.ts:83-85`) | dat.com; certification required; acting user needs a Connexion + load board seat | DAT One/Power + API entitlement (**MISSING: quote**) | **$490** *if the token exchange gets built* | 130 loads × 5 min saved tab-switching to book × $45 | **12+** |
+| **dat** | **two-level token built; staging-unverified** | `serviceAccountEmail`, `password`, `actingUserEmail` (`registry.ts:87-90`) | dat.com; certification required; acting user needs a Connexion + load board seat | DAT One/Power + API entitlement (**MISSING: quote**) | **$490** *once staging confirms the token/search paths* | 130 loads × 5 min saved tab-switching to book × $45 | **12+** |
 | **factor** | POST to a placeholder host; inbound webhook nobody sends | `apiKey` + `webhookSecret` (`registry.ts:144-145`) | your factor — OTR Solutions has public dev docs; RTS/Triumph are FTP-only (`docs/integrations/factor.md:22-25`) | usually no extra fee | **MISSING** | The DSO mechanism this adapter implements is an inbound funding webhook, and `docs/integrations/factor.md:13-15` states: "**no factor publicly documents webhooks pushed to carrier systems** — funding status flows back by polling a status endpoint or downloading report files everywhere we looked." Outbound POST targets `api.factor-partner.example.com` (`factor.ts:136`). No dollar figure is defensible until a named factor confirms both an API and a push channel. **MISSING: your factor's name, whether they expose an API, monthly invoiced revenue, current DSO** | **8+** |
 | **efs** | real call to a **nonexistent** REST endpoint; the working path is the signed file drop | `feedUser`, `feedPassword`, `webhookSecret` (`registry.ts:103-105`) | EFS rep — eManager → Data Sharing Preferences, or direct feed request; **up to 5 business days** (`docs/integrations/efs.md:16-32`) | included with the card | **$50** | $34 (45 min/mo CSV export+import+reconcile × $45) + $15 (daily instead of monthly cadence catches a card-fraud event ~3 weeks earlier; assumes 1 event/yr at $400, recovery odds 40%→85%) | **5** (build + host the HMAC-signing forwarder) |
 | **wex** | identical to EFS | same three fields (`registry.ts:113-115`) | WEX rep, Data Release Forms, 800-492-0669; 2–10 business days | included | **$0 incremental** | You run one fuel card. Activating a second card program earns nothing unless Thind actually holds a WEX account | **5** |
@@ -122,7 +129,7 @@ or inference as marked. Hours = your hours, after `CREDENTIALS_KEY` is set.
 | 1 | mailbox | $195 | 1 | **195** | Do it. Free, one hour, works the same day. |
 | 2 | terminal | $475 | 3 | **158** | Do it. Biggest absolute number in the list. |
 | 3 | qbo | $244 | 3 | **81** | Do it. Adapter is finished; you only mint a token. |
-| 4 | dat | $490 | 12+ | 41 | Only if Thind already holds a DAT API entitlement. Otherwise the token exchange is unbuilt (`dat.ts:127-136`) and certification is a multi-week vendor process. |
+| 4 | dat | $490 | 12+ | 41 | Only if Thind already holds a DAT API entitlement. Token exchange is built (`dat.ts:153-179`); remaining gap is confirming those paths against real staging plus a multi-week vendor certification. |
 | 5 | efs | $50 | 5 | 10 | Marginal. $50/mo is a rounding error — this is the "$200/mo idea" that should be cut unless the fraud catch matters to you. |
 | — | factor | MISSING | 8+ | — | Cannot be ranked. The repo's own research says no factor pushes webhooks (`docs/integrations/factor.md:13-15`) and the POST target is `example.com` (`factor.ts:136`). One phone call to your factor resolves this; do not spend an hour of build time before that call. |
 | — | wex, comdata, truckercloud | $0 | 4-6 | 0 | **Do not activate.** Second card program / second ELD aggregator. Zero incremental value for a 12-truck single-card fleet. |
@@ -148,9 +155,10 @@ or inference as marked. Hours = your hours, after `CREDENTIALS_KEY` is set.
 2. **`registry.ts:138` marks qbo `stub`.** `qbo.ts` is 468 lines of finished, both-directions,
    token-rotating adapter. The shopping list already says "adapter shipped both directions"
    (`creds-shopping-list.md:18`). The registry field is the stale one.
-3. **`registry.ts:87` marks dat `live`.** `dat.ts:127-136` says the auth is a placeholder. `live`
-   here means "the UI exists", which is not what the enum's own comment
-   (`registry.ts:18`) promises.
+3. **RESOLVED 2026-09-06.** `registry.ts:92` marks dat `stub` (correct — token paths are
+   unconfirmed). `dat.ts` no longer sends organization Basic auth; `101fc4c3` built the
+   two-level identity flow (`:153-179`). Do not flip `live` until staging confirms the
+   token/search paths.
 4. **`src/app/hub/_actions/integrations.ts:37-39`** says `"planned" providers (qbo, factor,
    truckstop) have no client built yet and aren't in the hub.api_credentials provider CHECK
    constraint`. Three errors in one comment: no provider in `PROVIDERS` has status `planned`
@@ -280,7 +288,7 @@ against `$PGURL`, `npm run connections:check` and `vercel.json` re-read.
 
 **Corrected:** ~20 bare filenames given full paths (adapters are `src/lib/hub/integrations/`, not
 `src/lib/hub/`); `import.ts` → `src/app/hub/_actions/import.ts`; `telematics.ts:46-53` → `:42` +
-`:47-50`; `dat.ts:128-135` → `:127-136`; `ifta.ts:113-117` → `:113-119`; `credentials.ts:75-84` →
+`:47-50`; `dat.ts:128-135` → `:153-179` (token exchange; labels/assert at `:126-138`); `ifta.ts:113-117` → `:113-119`; `credentials.ts:75-84` →
 `:75-83`; `truckstop.ts:196-208` → `:187-189`; `integrations.ts:38-40` → `:37-39`; totals
 $880 → $914.
 
@@ -295,7 +303,8 @@ is the sandbox (`truckstop.ts:230`); `factor.ts:142` puts a float on the wire in
 **Survived unchanged:** every SQL result (0 credentials / 0 syncs / 0 events; 543 demo pings;
 35 EFS + 1 Comdata fuel rows; 12 trucks; 29 loads; deadhead 7.10%); the `CREDENTIALS_KEY` finding
 and all four of its citations; `mock.ts` reached only by six test files; the qbo-is-mislabeled-stub
-and dat-is-mislabeled-live findings; the `planned` dead branch and the regex CHECK constraint; the
+finding (dat-is-mislabeled-live resolved 2026-09-06 — registry is `stub`, token exchange is built);
+the `planned` dead branch and the regex CHECK constraint; the
 `hasCredentials()`/`credentialsConfigured()` split; the IFTA two-char truncation and its
 Minnesota→MI worked examples; the QBO missing `authorization_code` grant; 17 crons; `$45/hr` and
 `130 loads/mo` as stated assumptions; the terminal, efs, dat and FMCSA arithmetic.
