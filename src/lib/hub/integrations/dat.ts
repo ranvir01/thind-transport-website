@@ -113,6 +113,71 @@ function searchQuery(criteria: DatSearchCriteria): string {
   return params.toString()
 }
 
+interface DatCredentials {
+  serviceAccountEmail: string
+  password: string
+  actingUserEmail: string
+}
+
+interface DatTokenResponse {
+  accessToken?: string
+}
+
+const DAT_CREDENTIAL_LABELS: [keyof DatCredentials, string][] = [
+  ["serviceAccountEmail", "service account email"],
+  ["password", "password"],
+  ["actingUserEmail", "acting user email"],
+]
+
+function assertDatCredentials(
+  creds: Partial<DatCredentials> | null | undefined
+): asserts creds is DatCredentials {
+  const missing = DAT_CREDENTIAL_LABELS.filter(([key]) => !creds?.[key]).map(([, label]) => label)
+  if (missing.length > 0) {
+    throw new Error(`dat is not connected (missing ${missing.join(", ")})`)
+  }
+}
+
+function datFreightBase(): string {
+  return (process.env.DAT_API_BASE ?? "https://freight.api.dat.com/v3").replace(/\/$/, "")
+}
+
+/** Identity host follows freight staging when `DAT_API_BASE` points at staging. */
+function datIdentityBase(): string {
+  const override = process.env.DAT_IDENTITY_API_BASE
+  if (override) return override.replace(/\/$/, "")
+  if (datFreightBase().includes(".staging.")) return "https://identity.api.staging.dat.com"
+  return "https://identity.api.dat.com"
+}
+
+async function fetchDatUserToken(creds: DatCredentials): Promise<string> {
+  const identityBase = datIdentityBase()
+  const orgResponse = await fetch(`${identityBase}/access/v1/token/organization`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Accept: "application/json" },
+    body: JSON.stringify({ username: creds.serviceAccountEmail, password: creds.password }),
+    signal: AbortSignal.timeout(15000),
+  })
+  if (!orgResponse.ok) throw new Error(`DAT org token → HTTP ${orgResponse.status}`)
+  const orgJson = (await orgResponse.json()) as DatTokenResponse
+  if (!orgJson.accessToken) throw new Error("DAT org token response missing accessToken")
+
+  const userResponse = await fetch(`${identityBase}/access/v1/token/user`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+      Authorization: `Bearer ${orgJson.accessToken}`,
+    },
+    body: JSON.stringify({ username: creds.actingUserEmail }),
+    signal: AbortSignal.timeout(15000),
+  })
+  if (!userResponse.ok) throw new Error(`DAT user token → HTTP ${userResponse.status}`)
+  const userJson = (await userResponse.json()) as DatTokenResponse
+  if (!userJson.accessToken) throw new Error("DAT user token response missing accessToken")
+  return userJson.accessToken
+}
+
 export interface DatSource extends SyncSource<DatLoadPosting> {
   /** Freight search — `pull()` is `search({})`, DAT's default radius-only query. */
   search(criteria: DatSearchCriteria): Promise<DatLoadPosting[]>
@@ -120,22 +185,15 @@ export interface DatSource extends SyncSource<DatLoadPosting> {
 
 /** DAT One freight-matching API (developer.dat.com — service-account credentials). */
 export function datSource(carrierId: string): DatSource {
-  const base = process.env.DAT_API_BASE ?? "https://freight.api.dat.com/v3"
-
   async function search(criteria: DatSearchCriteria): Promise<DatLoadPosting[]> {
     const creds = await getCredentials(carrierId, "dat")
-    // DAT's RESTful API FAQ (one.support.dat.com) confirms a two-level model: the service
-    // account authenticates the organization, but every request is made AS a regular user who
-    // must hold a Connexion + load board seat — the service account alone cannot search or post.
-    // actingUserEmail is required here so the credential is on file before the real token
-    // exchange is built; the request below still sends organization Basic auth only (placeholder,
-    // see docs/integrations/dat.md) until DAT's developer packet confirms the token endpoints.
-    if (!creds?.serviceAccountEmail || !creds?.password || !creds?.actingUserEmail) {
-      throw new Error("dat is not connected")
-    }
-    const auth = Buffer.from(`${creds.serviceAccountEmail}:${creds.password}`).toString("base64")
-    const response = await fetch(`${base}/loads/search?${searchQuery(criteria)}`, {
-      headers: { Authorization: `Basic ${auth}` },
+    // Two-level auth per DAT's RESTful API FAQ: service account → org token, acting user →
+    // user token, then Bearer on freight calls. Token paths modeled from public identity API
+    // docs (see docs/integrations/dat.md); re-auth each search — tokens expire ~30 min.
+    assertDatCredentials(creds)
+    const bearer = await fetchDatUserToken(creds)
+    const response = await fetch(`${datFreightBase()}/loads/search?${searchQuery(criteria)}`, {
+      headers: { Authorization: `Bearer ${bearer}`, Accept: "application/json" },
       signal: AbortSignal.timeout(15000),
     })
     if (!response.ok) throw new Error(`DAT search → HTTP ${response.status}`)
