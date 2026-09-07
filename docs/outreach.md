@@ -30,7 +30,7 @@ Lives at **`/hub/outreach`** (office-gated). It is the outbound complement to
 
 ## The value proposition per audience (what the drafts say)
 
-- **Brokers** → asset-based carrier, MC 876103 / USDOT 2523064, flatbed+reefer+dry
+- **Brokers** → asset-based carrier, MC 876103 / USDOT 02523064, flatbed+reefer+dry
   van, 48 states, live tracking, dispatch that answers — "put us on your carrier list."
 - **Shippers** → haul direct, skip the broker markup, live tracking + POD, fully
   insured — "want a lane quote?"
