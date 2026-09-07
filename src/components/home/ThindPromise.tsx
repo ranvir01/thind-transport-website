@@ -49,7 +49,7 @@ export const ThindPromise = () => {
                 <p className="font-display text-lg font-bold text-white">
                   {yearsRunning} yrs
                 </p>
-                <p className="text-[11px] uppercase tracking-wider text-steel-400">
+                <p className="text-m-micro uppercase tracking-wider text-steel-400">
                   family-run
                 </p>
               </div>
