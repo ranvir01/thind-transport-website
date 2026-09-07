@@ -6,10 +6,10 @@
  * own header flags that it cannot verify the row; this script closes that
  * gap for both funnels:
  *
- *   1. Driver: homepage → /apply step 1 (qualify) → step 2 (contact) —
- *      advancing fires captureLead → row in hub.website_leads (status
- *      'new', phone intact) → /hub Today "reached out on the website"
- *      card → /hub/leads row with a working tel: link.
+ *   1. Driver: homepage → /apply step 1 (contact, phone first) — advancing
+ *      fires captureLead → row in hub.website_leads (status 'new', phone
+ *      intact) → /hub Today "reached out on the website" card → /hub/leads
+ *      row with a working tel: link.
  *   2. Shipper: /shippers quote form → row with source
  *      'Shipper/Broker quote request' → /hub/leads row + tel: link.
  *
@@ -72,24 +72,15 @@ async function main() {
   // header is a template ("Step {step} of 4:"), so anchor on the form card
   // heading and let the step-advance waits below cover the wizard itself.
   await waitForText(page, "Start Your Application")
-  // Step 1: qualify
-  await clickByText(page, "Company Driver", { tag: "label" })
-  await clickByText(page, "Class A", { tag: "label" })
-  await clickByText(page, "3-5 Years", { tag: "label" })
-  await clickByText(page, "Continue Application")
-  await waitForText(page, "Step 2 of 4")
-  check(true, "apply step 1 (qualify) advances")
-  await shot(page, "02-apply-step2-390")
-
-  // Step 2: contact — advancing fires captureLead
+  // Step 1: contact — advancing fires captureLead
   await fill(page, "#firstName", "Funnel")
   await fill(page, "#lastName", "Driver")
   await fill(page, "#email", DRIVER_EMAIL)
   await fill(page, "#phone", DRIVER_PHONE)
   await clickByText(page, "Continue Application")
-  await waitForText(page, "Step 3 of 4", 20000)
-  check(true, "apply step 2 (contact) advances through captureLead")
-  await shot(page, "03-apply-step3-390")
+  await waitForText(page, "Step 2 of 4")
+  check(true, "apply step 1 (contact) advances through captureLead")
+  await shot(page, "02-apply-step2-390")
 
   // give the fire-and-forget insert a moment
   await sleep(1500)
