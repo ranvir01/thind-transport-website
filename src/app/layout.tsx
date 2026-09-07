@@ -9,7 +9,7 @@ import {
 import { BackToTop } from "@/components/shared/BackToTop"
 import { AttributionCapture } from "@/components/shared/AttributionCapture"
 import { SkipLink } from "@/components/shared/SkipLink"
-import { COMPANY_INFO, EQUIPMENT, PAY_RATES, SERVICES } from "@/lib/constants"
+import { COMPANY_INFO, EQUIPMENT, PAY_RATES } from "@/lib/constants"
 import { SchemaMarkup } from "@/components/features/SchemaMarkup"
 import { SITE_ICONS } from "@/lib/site-icons"
 import { InstalledAppRedirect } from "@/components/shared/InstalledAppRedirect"
@@ -39,23 +39,18 @@ const sourceSans = Source_Sans_3({
 export const metadata: Metadata = {
   metadataBase: new URL("https://thindtransport.com"),
   title: {
-    default: `${COMPANY_INFO.name} | Family-Run Trucking Company in ${COMPANY_INFO.location}`,
+    default: `${COMPANY_INFO.name} | Family-Run Trucking Company in Kent, WA`,
     template: `%s | ${COMPANY_INFO.name}`,
   },
-  description: `${COMPANY_INFO.name} is a family-run carrier in ${COMPANY_INFO.location} hiring CDL-A drivers. Owner operators keep ${PAY_RATES.ownerOperator.commission} of gross; company drivers earn ${PAY_RATES.companyDriver.otr.perMile}/mile. ${EQUIPMENT.modelYears} ${EQUIPMENT.makes}, weekly pay, no forced dispatch, and dispatch that actually answers the phone.`,
-  // The keywords that quote a figure or a service list are built from the
-  // constant, so a rate change cannot leave a stale phrase in the <head>. The
-  // rest stay literal because they are search phrasings rather than facts:
-  // "Kent WA" deliberately drops the comma COMPANY_INFO.location carries, and
-  // "90 percent" is spelled out for the query, not the price list.
+  description: `${COMPANY_INFO.name} is a family-run carrier in ${COMPANY_INFO.location} hiring CDL-A drivers. Owner operators keep ${PAY_RATES.ownerOperator.commission} of gross; company drivers earn ${PAY_RATES.companyDriver.local.perMile}/mile. ${EQUIPMENT.modelYears} ${EQUIPMENT.makes}, weekly pay, no forced dispatch, and dispatch that actually answers the phone.`,
   keywords: [
-    COMPANY_INFO.name,
+    "Thind Transport",
     "Kent WA trucking company",
     "family owned trucking company",
-    "owner operator jobs 90 percent",
+    `owner operator jobs ${PAY_RATES.ownerOperator.commission}`,
     "CDL Class A jobs Washington",
-    `company driver jobs ${PAY_RATES.companyDriver.otr.perMile} per mile`,
-    `${SERVICES.types.join(" ").toLowerCase()} carrier`,
+    `company driver jobs ${PAY_RATES.companyDriver.local.perMile} per mile`,
+    "flatbed reefer dry van carrier",
     "Pacific Northwest trucking jobs",
     "no forced dispatch trucking",
   ],
@@ -67,8 +62,8 @@ export const metadata: Metadata = {
     email: true,
   },
   openGraph: {
-    title: `${COMPANY_INFO.name} | Drive for a Family-Run Carrier in ${COMPANY_INFO.location}`,
-    description: `${PAY_RATES.ownerOperator.commission} gross for owner operators, ${PAY_RATES.companyDriver.otr.perMile}/mile for company drivers, ${EQUIPMENT.modelYears} ${EQUIPMENT.makes}, and weekly pay. Flatbed, reefer, and dry van — with dispatch that knows your name.`,
+    title: `${COMPANY_INFO.name} | Drive for a Family-Run Carrier in Kent, WA`,
+    description: `${PAY_RATES.ownerOperator.commission} gross for owner operators, ${PAY_RATES.companyDriver.local.perMile}/mile for company drivers, ${EQUIPMENT.modelYears} ${EQUIPMENT.makes}, and weekly pay. Flatbed, reefer, and dry van — with dispatch that knows your name.`,
     url: "https://thindtransport.com",
     siteName: `${COMPANY_INFO.name}`,
     locale: "en_US",
@@ -85,7 +80,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: `${COMPANY_INFO.name} | Drive for a Family-Run Carrier`,
-    description: `${PAY_RATES.ownerOperator.commission} gross for owner operators, ${PAY_RATES.companyDriver.otr.perMile}/mile for company drivers, ${EQUIPMENT.modelYears} ${EQUIPMENT.makes}, weekly pay, no forced dispatch.`,
+    description: `${PAY_RATES.ownerOperator.commission} gross for owner operators, ${PAY_RATES.companyDriver.local.perMile}/mile for company drivers, ${EQUIPMENT.modelYears} ${EQUIPMENT.makes}, weekly pay, no forced dispatch.`,
     images: ["/og-image.png"],
   },
   robots: {
@@ -119,10 +114,6 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 5,
-  // The fixed mobile command bar pads itself by env(safe-area-inset-bottom);
-  // without cover the inset reads 0 in standalone/landscape and the bar sits
-  // under the home indicator.
-  viewportFit: "cover",
   themeColor: "#121316",
 }
 
@@ -158,7 +149,7 @@ export default function RootLayout({
         <AttributionCapture />
       </head>
       <body
-        className={`${sourceSans.className} antialiased`}
+        className={`${sourceSans.className} antialiased overflow-x-hidden`}
         suppressHydrationWarning
       >
         <Providers>

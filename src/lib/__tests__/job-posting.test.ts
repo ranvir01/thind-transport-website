@@ -1,6 +1,15 @@
 import { describe, expect, it } from "vitest"
-import { buildJobPostingSchema, parseAnnualRange } from "@/lib/job-posting"
-import { PAY_RATES } from "@/lib/constants"
+import {
+  buildCompanyDriverJobPosting,
+  buildJobListingPosting,
+  buildJobPostingSchema,
+  buildLaneCompanyJobPosting,
+  buildOwnerOperatorJobPosting,
+  companyDriverAnnualBounds,
+  jobListingLead,
+  parseAnnualRange,
+} from "@/lib/job-posting"
+import { BENEFITS, COMPANY_INFO, PAY_RATES, WORKPLACE } from "@/lib/constants"
 import { STATES, stateBySlug } from "@/lib/state-data"
 
 describe("parseAnnualRange", () => {
@@ -39,7 +48,8 @@ describe("buildJobPostingSchema", () => {
     })
     expect(schema.baseSalary.value.minValue).toBeGreaterThan(0)
     expect(schema.baseSalary.value.maxValue).toBeGreaterThan(schema.baseSalary.value.minValue)
-    expect(schema.datePosted).toBe("2026-07-26")
+    expect(schema.url).toContain("/cdl-jobs/washington")
+    expect(schema.occupationalCategory).toBe("53-3032.00")
     expect(schema.validThrough > schema.datePosted).toBe(true)
   })
 
@@ -49,6 +59,80 @@ describe("buildJobPostingSchema", () => {
       expect(s.jobLocation.address.addressRegion).toBe(state.abbr)
       expect(s.validThrough).toBeTruthy()
     }
+  })
+})
+
+describe("Kent HQ JobPostings for /apply", () => {
+  const now = new Date("2026-08-26T00:00:00Z")
+  const company = buildCompanyDriverJobPosting(now)
+  const owner = buildOwnerOperatorJobPosting(now)
+
+  it("company posting carries Google-required fields plus WA EPOA benefits", () => {
+    expect(company["@type"]).toBe("JobPosting")
+    expect(company.employmentType).toBe("FULL_TIME")
+    expect(company.jobLocation.address).toMatchObject({
+      addressLocality: "Kent",
+      addressRegion: "WA",
+    })
+    expect(company.jobBenefits).toContain(BENEFITS.companyDriver[0])
+    expect(company.description).toContain(PAY_RATES.companyDriver.local.perMile)
+    expect(company.description).toContain(WORKPLACE.languages)
+    expect(company.baseSalary.value.minValue).toBe(companyDriverAnnualBounds()[0])
+    expect(company.baseSalary.value.maxValue).toBe(companyDriverAnnualBounds()[1])
+    expect(company.url).toContain("/apply")
+    expect(company.occupationalCategory).toBe("53-3032.00")
+    expect(company.datePosted).toBe("2026-08-26")
+  })
+
+  it("owner-operator posting is a contractor role with the lease split", () => {
+    expect(owner.url).toContain("/jobs/owner-operator")
+    expect(owner.employmentType).toBe("CONTRACTOR")
+    expect(owner.title).toContain(PAY_RATES.ownerOperator.commission)
+    expect(owner.description).toContain(PAY_RATES.ownerOperator.fuelSurcharge)
+    expect(owner.jobBenefits).toContain(BENEFITS.ownerOperator[0])
+    const [min, max] = parseAnnualRange(PAY_RATES.ownerOperator.annualGross)
+    expect(owner.baseSalary.value.minValue).toBe(min)
+    expect(owner.baseSalary.value.maxValue).toBe(max)
+  })
+})
+
+describe("per-lane Google Jobs listings", () => {
+  const now = new Date("2026-08-27T00:00:00Z")
+
+  it("gives local / regional / OTR unique URLs and titles", () => {
+    const local = buildLaneCompanyJobPosting("local", now)
+    const regional = buildLaneCompanyJobPosting("regional", now)
+    const otr = buildLaneCompanyJobPosting("otr", now)
+    expect(local.url).toContain("/jobs/local")
+    expect(regional.url).toContain("/jobs/regional")
+    expect(otr.url).toContain("/jobs/otr")
+    expect(local.title).not.toBe(regional.title)
+    expect(local.identifier.value).toBe("company-driver-local")
+    expect(local.description).toContain(PAY_RATES.companyDriver.local.homeTime)
+  })
+
+  it("jobListingPosting routes owner-operator to the contractor posting", () => {
+    const listing = buildJobListingPosting("owner-operator", now)
+    expect(listing.employmentType).toBe("CONTRACTOR")
+    expect(listing.url).toContain("/jobs/owner-operator")
+  })
+
+  it("jobListingLead puts pay and home time in the first sentence", () => {
+    expect(jobListingLead("local")).toContain(PAY_RATES.companyDriver.local.perMile)
+    expect(jobListingLead("local")).toContain(COMPANY_INFO.location)
+    expect(jobListingLead("otr")).toContain(PAY_RATES.companyDriver.otr.homeTime)
+    expect(jobListingLead("owner-operator")).toContain(PAY_RATES.ownerOperator.commission)
+  })
+})
+
+describe("companyDriverAnnualBounds", () => {
+  it("spans local min to OTR max so one posting can show the full wage scale", () => {
+    const [min, max] = companyDriverAnnualBounds()
+    const [localMin] = parseAnnualRange(PAY_RATES.companyDriver.local.annual)
+    const [, otrMax] = parseAnnualRange(PAY_RATES.companyDriver.otr.annual)
+    expect(min).toBe(localMin)
+    expect(max).toBe(otrMax)
+    expect(max).toBeGreaterThan(min)
   })
 })
 

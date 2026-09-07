@@ -11,9 +11,9 @@
  *   2. /pre-qualify manual-review path — same form with SAP Driver = Yes,
  *      expect the "Thank You for Your Interest" review card (the
  *      checkQualification disqualifier branch).
- *   3. /apply full 4-step wizard — qualify radios → contact → details →
- *      docs (uploads optional) → submit → "Thank You for Submitting Your
- *      Info" success step. Step 2→3 also fires the captureLead action.
+ *   3. /apply full 4-step wizard — contact (phone first) → qualify radios →
+ *      details → docs (uploads optional) → submit → "Thank You for Submitting
+ *      Your Info" success step. Step 1→2 also fires the captureLead action.
  *
  * Persistence caveat: the public actions write through src/lib/driver-db.ts,
  * which with POSTGRES_URL set routes to @vercel/postgres (Neon HTTP driver)
@@ -158,22 +158,22 @@ async function main() {
   )
   check(noHscroll, "apply page: no horizontal scroll at 390px")
 
-  // Step 1: qualify
-  await clickRadioLabel(page, "Company Driver")
-  await clickRadioLabel(page, "Class A")
-  await clickRadioLabel(page, "3-5 Years")
-  await clickByText(page, "Continue Application")
-  await waitForText(page, "Step 2 of 4")
-  check(true, "step 1 (qualify) advances")
-
-  // Step 2: contact — advancing fires captureLead
+  // Step 1: contact (phone first — advancing fires captureLead)
   await fill(page, "#firstName", "Test")
   await fill(page, "#lastName", "Applicant")
   await fill(page, "#email", "e2e-apply@example.com")
   await fill(page, "#phone", "2065556789")
   await clickByText(page, "Continue Application")
-  await waitForText(page, "Step 3 of 4", 20000)
-  check(true, "step 2 (contact) advances through captureLead")
+  await waitForText(page, "Step 2 of 4")
+  check(true, "step 1 (contact) advances through captureLead")
+
+  // Step 2: qualify
+  await clickRadioLabel(page, "Company Driver")
+  await clickRadioLabel(page, "Class A")
+  await clickRadioLabel(page, "3-5 Years")
+  await clickByText(page, "Continue Application")
+  await waitForText(page, "Step 3 of 4")
+  check(true, "step 2 (qualify) advances")
 
   // Step 3: details
   await fill(page, "#cdlNumber", "WDL1234567")

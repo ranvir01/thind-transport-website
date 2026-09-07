@@ -56,6 +56,8 @@ const FooterSection = ({
 const FooterLinkSections = () => {
   const driverLinks: FooterLink[] = [
     { href: "/apply", label: "Apply", highlight: true },
+    { href: "/jobs", label: "Open jobs" },
+    { href: "/refer", label: "Refer a driver" },
     { href: "/pay-rates", label: "Pay rates" },
     { href: "/benefits", label: "Benefits" },
     { href: "/routes", label: "Routes and lanes" },
@@ -102,6 +104,8 @@ const NOT_A_DRIVER_PAGE = new Set(["/shippers", "/brokers", "/quote", "/trust", 
 export const shouldHideMobileCommandBar = (pathname: string): boolean =>
   pathname === "/apply" ||
   pathname === "/pre-qualify" ||
+  pathname === "/refer" ||
+  pathname.startsWith("/jobs") ||
   pathname.startsWith("/hub") ||
   pathname.startsWith("/track") ||
   pathname.startsWith("/driver") ||

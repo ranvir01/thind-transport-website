@@ -20,6 +20,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { path: "/quote", changeFrequency: "monthly" as const, priority: 0.85 },
     { path: "/contact", changeFrequency: "monthly" as const, priority: 0.7 },
     { path: "/cdl-jobs", changeFrequency: "weekly" as const, priority: 0.85 },
+    { path: "/jobs", changeFrequency: "weekly" as const, priority: 0.9 },
+    { path: "/jobs/local", changeFrequency: "weekly" as const, priority: 0.9 },
+    { path: "/jobs/regional", changeFrequency: "weekly" as const, priority: 0.85 },
+    { path: "/jobs/otr", changeFrequency: "weekly" as const, priority: 0.85 },
+    { path: "/jobs/owner-operator", changeFrequency: "weekly" as const, priority: 0.9 },
+    { path: "/refer", changeFrequency: "weekly" as const, priority: 0.7 },
     ...STATES.map((state) => ({
       path: `/cdl-jobs/${state.slug}`,
       changeFrequency: "monthly" as const,

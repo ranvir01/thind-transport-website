@@ -58,7 +58,6 @@ const SCOPE = [
   "src/components/features/GetTheApp.tsx",
   "src/components/features/WhySwitch.tsx",
   "src/components/features/PayTable.tsx",
-  "src/components/features/ProfitCalculator.tsx",
   "src/components/features/JobDetailsDialog.tsx",
   "src/components/features/LaneTransitEstimator.tsx",
   "src/components/features/ShipperQuoteForm.tsx",

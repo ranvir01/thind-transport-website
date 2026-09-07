@@ -7,7 +7,7 @@ import { focusableWithin, nextFocusTarget } from "@/lib/focus-trap"
 import {
   ChevronDown, Menu, X, Phone, FileText,
   DollarSign, Heart, MapPin, BookOpen, Users,
-  Truck, Shield, ChevronRight, LayoutDashboard,
+  Truck, Shield, ChevronRight, LayoutDashboard, Share2,
 } from "lucide-react"
 import { COMPANY_INFO, EQUIPMENT, PAY_RATES, STATS } from "@/lib/constants"
 import { PersonaSwitcher } from "@/components/shared/PersonaSwitcher"
@@ -20,6 +20,18 @@ const driverMenuItems = [
     description: "Start your application",
     icon: FileText,
     highlight: true,
+  },
+  {
+    href: "/jobs",
+    label: "Open Jobs",
+    description: "Local, regional, OTR, lease-on",
+    icon: Truck,
+  },
+  {
+    href: "/refer",
+    label: "Send this job",
+    description: "QR + copy for WhatsApp",
+    icon: Share2,
   },
   {
     href: "/pay-rates",

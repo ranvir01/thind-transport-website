@@ -9,6 +9,9 @@
  */
 export const APPLY_TOTAL_STEPS = 4
 
+/** Phone first so dispatch can call even if the driver bounces on CDL class. */
+export const APPLY_STEP_LABELS = ["Contact", "Qualify", "Details", "Docs"] as const
+
 export function applyProgressPercent(step: number): number {
   const clamped = Math.min(Math.max(step, 1), APPLY_TOTAL_STEPS)
   return Math.round((clamped / APPLY_TOTAL_STEPS) * 100)

@@ -138,7 +138,7 @@ export const TRUST_INDICATORS = {
       href: FMCSA_LINKS.safer,
     },
     {
-      name: `USDOT #2523064`,
+      name: `USDOT #${COMPANY_INFO.dot}`,
       issuer: "U.S. Department of Transportation",
       icon: "badge-check",
       href: FMCSA_LINKS.safer,
@@ -154,5 +154,24 @@ export const TRUST_INDICATORS = {
     // owner confirms the real limits (see docs/OWNER-CHECKLIST.md). A test
     // fails if it is re-added without that confirmation.
   ],
+} as const
+
+/**
+ * Workplace facts for recruiting copy — not compensation, not a hiring screen.
+ *
+ * Local Kent carriers recruit the same Punjabi-American CDL pool with "Punjabi
+ * preferred" ads. That framing is an EEOC national-origin risk. The lawful,
+ * equally useful statement is what we actually do at work: dispatch and
+ * orientation in Punjabi and English, while FMCSA English proficiency remains
+ * a job requirement (49 CFR 391.11(b)(2), ELP out-of-service since June 2025).
+ *
+ * WA Equal Pay and Opportunities Act (RCW 49.58.110) postings also need an
+ * EEO line plus the wage scale + benefits already in PAY_RATES / BENEFITS.
+ */
+export const WORKPLACE = {
+  languages:
+    "Dispatch, orientation, and paperwork help available in Punjabi and English.",
+  elp: "Must meet all FMCSA driver qualifications, including English proficiency (49 CFR 391.11(b)(2)).",
+  eeo: "Thind Transport is an equal opportunity employer. All qualified applicants receive consideration without regard to race, color, religion, sex, national origin, age, disability, or any other protected status.",
 } as const
 
