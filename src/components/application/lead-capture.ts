@@ -1,5 +1,5 @@
 /**
- * Step-2 lead capture for the /apply wizard, designed to be fired WITHOUT
+ * Contact-step lead capture for the /apply wizard, designed to be fired WITHOUT
  * awaiting it. The server action inserts the lead (DB first, then a
  * notification email when SMTP is configured) — a full round trip that can
  * take seconds on truck-stop cell service. The wizard never uses the result

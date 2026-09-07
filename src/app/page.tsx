@@ -1,91 +1,94 @@
-import Link from "next/link"
 import { CinematicHero } from "@/components/cinematic/Hero"
 import { AudienceSelector } from "@/components/home/AudienceSelector"
-import { HomeTimeLanes } from "@/components/home/HomeTimeLanes"
+import { InfiniteTicker } from "@/components/cinematic/Ticker"
+import { EquipmentSection } from "@/components/home/EquipmentSection"
 import { FAQSection } from "@/components/home/FAQSection"
+import { TrustStrip } from "@/components/home/TrustStrip"
 import { ThindPromise } from "@/components/home/ThindPromise"
 import { OperationSection } from "@/components/home/OperationSection"
 import { PhotoBand } from "@/components/home/PhotoBand"
-import { DeferredApplicationForm, DeferredProfitCalculator } from "@/components/home/DeferredHomeSections"
+import { DeferredApplicationForm } from "@/components/home/DeferredHomeSections"
+import { HomeTimeLanes } from "@/components/home/HomeTimeLanes"
 import { WhySwitch } from "@/components/features/WhySwitch"
-import { COMPANY_INFO, STATS } from "@/lib/constants"
+import { COMPANY_INFO } from "@/lib/constants"
+import Link from "next/link"
 
 /**
- * Homepage — nine sections, one primary CTA per viewport.
- *
- * Was fourteen: TrustStrip (its USDOT / MC / fleet figures now sit on the
- * hero's trust line), DispatchBand (folded into OperationSection), a second
- * PhotoBand, QuickQualify (a second apply entry one screen above the real
- * form) and the closing Ticker (a static row that read as a second footer)
- * are gone; RoutesSection + EquipmentSection became HomeTimeLanes. At 390px
- * the page dropped from ~21 phone screens to ~12.
+ * Section order is designed as a whole, not accreted — see
+ * docs/design/home-rework-2026-08.md (constraints + paper variants).
+ * Each message appears exactly once: pay (hero), lanes (HomeTimeLanes),
+ * legitimacy (TrustStrip), comparison (WhySwitch), dispatch/day-to-day
+ * (OperationSection), the family (ThindPromise), equipment, objections
+ * (FAQ), then the one form. Earnings detail lives on /pay-rates (the
+ * calculators were removed — constraint 12). Do not re-add a second lanes
+ * section, a mid-page CTA band, a qualify widget, or a calculator.
  */
 export default function Home() {
   return (
-    <div className="brand-page-shell relative min-h-screen pb-24 selection:bg-orange-600 selection:text-white md:pb-0">
+    <div className="brand-page-shell relative min-h-screen selection:bg-orange-600 selection:text-white pb-24 md:pb-0">
       <CinematicHero />
 
       {/* Three doors, immediately after the hero — see AudienceSelector for why
           this is inline rather than a blocking gate. */}
       <AudienceSelector />
+      <HomeTimeLanes />
 
-      {/* The signature instrument: what you'd take home, on your numbers. */}
-      <DeferredProfitCalculator />
+      <TrustStrip />
 
       <WhySwitch />
 
       <PhotoBand
         src="/images/generated/fleet-lineup-kent.webp"
-        alt="Illustration of Freightliner Cascadia tractors lined up in a yard"
-        eyebrow={`${COMPANY_INFO.location} · Home yard`}
-        headline={`${STATS.trucksInFleet} trucks. One family. Zero call centers.`}
+        alt="Thind Transport Freightliner Cascadias lined up at the Kent, WA yard"
+        eyebrow="Kent, WA · Home yard"
+        headline="15 trucks. One family. Zero call centers."
       />
 
       <OperationSection />
 
-      <HomeTimeLanes />
-
       <ThindPromise />
 
+      <EquipmentSection />
       <FAQSection />
 
-      {/* The funnel form e2e-funnel-smoke pins. The fixed Call/Apply bar hides
-          while this is in view so a thumb reaching for "Submit" never lands on
-          a bar that navigates away (Footer.tsx, MobileCommandBar). */}
-      <section id="apply" aria-labelledby="apply-heading" className="brand-section-panel py-section-tight md:py-section-loose">
-        <div className="container">
-          <div className="mx-auto max-w-6xl">
-            <div className="mx-auto mb-8 max-w-measure text-center">
+      <section className="brand-section-panel py-20 md:py-28 relative overflow-hidden border-t border-steel-800">
+        <div className="container px-4 relative z-10">
+          <div className="max-w-6xl mx-auto">
+            <div className="fleet-section-heading">
               <span className="fleet-badge mb-4">Join the fleet</span>
-              <h2 id="apply-heading" className="mb-4 text-white">
-                Find the right fit
+              <h2 className="text-white mb-4">
+                Find the right <span className="text-orange">fit</span>
               </h2>
-              <p className="text-lg text-steel-300">
-                <span>
-                  Company driver or owner-operator — we review your experience, equipment and lanes with you directly. Prefer to talk?{" "}
-                </span>
-                <a
-                  href={`tel:${COMPANY_INFO.phoneFormatted}`}
-                  className="inline-flex items-center font-semibold text-white underline-offset-4 hover:underline"
-                >
-                  <span className="font-mono tabular-nums">{COMPANY_INFO.phone}</span>
-                </a>
+              <p className="text-lg text-steel-300 max-w-2xl mx-auto">
+                Company driver or owner-operator — we&apos;ll review your experience, equipment, and lanes with you directly.
               </p>
             </div>
 
-            <div className="fleet-panel p-6 md:p-10" data-light>
+            <div className="flex flex-wrap justify-center gap-4 mb-8">
+              <a 
+                href={`tel:${COMPANY_INFO.phoneFormatted}`}
+                className="flex items-center gap-2 px-6 py-3 border border-steel-600 bg-steel-800/50 rounded-fleet text-white font-semibold hover:border-orange/50 hover:text-orange transition-colors"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                </svg>
+                Call: {COMPANY_INFO.phone}
+              </a>
+            </div>
+
+            <div className="fleet-panel overflow-hidden p-6 md:p-10 border-steel-600" data-light>
               <DeferredApplicationForm />
             </div>
 
-            <p className="mt-6 text-center text-sm text-steel-400">
-              <span>Your information is secure and will only be used for recruitment purposes. </span>
-              <Link href="/privacy" className="underline underline-offset-2 hover:text-white">
-                Privacy Policy
-              </Link>
+            <p className="text-center text-steel-400 text-sm mt-6">
+              Your information is secure and will only be used for recruitment purposes.
+              <Link href="/privacy" className="underline ml-1 hover:text-white/90">Privacy Policy</Link>
             </p>
           </div>
         </div>
       </section>
+
+      <InfiniteTicker />
     </div>
   )
 }

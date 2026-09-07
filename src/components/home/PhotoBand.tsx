@@ -20,7 +20,7 @@ export function PhotoBand({
   priorityHint?: boolean
 }) {
   return (
-    <section className="relative h-[260px] overflow-hidden md:h-[420px]">
+    <section className="relative h-[320px] md:h-[420px] overflow-hidden">
       <Image
         src={src}
         alt={alt}
@@ -29,12 +29,12 @@ export function PhotoBand({
         priority={priorityHint}
         className="object-cover img-authentic"
       />
-      <div className="absolute inset-0 bg-gradient-to-t from-navy-950 via-navy-950/45 to-navy-950/20" />
+      <div className="absolute inset-0 bg-gradient-to-t from-[#060607] via-[#060607]/45 to-[#060607]/20" />
       <div className="grain-overlay" />
       <div className="absolute inset-x-0 bottom-0 pb-8 md:pb-12">
         <div className="container px-4">
           <p className="fleet-badge fleet-badge-gold mb-3">{eyebrow}</p>
-          <p className="font-display text-2xl md:text-4xl font-extrabold text-white max-w-3xl text-balance [text-shadow:0_2px_16px_rgba(0,0,0,0.7)]">
+          <p className="font-display text-2xl md:text-4xl font-extrabold uppercase tracking-wide text-white max-w-3xl [text-shadow:0_2px_16px_rgba(0,0,0,0.7)]">
             {headline}
           </p>
         </div>

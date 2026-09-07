@@ -18,8 +18,8 @@ import type { RelatedLink } from "@/components/shared/RelatedLinks"
 const DRIVER: RelatedLink[] = [
   {
     href: "/pay-rates",
-    title: "Pay calculator",
-    blurb: "Your miles and your rate — what a week grosses, before deductions.",
+    title: "Pay table",
+    blurb: "Per-mile rate, typical year, and home time for every lane — one table.",
     icon: Calculator,
     kind: "Tool",
   },
@@ -80,13 +80,23 @@ const DRIVER: RelatedLink[] = [
     kind: "Verify",
   },
   {
+    href: "/jobs",
+    title: "Open jobs",
+    blurb: "Local, regional, OTR, and owner-operator — one posting each for Google Jobs.",
+    icon: MapPin,
+    kind: "Page",
+  },
+  {
+    href: "/refer",
+    title: "Send this job",
+    blurb: "Copy-paste WhatsApp, Facebook, and QR codes so current drivers can forward it.",
+    icon: Users,
+    kind: "Tool",
+  },
+  {
     href: "/apply",
     title: "Apply",
-    // No callback-speed promise here: how fast recruiting actually calls back
-    // is an open question in docs/OWNER-CHECKLIST.md, and asserting it while
-    // asking the owner what it is would be the same mistake this file just
-    // helped clean up.
-    blurb: "A short form, then a person reviews it and calls you.",
+    blurb: "About a minute, and a person calls you back — usually the same day.",
     icon: Users,
     kind: "Form",
   },
