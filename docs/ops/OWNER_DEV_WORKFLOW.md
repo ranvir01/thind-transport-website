@@ -13,14 +13,15 @@ transfer to any job, team, or codebase later.
 There are two kinds of commits in this repo, and they carry different names
 because different parties are responsible for them:
 
-- **Agent commits** (the autonomous sessions) carry an AI attribution trailer.
-  That stays. It is an honest record of who did the work, and in THIS repo
-  it's also your evidence: the "family carrier built its own TMS with an agent
-  fleet" story is your differentiator for the fellowship and the launch
-  narrative. This repo is *visibly* agent-built — hundreds of `claude/*`
-  branches, CLAUDE.md, the routines docs. Stripping trailers wouldn't hide
-  that; it would just make the history dishonest and inconsistent. Never
-  rewrite pushed history to remove attribution.
+- **Agent commits** (the autonomous sessions) are authored *and* committed as
+  you — `npm run git:identity` sets it and the SessionStart hook re-runs it —
+  and carry no trailer naming a tool, model, vendor, or bot (owner rule,
+  2026-09-10; the full contract is `docs/ops/AGENT_INTEROP.md §8`). The repo
+  stays *visibly* agent-built through its history and docs — hundreds of
+  `claude/*` branches, the routines docs — and that remains the story for the
+  fellowship and the launch narrative; it does not need a vendor's name in
+  every commit to be true. Older commits that still carry an AI trailer are
+  left exactly as they are: never rewrite pushed history.
 
 - **Your commits** are yours, full stop. When you review a diff, understand
   it, test it, and commit it yourself, **you are the author** — no AI trailer
@@ -29,8 +30,8 @@ because different parties are responsible for them:
   person who can defend the change in review is the author.
 
 The line between the two is responsibility, not who typed. If you can't
-explain a change, it isn't yours yet — keep reviewing (or let the agent
-commit it under its own name).
+explain a change, it isn't yours yet — keep reviewing (or leave it on
+the agent's branch until you can).
 
 **For other people's repos later** (a job, open source): follow that team's
 AI policy, never paste private code into tools the team hasn't approved, and

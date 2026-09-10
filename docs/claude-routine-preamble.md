@@ -15,6 +15,7 @@ leave yours readable.
 ## Start of every run
 
 ```bash
+export DO_NOT_TRACK=1 NEXT_TELEMETRY_DISABLED=1 DISABLE_TELEMETRY=1 CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1 SUPERPOWERS_DISABLE_TELEMETRY=1   # nothing phones home — AGENT_INTEROP §8 (Go: `go telemetry off` once)
 npm run git:identity      # commit as the owner, not as the agent
 git pull
 npm run hooks:install     # core.hooksPath=.githooks — npm ci --ignore-scripts skips prepare
@@ -68,6 +69,10 @@ The tags are how work reaches the platform that can actually run it — see
 
 4. Stay inside your lane's file territory. Need a shared file (`types.ts`, migrations, AGENTS.md)?
    Write the need in `Backlog:` — integrator handles it.
+
+5. Author **and** committer are the owner (`npm run git:identity` above). No trailer names a
+   tool, model, vendor, or bot, and the message never says which AI tool wrote the change —
+   `docs/ops/AGENT_INTEROP.md §8`.
 
 ## Check your work is picked up
 

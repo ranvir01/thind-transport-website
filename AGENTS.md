@@ -45,6 +45,13 @@ For any visual or page change, `thind-brand-identity` + `responsive-performance`
   safety net, but it cannot retroactively earn contribution-graph credit. Set
   the identity up front.
 
+- **Start here:** [`Handoff.md`](Handoff.md) is the current-state map (what is built, what is
+  mid-flight, how to verify) and [`.cursorrules`](.cursorrules) is the exact stack and style
+  constraint list. This file stays the rulebook; when they disagree, this file wins.
+- **Credit and telemetry (owner rule, 2026-09-10):** author and committer are the owner, no
+  trailer names a tool or bot, nobody names which AI tool wrote anything, and every tool's
+  phone-home is switched off — [`docs/ops/AGENT_INTEROP.md §8`](docs/ops/AGENT_INTEROP.md).
+
 Setup guides live in `docs/` (database, deployment, email, driver onboarding).
 
 ## Language stack — TypeScript (app), Go (workers), Rust (compute)
@@ -93,8 +100,11 @@ full playbook and ready-made prompts:
    + the gates below + visual check of changed screens (local Postgres:
    `npm run db:migrate && npm run seed:demo`, then drive the real UI — demo logins in
    `scripts/seed-demo.mjs`).
-5. **Ship** — commit with a one-line why, push, merge to `main` (Vercel deploys `main`). Background
-   fleet automations (`.cursor/automation/README.md`) handle integrator → main drain and prod smoke.
+5. **Ship** — commit with a one-line why and push your branch. `main` is published by its writers in
+   [`docs/ops/AGENT_INTEROP.md §2`](docs/ops/AGENT_INTEROP.md) — the integrator → drain path for
+   `claude/*` branches, or the owner merging a PR — never by a session agent directly (Vercel deploys
+   `main`). Background fleet automations (`.cursor/automation/README.md`) handle integrator → main
+   drain and prod smoke.
 6. **Record** — end the commit body or PR with a `Backlog:` list of follow-ups you saw but didn't
    take; the next agent starts there. Never leave discovered defects unrecorded.
 
