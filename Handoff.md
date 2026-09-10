@@ -146,6 +146,7 @@ Ordered roughly by consequence. Source in brackets. Tags follow `docs/ops/AGENT_
 - Offline-queue replay idempotency for `submitDvirAction` / `fileDriverIncidentReport` (a `clientRequestId` + unique index) — carried from closed PR #19. [`docs/ops/TEST_GAPS.md` tail]
 
 **Fleet and docs**
+- `[needs-owner]` Protect `main` on this repo (require a pull request, no direct pushes) now that the Grok bots hold a push-capable token for their `grok/*` branches; confirm `drain-integrator.yml` keeps its bypass first, since it pushes `main` with the Actions token.
 - #87 / #90 fleet patches wait on a `should` label; `docs/ops/FLEET.md`, CLAUDE-START and CURSOR-START exist only on PR #42's branch. The Grok org design in `docs/grok-bots/` (on that branch) is superseded by `ranvir01/grok-bot-org` v2.
 - `docs/ops/HANDOFF.md`, `RELEASE_READINESS.md`, `TOP_10.md`, `STUB_INVENTORY.md`, `TEST_GAPS.md` are 2026-07-25 audits with later patches; treat their dollar figures as seed-data arithmetic (they say so themselves).
 - Mobile app phases 2 (Play via TWA) and 3 (iOS via Capacitor) are documented only; SMS critical-alert fallback is planned, not built. [`README.md`]
@@ -217,7 +218,7 @@ Gates that ratchet: `TEST_ERROR_BASELINE` (0) and `CEILING_KB` (285). If a chang
 
 ## 9. Decisions only the owner makes
 
-Standing queue: [`docs/ops/DECISIONS.md`](docs/ops/DECISIONS.md) on `main` holds D-001 (branch reaper), D-002 (semver-major bumps) and D-003; the later rows (D-004 … D-017, including D-005/D-006 on the Cursor automations) exist only on PR #42's branch and in the reference copy `ranvir01/grok-bot-org/fleet/docs/DECISIONS.md`. Plus, from this file: the production env confirmations in §4, the legacy-blob migration choice, the DAT staging verification, fuel/toll chargebacks, the sign-on bonus wording, IFTA re-import semantics, the real cost per mile, and whether the Grok team runs in write mode A or B (`ranvir01/grok-bot-org/GROK-BOT-SETUP-V2.md` rule 2).
+Standing queue: [`docs/ops/DECISIONS.md`](docs/ops/DECISIONS.md) on `main` holds D-001 (branch reaper), D-002 (semver-major bumps) and D-003; the later rows (D-004 … D-017, including D-005/D-006 on the Cursor automations) exist only on PR #42's branch and in the reference copy `ranvir01/grok-bot-org/fleet/docs/DECISIONS.md`. Plus, from this file: the production env confirmations in §4, the legacy-blob migration choice, the DAT staging verification, fuel/toll chargebacks, the sign-on bonus wording, IFTA re-import semantics, the real cost per mile, and `main` branch protection now that the Grok team runs in write mode B (`ranvir01/grok-bot-org/GROK-BOT-SETUP-V2.md` rule 2, since 2026-09-10: Dexter, Rex and Steve commit on their own `grok/<seat>-<ticket>` branches and open PRs; the owner merges).
 
 ---
 
