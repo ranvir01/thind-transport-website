@@ -54,6 +54,8 @@ concurrency:
   cancel-in-progress: false
 
 env:
+  DO_NOT_TRACK: "1"
+  NEXT_TELEMETRY_DISABLED: "1"
   INTEGRATOR: claude/hauldesk-project-setup-l1luoo
   AGENT_CATCHUP_THRESHOLD: "3"
   MAX_PENDING_AGE_HOURS: "12"

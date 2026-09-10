@@ -1,0 +1,170 @@
+# .cursorrules — Thind Transport Website + LoadOff hub (ranvir01/thind-transport-website)
+#
+# Precise constraints for any autonomous agent working this repo (Cursor cloud agents,
+# Claude Code sessions, Grok-fired agents). Rationale lives in AGENTS.md (the canonical
+# rulebook), DESIGN.md, docs/ops/AGENT_INTEROP.md, docs/agent-improvement-loop.md and the
+# skills in .cursor/skills/. Handoff.md is the current-state map (what is built, what is
+# mid-flight). If this file and AGENTS.md ever disagree, AGENTS.md wins — fix this file in
+# the same commit.
+
+## 0. Identity and reading order
+- Owner: Ranvir Thind (America/Los_Angeles). Business: Thind Transport, carrier in Kent, WA.
+- One Next.js app, two products: (1) LoadOff — multi-tenant TMS at /hub (office screens,
+  driver PWA, customer portal); (2) the driver-recruitment marketing site at / (every route
+  that is not /hub). Thind Transport is tenant #1 of LoadOff.
+- Read before the first edit, in this order: AGENTS.md → this file → Handoff.md →
+  docs/ops/AGENT_INTEROP.md → docs/agent-improvement-loop.md §4–5 → DESIGN.md → the
+  .cursor/skills/* skill that matches the task.
+
+## 1. Stack — pinned by package.json / tsconfig.json; do not bump majors without [needs-owner]
+- Node 22, npm with package-lock.json (never pnpm / yarn / bun).
+  Install exactly like CI: `npm ci --ignore-scripts && npm rebuild bcrypt sharp`.
+- Next.js 16 App Router, Turbopack default. Route protection is `src/proxy.ts`
+  (Next 16 "proxy" convention) — there is no middleware.ts; do not add one.
+- React 19. TypeScript 5.9, `strict: true`, `moduleResolution: bundler`, alias `@/* → src/*`.
+- Tailwind CSS 3.4 (+ tailwindcss-animate, tailwind-merge, class-variance-authority).
+  NOT Tailwind v4: no `@theme`, no v4 plugins. Tokens: tailwind.config.ts + src/app/hub/hub-theme.css.
+- UI primitives: Radix (shadcn-style) in src/components/ui; icons lucide-react; toasts sonner;
+  forms react-hook-form + zod (schemas must match form fields or steps silently stall).
+- Auth: NextAuth v5 beta. Session cookie `authjs.session-token` (`__Secure-` prefix in prod),
+  `trustHost: true`, secret from NEXTAUTH_SECRET or AUTH_SECRET.
+- Database: Postgres via `pg` with hand-written parameterised SQL in schema `hub.*`. No ORM.
+  The legacy /driver/* portal keeps its own public-schema tables behind node-postgres pools
+  (src/lib/driver-db-local.ts, src/lib/db-setup.ts) — not `@vercel/postgres`.
+- Tests: vitest 4, `src/**/*.test.ts`, node environment, esbuild transpile (NO typechecking —
+  that is what `node scripts/typecheck-gate.mjs` is for). Browser smokes: Puppeteer via
+  scripts/e2e-*-smoke.mjs (need a live server + Postgres).
+- Lint: ESLint 9 flat config (eslint.config.mjs, eslint-config-next core-web-vitals).
+  Style: match surrounding code — no semicolons, double quotes, 2-space indent, named exports.
+- Optional sidecars, at most one each: Go worker (services/go/hauldesk-worker, :8081; go.mod says
+  `go 1.22`, any 1.22+ toolchain)
+  and Rust compute (services/rust/hauldesk-compute, :8082), called from src/lib/hub/sidecars.ts
+  only when HAULDESK_GO_WORKER_URL / HAULDESK_RUST_COMPUTE_URL are set. Unset → pure TS paths.
+- Deploy: Vercel (region iad1), builds only `main` (vercel.json ignoreCommand). Crons are
+  declared in vercel.json and served by src/app/api/hub/cron/[job]/route.ts behind CRON_SECRET.
+- Dependencies: no new heavy dependency. Licenses: permissive only, per PERMISSIVE_LICENSES in
+  src/lib/license-policy.ts (MIT, ISC, BSD, Apache-2.0 and kin); no strong copyleft (GPL, AGPL,
+  SSPL, LGPL); weak copyleft (MPL-2.0, e.g. web-push) only as an unmodified dependency
+  (`npm run license:audit`). `canvas` is optional/native.
+
+## 2. Directory map and ownership
+- src/app/hub/(office)/**      office screens (owner, dispatcher, accountant)
+- src/app/hub/driver/**        driver PWA — forced-dark surface
+- src/app/hub/portal/**        broker/shipper portal — forced-dark surface; src/app/track/** public tracking
+- src/app/hub/_actions/**      server actions: the ONLY place hub mutations happen
+- src/app/api/hub/**           cron, webhooks, files, exports, ifta, push, sandbox, manifest
+- src/lib/hub/**               the engine (pure functions + SQL); tests in src/lib/hub/__tests__/
+- src/lib/hub/integrations/**  provider adapters; registry.ts is the ONLY provider list
+- src/components/hub/**        hub components (driver/ subfolder = PWA)
+- src/components/{home,application,driver-form,cinematic,features,fleet,shared,ui}/**  marketing site
+- src/lib/constants.ts         single source of company facts (phone, pay rates, stats).
+                               Read-only for lane agents; the integrator edits it.
+- migrations/hub/NNN_*.sql     append-only, idempotent (IF NOT EXISTS); applied by `npm run db:migrate`
+- scripts/**                   node tooling: gates, migrate, seed, e2e smokes, agent helpers
+- docs/**                      ops docs, ADRs (docs/decisions), integrations, phases, research
+- Shared files — src/lib/hub/types.ts, permissions.ts, navigation.ts, AGENTS.md, migrations —
+  are changed only through the integrator: write the need into `Backlog:` instead.
+- Which paths a scheduled lane may touch: docs/agent-improvement-loop.md §5 (territory table).
+
+## 3. Code rules — each is enforced by a test or gate; do not regress any of them
+Money
+- Integer cents everywhere (bigint columns, `*_cents` names). User input → `dollarsToCents`;
+  rounding → `roundHalfAwayFromZero` (src/lib/hub/types.ts, src/lib/hub/rounding.ts).
+  A float anywhere in a money path is a bug. Display formatting is the only exception.
+Tenancy (ADR docs/decisions/0002)
+- Every hub query is carrier-scoped (`WHERE carrier_id = $1`). Cross-table writes guard BOTH
+  sides (`assertCarrierRefs`, src/lib/hub/tenancy.ts). A new tenant-owned table ships with a
+  tenant-isolation test.
+Permissions
+- Mutations live in server actions and call `requirePermission(...)` from
+  src/lib/hub/session.ts (the role × action matrix itself — `can`, `rolesAllowed`, `HubAction` —
+  is src/lib/hub/permissions.ts); a UI-only guard does not count. Money-adjacent mutations call
+  `logAudit`. Driver actions use `requireDriverUser`; portal actions use `requirePortalUser`.
+UI tokens (DESIGN.md)
+- (office) routes: semantic tokens only — `accent-text` for money/links, `warn` / `warn-soft`
+  for needs-attention, `bad` for red, surface/border/fg scales otherwise. Never `gold`,
+  `navy`, `steel` in (office). Radii: rounded-control 10px < rounded-card 14px < rounded-sheet 20px.
+- /hub/driver/* and /hub/portal/* are forced dark: never `text-fg*`, `bg-surface*`,
+  `border-border*`; use `text-white`, `text-steel-*`, `bg-navy-*`, `border-white/*`.
+- Never a Tailwind opacity modifier on a CSS-variable colour (`bg-surface/95`) — Tailwind drops
+  the class silently. Only the marketing `paper / ink / signal / asphalt / cedar` set supports it.
+- Marketing: tokens only in redesigned components (`npm run token-lint`), brand rules in
+  .cursor/skills/thind-brand-identity, mobile-first and verified at 390px, no popups or gimmick
+  animations, one red CTA per viewport.
+Components
+- Server Components by default; `"use client"` only at the smallest interactive leaf;
+  `next/dynamic` for heavy below-the-fold pieces; fonts through next/font only.
+Data and migrations
+- New schema = a new migrations/hub/NNN_*.sql with IF NOT EXISTS. Never edit an applied
+  migration. Postgres returns snake_case, TypeScript uses camelCase — handle both at boundaries.
+Integrations (AGENTS.md "Integrations doctrine")
+- Stub-first: an adapter is complete against src/lib/hub/integrations/mock.ts and
+  integration-contract.test.ts BEFORE vendor credentials exist. Adapters implement `SyncSource`,
+  upsert `ON CONFLICT (carrier_id, source, external_id)`, and write a hub.integration_syncs row
+  on every run. The CSV/manual fallback is never removed. Inbound pushes only through
+  /api/hub/webhooks/[provider], HMAC-verified. Never log a credential value (field names only).
+Sidecars (docs/architecture/trilingual-stack.md)
+- Rust/TS golden parity: a change to ifta.test.ts fixtures updates the Rust tests in the same
+  commit (`npm run test:sidecars`). Sidecars never touch Postgres; HAULDESK_SIDECAR_SECRET gates
+  every work endpoint.
+Copy
+- Company facts come from src/lib/constants.ts only. No unverifiable claims — the banned list in
+  src/__tests__/unverifiable-claims.test.ts is a ratchet. Never state which AI tool wrote anything.
+Secrets
+- Never commit `.env*` values, tokens, or passwords; .env.example documents names and non-secret
+  defaults only — never a real credential.
+
+## 4. Tests
+- Co-locate: src/lib/hub/__tests__/<module>.test.ts (engine), src/lib/__tests__/ (scripts,
+  workflow guards), src/__tests__/ (site-wide guards). Shared fixtures:
+  src/lib/hub/__tests__/helpers/db-mock.ts and helpers/session.ts — mocks accept `(sql, params)`.
+- Bug fix = failing test first. New engine function = unit test. New money or tenancy path =
+  a negative (cross-carrier) case as well as the happy path.
+- DB-gated suites (portal-isolation, driver-file-isolation, cross-tenant-harness) run when
+  POSTGRES_URL is set and hard-fail in CI if skipped. Set POSTGRES_URL locally to run them.
+
+## 5. Verification chain — before every push; never weaken a gate or raise a ratchet
+  npm run build && npx vitest run && node scripts/typecheck-gate.mjs && npm run lint
+  + npm run token-lint            (marketing UI touched)
+  + npm run license:audit         (dependencies touched)
+  + npm run test:sidecars         (services/** touched; needs Go + Rust)
+  + npm run design-qa / js-budget / qa:a11y   (UI; needs a browser — tag [needs-browser] if none)
+  + npm run connections:check / go-live:check  (env or integration changes)
+  Ratchets: TEST_ERROR_BASELINE in scripts/typecheck-gate.mjs (now 0) and CEILING_KB in
+  scripts/js-budget.mjs may go down, never up. A build made green by moving a ratchet is red.
+
+## 6. Git and hand-off protocol (docs/ops/AGENT_INTEROP.md)
+- `npm run git:identity` before the first commit: author AND committer are the owner. No
+  `Co-authored-by`, `Generated with`, `Signed-off-by` or similar line naming a tool, model,
+  vendor, or bot. Never name an AI tool in a commit, PR body, issue, or public copy.
+- One branch, one writer. `claude/<name>` session branches are absorbed by the `:00` integrator
+  (`npm run agent:branches` sees only `claude/*`); `cursor/<slug>` and `grok/<seat>-<ticket>`
+  branches are PR-only — invisible to the integrator, merged by the owner. Never push `main`
+  (its writers are the four in docs/ops/AGENT_INTEROP.md §2: deploy agent, drain Action, smoke
+  agent when production is red, the owner) or the integrator branch
+  claude/hauldesk-project-setup-l1luoo. An agent never merges into `main` itself — the fleet's
+  publishers and the owner do. Never absorb, rebase onto, or merge `cursor/*` automation run
+  branches (fleet rule, ranvir01/grok-bot-org fleet/README.md §4).
+- Before fixing any bug: `npm run agent:branches` and `git log --all --oneline --grep="<bug>"`.
+  If a fix exists on an unmerged branch, cite that branch in `Backlog:` instead of writing another.
+- One finished item per commit. Subject = a one-line why. Body ends with `Backlog:` and uses the
+  tags [needs-browser], [needs-sidecars], [needs-owner], [blocked-by <branch>].
+- Adding any schedule (cron, routine, automation) = an unused UTC minute + a row in
+  docs/ops/AGENT_INTEROP.md §1; fleet-clock guard tests fail two schedulers on one minute.
+
+## 7. Telemetry — nothing phones home (docs/ops/AGENT_INTEROP.md §8)
+- Before running any tool, export the block at the end of .env.example: DO_NOT_TRACK=1,
+  NEXT_TELEMETRY_DISABLED=1, DISABLE_TELEMETRY=1, CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1,
+  SUPERPOWERS_DISABLE_TELEMETRY=1. Go has no env switch (GOTELEMETRY is read-only): run
+  `go telemetry off` once per machine or image before any `go` command. Never add analytics, beacons, version pings,
+  or remote-loaded assets to tooling, prompts, or docs. The product's own analytics
+  (@vercel/analytics, @vercel/speed-insights) belong to the owner and stay.
+
+## 8. Never
+- Edit `.env*` contents, secrets, HUB_DEMO_LOGIN in production, or an applied migration.
+- Change fleet configuration (schedules, lanes, .cursor/**, workflow triggers), money maths,
+  permissions, or deletion behaviour on your own — file it as [needs-owner].
+- Build anything on the do-not-build list (docs/small-carrier-v1-master-prompt.md), a webview
+  shell (ADR docs/decisions/0003), billing code in lane-saas, a second load board, a third sidecar.
+- Skip, disable, or quarantine a test to go green; push an empty commit to kick CI.
+- Force-push or otherwise rewrite any pushed history.
