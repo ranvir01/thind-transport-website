@@ -15,6 +15,7 @@ thing keeping you out of each other's way.
 ## Start of every run
 
 ```bash
+export DO_NOT_TRACK=1 NEXT_TELEMETRY_DISABLED=1 DISABLE_TELEMETRY=1 CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1 SUPERPOWERS_DISABLE_TELEMETRY=1   # nothing phones home — AGENT_INTEROP §8 (Go: `go telemetry off` once)
 npm run git:identity      # commit as the owner, not as Cursor
 git pull
 npm run hooks:install     # core.hooksPath=.githooks — npm ci --ignore-scripts skips prepare
@@ -49,6 +50,10 @@ in three days. This is the only lock the fleet has.
 4. Commit body ends with a `Backlog:` list. Tag anything the next agent can't just pick up:
    `[needs-browser]`, `[needs-sidecars]`, `[needs-owner]`, `[blocked-by <branch>]` — see
    `docs/ops/AGENT_INTEROP.md §4`.
+
+5. Author **and** committer are the owner. No `Co-authored-by`, `Generated with`, or similar
+   line naming a tool, model, vendor, or bot; never say which AI tool wrote the change —
+   `docs/ops/AGENT_INTEROP.md §8`.
 
 ## What this environment cannot do
 

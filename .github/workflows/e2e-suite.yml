@@ -68,6 +68,8 @@ jobs:
           --health-timeout 5s
           --health-retries 12
     env:
+      DO_NOT_TRACK: "1"
+      NEXT_TELEMETRY_DISABLED: "1"
       POSTGRES_URL: postgres://hubapp:hubpass@localhost:5432/hubdb
       # CI-only values; nothing here is a real secret and none of it can
       # reach production. CREDENTIALS_KEY must be 32+ chars for the vault.
@@ -135,6 +137,8 @@ jobs:
           --health-timeout 5s
           --health-retries 12
     env:
+      DO_NOT_TRACK: "1"
+      NEXT_TELEMETRY_DISABLED: "1"
       POSTGRES_URL: postgres://hubapp:hubpass@localhost:5432/hubdb
       NEXTAUTH_URL: http://localhost:3000
       # CI-only values; nothing here is a real secret and none of it can

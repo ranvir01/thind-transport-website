@@ -44,6 +44,7 @@ broken, it still runs.
 | `claude/hauldesk-project-setup-l1luoo` (integrator) | the `:00` integrator agent, and the drain Action carrying the merge back | never push directly |
 | `claude/lane-*` | the one agent working that lane | never |
 | `claude/<session-name>` | the one agent that created it | never |
+| `cursor/<slug>`, `grok/<seat>-<ticket>` | the one cloud agent or bot that created it — PR-only: `npm run agent:branches` does not see them, the owner merges the PR | never |
 
 Two agents on one branch is the single most expensive mistake available here — it costs a forced
 push or a conflict resolution nobody asked for. **One branch, one writer.** If you need work that
@@ -174,3 +175,33 @@ Every agent commits as the owner — `npm run git:identity`, or the two `git con
 AGENTS.md. The author field is what GitHub credits and what `git blame` reports; an agent that
 leaves its own identity there takes the owner's credit on the owner's repository. If your harness
 needs a specific committer for signing, set `GIT_COMMITTER_*` and leave the author alone.
+
+---
+
+## 8 · Credit and telemetry (owner rule, 2026-09-10)
+
+Two rules apply to every agent on every platform, in this repo and in every other `ranvir01/*`
+repo an agent touches.
+
+**Credit is the owner's.** The git author *and* committer are Ranvir Thind (`npm run git:identity`,
+§7). No trailer names a tool, model, vendor, or bot — no `Co-authored-by: <tool>`, no
+`Generated with …`, no `Signed-off-by: <bot>`. Commit messages, PR bodies, issues, docs, and public
+copy never say which AI tool wrote something; "how AI was used" is the most any form ever gets.
+Pushed history is never rewritten to change past attribution — older commits that carry a trailer
+stay as they are. The one thing this rule does not touch is third-party *license* notices on
+vendored code: MIT/Apache/BSD require them, `npm run license:notices` regenerates
+`THIRD_PARTY_NOTICES.md`, and it stays.
+
+**Nothing phones home.** Every agent environment exports the block at the end of `.env.example`
+(`DO_NOT_TRACK`, `NEXT_TELEMETRY_DISABLED`, `DISABLE_TELEMETRY`,
+`CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC`, `SUPERPOWERS_DISABLE_TELEMETRY`) before the first tool
+runs, and runs `go telemetry off` once per machine (Go's `GOTELEMETRY` is read-only; the command is
+the switch). The npm-running CI jobs set the two that apply on a GitHub runner (`DO_NOT_TRACK`,
+`NEXT_TELEMETRY_DISABLED`). A plugin, skill, MCP server, template,
+or CLI is enabled only after someone has read its source for outbound calls (analytics SDKs,
+version pings, logos or assets fetched from the author's domain — the Superpowers plugin's
+version-tagged logo load is the worked example), set its documented opt-out, and recorded it. The
+procedure is `skills/plugin-audit.md` in `ranvir01/grok-bot-org`; the registry is
+`/workspace/org/plugins.md` on the Grok computer. No agent adds analytics, beacons, version
+pings, or remote-asset loads to tooling, prompts, or docs. The product's own analytics
+(`@vercel/analytics`, `@vercel/speed-insights`) are the owner's and are not in scope.
