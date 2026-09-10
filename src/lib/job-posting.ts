@@ -275,3 +275,30 @@ export function jobListingLead(slug: JobSlug): string {
     slug === "otr" ? `${row.homeTime} out` : `Home ${row.homeTime.toLowerCase()}`
   return `${home} from ${COMPANY_INFO.location}. ${row.perMile}/mile · ${row.annual}/year.`
 }
+
+const JOBS_HUB_TITLES: Record<JobSlug, string> = {
+  local: "Local company driver",
+  regional: "Regional company driver",
+  otr: "OTR company driver",
+  "owner-operator": "Owner operator",
+}
+
+/** ItemList for /jobs — four live postings with canonical URLs. */
+export function buildJobsHubItemList(now: Date = new Date()) {
+  const { datePosted } = postingDates(now)
+  return {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    name: `Open CDL jobs at ${COMPANY_INFO.name}`,
+    description: `Local, regional, and OTR company-driver seats plus owner-operator lease-on at ${COMPANY_INFO.location}.`,
+    numberOfItems: JOB_SLUGS.length,
+    itemListElement: JOB_SLUGS.map((slug, index) => ({
+      "@type": "ListItem",
+      position: index + 1,
+      name: JOBS_HUB_TITLES[slug],
+      url: jobListingUrl(slug),
+      item: buildJobListingPosting(slug, now),
+    })),
+    dateModified: datePosted,
+  }
+}

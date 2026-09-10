@@ -3,10 +3,13 @@ import {
   buildCompanyDriverJobPosting,
   buildJobListingPosting,
   buildJobPostingSchema,
+  buildJobsHubItemList,
   buildLaneCompanyJobPosting,
   buildOwnerOperatorJobPosting,
   companyDriverAnnualBounds,
+  JOB_SLUGS,
   jobListingLead,
+  jobListingUrl,
   parseAnnualRange,
 } from "@/lib/job-posting"
 import { BENEFITS, COMPANY_INFO, PAY_RATES, WORKPLACE } from "@/lib/constants"
@@ -122,6 +125,26 @@ describe("per-lane Google Jobs listings", () => {
     expect(jobListingLead("local")).toContain(COMPANY_INFO.location)
     expect(jobListingLead("otr")).toContain(PAY_RATES.companyDriver.otr.homeTime)
     expect(jobListingLead("owner-operator")).toContain(PAY_RATES.ownerOperator.commission)
+  })
+})
+
+describe("buildJobsHubItemList", () => {
+  const now = new Date("2026-09-10T00:00:00Z")
+  const list = buildJobsHubItemList(now)
+
+  it("lists all four live postings with JobPosting items", () => {
+    expect(list["@type"]).toBe("ItemList")
+    expect(list.numberOfItems).toBe(4)
+    expect(list.itemListElement).toHaveLength(4)
+    for (const [index, slug] of JOB_SLUGS.entries()) {
+      const row = list.itemListElement[index]
+      expect(row.position).toBe(index + 1)
+      expect(row.url).toBe(jobListingUrl(slug))
+      expect(row.item["@type"]).toBe("JobPosting")
+      expect(row.item.url).toBe(jobListingUrl(slug))
+    }
+    expect(list.itemListElement[0].item.description).toContain(PAY_RATES.companyDriver.local.perMile)
+    expect(list.itemListElement[3].item.employmentType).toBe("CONTRACTOR")
   })
 })
 

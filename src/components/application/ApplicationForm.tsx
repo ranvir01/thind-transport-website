@@ -548,6 +548,8 @@ export function ApplicationForm() {
                   type="tel"
                   inputMode="tel"
                   autoComplete="tel"
+                  required
+                  aria-required="true"
                   className={cn("h-12 py-3 text-base", errors.phone ? "border-red-500" : "")}
                 />
                 {errors.phone && <p className="text-xs text-red-500 mt-1">{errors.phone.message}</p>}
@@ -561,6 +563,8 @@ export function ApplicationForm() {
                     {...register("firstName")}
                     autoComplete="given-name"
                     placeholder="John"
+                    required
+                    aria-required="true"
                     className={cn("h-12 py-3 text-base", errors.firstName ? "border-red-500" : "")}
                   />
                   {errors.firstName && <p className="text-xs text-red-500 mt-1">{errors.firstName.message}</p>}
@@ -573,6 +577,8 @@ export function ApplicationForm() {
                     {...register("lastName")}
                     autoComplete="family-name"
                     placeholder="Doe"
+                    required
+                    aria-required="true"
                     className={cn("h-12 py-3 text-base", errors.lastName ? "border-red-500" : "")}
                   />
                   {errors.lastName && <p className="text-xs text-red-500 mt-1">{errors.lastName.message}</p>}
@@ -587,6 +593,8 @@ export function ApplicationForm() {
                   placeholder="john@example.com"
                   type="email"
                   autoComplete="email"
+                  required
+                  aria-required="true"
                   className={cn("h-12 py-3 text-base", errors.email ? "border-red-500" : "")}
                 />
                 {errors.email && <p className="text-xs text-red-500 mt-1">{errors.email.message}</p>}
