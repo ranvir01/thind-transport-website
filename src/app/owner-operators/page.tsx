@@ -1,6 +1,7 @@
 import { Metadata } from "next"
 import Link from "next/link"
 import { BENEFITS, COMPANY_INFO, PAY_RATES, STATS } from "@/lib/constants"
+import { buildOwnerOperatorJobPosting } from "@/lib/job-posting"
 import { PageBreadcrumb } from "@/components/shared/PageBreadcrumb"
 import { PersonaRemember } from "@/components/shared/PersonaRemember"
 import { AsphaltHero } from "@/components/shared/AsphaltHero"
@@ -12,8 +13,7 @@ const OO = PAY_RATES.ownerOperator
 
 export const metadata: Metadata = {
   title: `Owner Operators | ${OO.commission} of the Linehaul, ${OO.fuelSurcharge} of the Fuel Surcharge`,
-  description:
-    `Lease on with ${COMPANY_INFO.name} in ${COMPANY_INFO.location}. ${OO.commission} of the linehaul, ${OO.fuelSurcharge} of the fuel surcharge, and a settlement statement that shows every deduction line by line. No forced dispatch. USDOT ${COMPANY_INFO.dot}, MC ${COMPANY_INFO.mc}.`,
+  description: `Lease on in ${COMPANY_INFO.location}. ${OO.commission} of linehaul, ${OO.fuelSurcharge} fuel surcharge pass-through. Every deduction on your settlement before you sign. No forced dispatch.`,
   alternates: { canonical: "/owner-operators" },
 }
 
@@ -88,6 +88,7 @@ const FAQ = [
 ] as const
 
 export default function OwnerOperatorsPage() {
+  const jobPosting = buildOwnerOperatorJobPosting()
   const faqJsonLd = {
     "@context": "https://schema.org",
     "@type": "FAQPage",
@@ -101,6 +102,7 @@ export default function OwnerOperatorsPage() {
   return (
     <div className="min-h-screen overflow-x-hidden bg-navy-950">
       <PersonaRemember persona="owner-operators" />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jobPosting) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />
 
       <AsphaltHero
@@ -254,6 +256,14 @@ export default function OwnerOperatorsPage() {
                 <span>Call</span>
                 <span className="font-mono tabular-nums">{COMPANY_INFO.phone}</span>
               </a>
+            </p>
+            <p className="mt-4">
+              <Link
+                href="/jobs/owner-operator"
+                className="inline-flex min-h-[48px] items-center text-m-body font-semibold text-signal underline-offset-4 hover:underline"
+              >
+                See the full owner-operator job posting
+              </Link>
             </p>
             <p className="mt-2">
               <Link

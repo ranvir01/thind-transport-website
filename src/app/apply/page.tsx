@@ -10,8 +10,8 @@ import {
 import { recruitingShareTags } from "@/lib/recruiting-posts"
 
 export const metadata: Metadata = recruitingShareTags({
-  title: `Apply Now | ${COMPANY_INFO.name}`,
-  description: `Apply for a CDL-A seat with ${COMPANY_INFO.name} in ${COMPANY_INFO.location}. Company drivers ${PAY_RATES.companyDriver.local.perMile}/mile. Owner-operators keep ${PAY_RATES.ownerOperator.commission} of gross. Call ${COMPANY_INFO.phone}.`,
+  title: "Apply Now",
+  description: `Apply for a CDL-A seat in ${COMPANY_INFO.location}. Company drivers ${PAY_RATES.companyDriver.local.perMile}/mile; owner-operators keep ${PAY_RATES.ownerOperator.commission} of gross. Call ${COMPANY_INFO.phone}.`,
   path: "/apply",
 })
 
