@@ -16,7 +16,8 @@ export function CopyPostButton({
   const [canShare, setCanShare] = useState(false)
 
   useEffect(() => {
-    setCanShare(typeof navigator.share === "function")
+    // Defer Web Share probe — SSR stays copy-only; Share appears after paint if the API exists.
+    queueMicrotask(() => setCanShare(typeof navigator.share === "function"))
   }, [])
 
   async function copy() {
