@@ -46,6 +46,11 @@ suite("the loaded scenario has a name the app can read", () => {
    * books a couple of loads for "this morning", so by the afternoon a bare
    * count of late unassigned pickups picks those up too and the test would
    * pass or fail by the clock on the wall.
+   *
+   * A second trap: the crunch overlay then advances three *other* booked
+   * pickups to this afternoon. Those two late loads are now booked, so a
+   * `LIMIT 3` with no exclusion can pick them and erase the lateness
+   * (expected 2, got 0) depending on heap order.
    */
   const latePickups = async () =>
     (

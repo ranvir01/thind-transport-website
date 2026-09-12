@@ -1116,12 +1116,22 @@ export async function applySandboxScenario(scenario: "steady" | "crunch"): Promi
     await bulk(client, "hub.load_events", ["carrier_id", "load_id", "kind", "actor_name", "payload"],
       lateIds.map((id) => [C, id, "note", "Marcus Webb",
         JSON.stringify({ text: "Driver no-show at the shipper. Truck pulled off the load — needs a new one now." })]))
-    // Three booked loads suddenly due this afternoon.
+    // Three booked loads suddenly due this afternoon. Exclude the two we
+    // just made late — they are now status='booked', and LIMIT 3 without
+    // an exclusion used to pick them (no ORDER BY, heap order) and move
+    // their appt_start three hours into the future. The drill only exists
+    // if those two stay four hours past appointment.
     await client.query(
       `UPDATE hub.stops SET appt_start = NOW() + interval '3 hours'
         WHERE carrier_id = $1 AND type = 'pickup' AND arrived_at IS NULL
-          AND load_id IN (SELECT id FROM hub.loads WHERE carrier_id = $1 AND status = 'booked' LIMIT 3)`,
-      [C]
+          AND load_id IN (
+            SELECT id FROM hub.loads
+             WHERE carrier_id = $1 AND status = 'booked'
+               AND NOT (id = ANY($2::uuid[]))
+             ORDER BY reference
+             LIMIT 3
+          )`,
+      [C, lateIds]
     )
     // A truck dies at morning inspection: into the shop, unsafe DVIR on file.
     await client.query(

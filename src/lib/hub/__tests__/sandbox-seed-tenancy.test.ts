@@ -30,3 +30,17 @@ describe("sandbox crunch DVIR insert pins the driver join on both sides", () => 
     )
   })
 })
+
+describe("sandbox crunch afternoon overlay leaves the late pickups late", () => {
+  it("excludes the no-show load ids from the this-afternoon appt bump", () => {
+    const afternoon = SOURCE.match(
+      /UPDATE hub\.stops SET appt_start = NOW\(\) \+ interval '3 hours'[\s\S]*?LIMIT 3/
+    )
+    expect(afternoon?.[0]).toBeDefined()
+    expect(afternoon![0]).toContain("AND NOT (id = ANY($2::uuid[]))")
+    expect(afternoon![0]).toContain("ORDER BY reference")
+    expect(afternoon![0]).not.toMatch(
+      /AND load_id IN \(SELECT id FROM hub\.loads WHERE carrier_id = \$1 AND status = 'booked' LIMIT 3\)/
+    )
+  })
+})
