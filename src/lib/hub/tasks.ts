@@ -5,6 +5,7 @@
  * problem never piles up duplicates; each task deep-links to its record.
  */
 import { query, queryOne } from "./db"
+import { trucksAwaitingRepair } from "./dvir"
 import { assertCarrierRefs } from "./tenancy"
 import type { Task, TaskChecklistItem, TaskPriority, TaskRecurrence } from "./types"
 
@@ -304,6 +305,27 @@ export async function runTaskAutomations(carrierId: string): Promise<{ created: 
       entityType: "load",
       entityId: load.id,
       automationKey: `unbilled:${load.id}`,
+    })
+  }
+
+  // 6. Trucks grounded on an unsafe DVIR nobody has certified a repair for
+  //    (#66). One task per DVIR, keyed on it, so the office is nagged once
+  //    per grounding rather than once per sweep. Due from the day it was
+  //    grounded, so it is overdue the moment it appears — a parked truck
+  //    earns nothing until the repair is certified on its truck page.
+  const grounded = await trucksAwaitingRepair(carrierId)
+  for (const g of grounded) {
+    const defect = g.defects[0]
+    await add({
+      title: `Unit ${g.truck_unit} is grounded — certify the repair`,
+      notes:
+        `${defect?.label ?? "Defect"}${defect?.note ? ` — ${defect.note}` : ""} · reported by ${g.driver_name} on ${isoDate(g.created_at)}. ` +
+        "Dispatch can't use the truck until the repair is certified on its truck page.",
+      dueAt: new Date(g.created_at).toISOString(),
+      priority: "urgent",
+      entityType: "truck",
+      entityId: g.truck_id,
+      automationKey: `dvir-open-defect:${g.dvir_id}`,
     })
   }
 

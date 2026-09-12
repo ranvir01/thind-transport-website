@@ -116,3 +116,73 @@ describe("runTaskAutomations — driver CDL/med-card expiry", () => {
     expect(result.created).toBe(1)
   })
 })
+
+/**
+ * #66: a truck grounded on an unsafe DVIR was visible only on its own truck
+ * page. The sweep now files one urgent, deep-linked task per open defect
+ * report, keyed on the DVIR id so a re-sweep cannot file it twice.
+ */
+describe("runTaskAutomations — DVIR awaiting repair", () => {
+  const groundedRow = (over: Record<string, unknown> = {}) => ({
+    dvir_id: "dvir-1",
+    truck_id: "truck-1",
+    truck_unit: "105",
+    driver_name: "Sam Trucker",
+    created_at: "2026-09-10T08:00:00.000Z",
+    defects: [{ label: "Service brakes", note: "pulls left" }],
+    ...over,
+  })
+
+  const world = (grounded: unknown[], insertReturns: unknown[] = [{ id: "task-created" }]) =>
+    queryMock.mockImplementation(async (sql: string) => {
+      if (sql.includes("hub.compliance_items")) return []
+      if (sql.includes("FROM hub.drivers")) return []
+      if (sql.includes("FROM hub.claims")) return []
+      if (sql.includes("FROM hub.loads l")) return []
+      if (sql.includes("FROM hub.dvirs v")) return grounded
+      if (sql.includes("INSERT INTO hub.tasks")) return insertReturns
+      return []
+    })
+
+  const inserts = () =>
+    queryMock.mock.calls
+      .filter(([sql]) => String(sql).includes("INSERT INTO hub.tasks"))
+      .map(([, params]) => params as unknown[])
+
+  beforeEach(() => {
+    queryMock.mockReset()
+    queryOneMock.mockReset()
+    queryOneMock.mockResolvedValue({ count: "0" })
+  })
+
+  it("files one urgent task per grounded truck, deep-linked to the truck page", async () => {
+    world([groundedRow()])
+
+    const result = await runTaskAutomations("carrier-1")
+
+    const [params] = inserts()
+    expect(params[0]).toBe("carrier-1")
+    expect(params[1]).toBe("Unit 105 is grounded — certify the repair")
+    expect(params[2]).toContain("Service brakes — pulls left")
+    expect(params[2]).toContain("reported by Sam Trucker on 2026-09-10")
+    expect(params[6]).toBe("2026-09-10T08:00:00.000Z") // due from the day it was grounded — overdue on arrival
+    expect(params[7]).toBe("urgent")
+    expect(params[8]).toBe("truck")
+    expect(params[9]).toBe("truck-1")
+    expect(params[params.length - 1]).toBe("dvir-open-defect:dvir-1")
+    expect(result.created).toBe(1)
+  })
+
+  it("keys on the DVIR, so two grounded trucks make two tasks and a re-sweep makes none", async () => {
+    world([groundedRow(), groundedRow({ dvir_id: "dvir-2", truck_id: "truck-2", truck_unit: "106", defects: [] })])
+    await runTaskAutomations("carrier-1")
+    const keys = inserts().map((p) => p[p.length - 1])
+    expect(keys).toEqual(["dvir-open-defect:dvir-1", "dvir-open-defect:dvir-2"])
+    expect(inserts()[1][2]).toContain("Defect · reported by")
+
+    // Same world, but the INSERT's ON CONFLICT swallows both rows: nothing counted.
+    world([groundedRow(), groundedRow({ dvir_id: "dvir-2", truck_id: "truck-2", truck_unit: "106" })], [])
+    const again = await runTaskAutomations("carrier-1")
+    expect(again.created).toBe(0)
+  })
+})
