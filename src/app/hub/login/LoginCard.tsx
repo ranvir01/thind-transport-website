@@ -28,26 +28,11 @@ async function sessionAfterLogin() {
   return null
 }
 
-/**
- * The demo seats a visitor can try when HUB_DEMO_LOGIN is on. One tap fills
- * the form; the visitor still presses Sign in, so the flow they rehearse is
- * the real one. Kept inline on purpose — this card must not pull the
- * showcase module (and its imports) into the login bundle.
- */
-const DEMO_PASSWORD = "ThindDemo1!"
-const DEMO_SEATS = [
-  { label: "Dispatcher", email: "dispatch@demo.thind" },
-  { label: "Driver", email: "driver@demo.thind" },
-  { label: "Accountant", email: "accounting@demo.thind" },
-  { label: "Owner", email: "owner@demo.thind" },
-  { label: "Broker", email: "broker@demo.thind" },
-  { label: "Shipper", email: "shipper@demo.thind" },
-] as const
-
-/** Client login card. `showDemo` comes from the server page (HUB_DEMO_LOGIN);
- *  `installSlot` is the install-the-app affordance the page composes in — it
- *  belongs on this route because /hub/* carries the driver app manifest. */
-export function LoginCard({ showDemo, installSlot }: { showDemo: boolean; installSlot?: React.ReactNode }) {
+/** Client login card. `installSlot` is the install-the-app affordance the page
+ *  composes in — it belongs on this route because /hub/* carries the driver
+ *  app manifest. Demo credentials are not rendered here; HUB_DEMO_LOGIN still
+ *  gates authorize() for seeded accounts. */
+export function LoginCard({ installSlot }: { installSlot?: React.ReactNode }) {
   const [loading, setLoading] = useState(false)
   const [form, setForm] = useState({ email: "", password: "", totpCode: "" })
   const [roleHint, setRoleHint] = useState<string | null>(null)
@@ -164,27 +149,6 @@ export function LoginCard({ showDemo, installSlot }: { showDemo: boolean; instal
             {loading ? "Signing in…" : "Sign in"}
           </button>
         </form>
-
-        {showDemo ? (
-          <Panel nested className="mt-6 p-3.5 text-left">
-            <p className="text-[13px] font-semibold text-fg">Try a seat</p>
-            <p className="text-body-xs text-fg-3">
-              Same password for every demo account: <span className="font-mono">{DEMO_PASSWORD}</span>
-            </p>
-            <div className="mt-3 flex flex-wrap gap-3">
-              {DEMO_SEATS.map((seat) => (
-                <button
-                  key={seat.email}
-                  type="button"
-                  onClick={() => setForm((f) => ({ ...f, email: seat.email, password: DEMO_PASSWORD }))}
-                  className="min-h-[44px] rounded-pill border border-border-strong bg-surface px-3 text-sm font-semibold text-fg-2 hover:bg-hover hover:text-fg"
-                >
-                  {seat.label}
-                </button>
-              ))}
-            </div>
-          </Panel>
-        ) : null}
 
         <p className="mt-6 text-center text-xs text-fg-3">
           Need access? Ask the office to create your account.

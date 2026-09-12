@@ -9,8 +9,37 @@ import * as nodemailer from "nodemailer"
 export const smtpUser = () => process.env.SMTP_USER || process.env.EMAIL_USER
 export const smtpPass = () => process.env.SMTP_PASS || process.env.EMAIL_PASS
 
+const PLACEHOLDER_USERS = new Set([
+  "your-gmail@gmail.com",
+  "your-email@gmail.com",
+])
+const PLACEHOLDER_PASSES = new Set([
+  "your-16-character-app-password",
+  "your-app-password",
+  "changeme",
+])
+
+function looksLikePlaceholder(value: string | undefined): boolean {
+  if (!value) return true
+  const trimmed = value.trim().toLowerCase()
+  return (
+    PLACEHOLDER_USERS.has(trimmed) ||
+    PLACEHOLDER_PASSES.has(trimmed) ||
+    trimmed.includes("your-") ||
+    trimmed.includes("example.com")
+  )
+}
+
+/**
+ * True only when SMTP creds look real. Empty *or* the .env.example
+ * placeholders count as unset — otherwise production crons treat
+ * "your-gmail@gmail.com" as configured and 535 against Gmail for 8s.
+ */
 export function isEmailConfigured(): boolean {
-  return Boolean(smtpUser() && smtpPass())
+  const user = smtpUser()
+  const pass = smtpPass()
+  if (!user || !pass) return false
+  return !looksLikePlaceholder(user) && !looksLikePlaceholder(pass)
 }
 
 export function createMailTransport() {
