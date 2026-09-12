@@ -1,6 +1,7 @@
 import "server-only"
 import { query } from "./db"
 import { SANDBOX_CARRIER_ID } from "./sandbox"
+import { COMMITTED_STATUSES, CREW_REQUIRED_STATUSES } from "./types"
 
 /**
  * Invariants the simulated world must satisfy after every tick.
@@ -29,14 +30,18 @@ export async function checkSandboxInvariants(): Promise<InvariantViolation[]> {
   const violations: InvariantViolation[] = []
 
   const [doubleBooked, playerFinished, negativeBalance, orphanRolling, deadEnded] = await Promise.all([
-    // A truck can only pull one load at a time.
+    // A truck can only be committed to one load at a time. "Committed"
+    // includes booked: a booked load with a truck on it is that truck's next
+    // job, and two of those on one truck is the double booking the planner
+    // warns about — the rule used to count only rolling loads and let it
+    // through (#65).
     query<{ truck_id: string; n: number }>(
       `SELECT truck_id, COUNT(*)::int AS n
          FROM hub.loads
         WHERE carrier_id = $1 AND deleted_at IS NULL AND truck_id IS NOT NULL
-          AND status IN ('dispatched','at_pickup','in_transit')
+          AND status = ANY($2::text[])
         GROUP BY truck_id HAVING COUNT(*) > 1`,
-      [C]
+      [C, [...COMMITTED_STATUSES]]
     ),
     // The sim must never complete a human's load. The autopilot signs its
     // work, so a player-driven load carrying an autopilot delivery is proof
@@ -80,19 +85,21 @@ export async function checkSandboxInvariants(): Promise<InvariantViolation[]> {
     // an active load must never sit without a driver AND without being on the
     // board to assign one. This is the rule that keeps "recoverable" honest in
     // code instead of in a comment.
+    // Deliberately the crew-required subset, not COMMITTED_STATUSES: an
+    // unassigned booked load is a real state a dispatcher sees every morning.
     query<{ id: string; reference: string; status: string }>(
       `SELECT id, reference, status FROM hub.loads
         WHERE carrier_id = $1 AND deleted_at IS NULL
-          AND status IN ('dispatched','at_pickup','in_transit')
+          AND status = ANY($2::text[])
           AND (driver_id IS NULL OR truck_id IS NULL)`,
-      [C]
+      [C, [...CREW_REQUIRED_STATUSES]]
     ),
   ])
 
   if (doubleBooked.length > 0) {
     violations.push({
       rule: "one-load-per-truck",
-      detail: doubleBooked.map((r) => `truck ${r.truck_id} on ${r.n} active loads`).join("; "),
+      detail: doubleBooked.map((r) => `truck ${r.truck_id} on ${r.n} committed loads`).join("; "),
     })
   }
   if (playerFinished.length > 0) {

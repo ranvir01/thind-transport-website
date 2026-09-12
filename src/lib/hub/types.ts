@@ -76,6 +76,27 @@ export const BOARD_STATUSES: LoadStatus[] = [
   "pod_received",
 ]
 
+/**
+ * Statuses in which a load has a crew committed to it. A booked load with a
+ * truck is that truck's next job, so two booked loads on one truck are a
+ * double booking whether or not either has left the yard. One definition
+ * for the planner's overlap warning, the seed's crew draw, the sim's
+ * idle-crew query and the invariant that audits all three (#65).
+ */
+export const COMMITTED_STATUSES = [
+  "booked",
+  "dispatched",
+  "at_pickup",
+  "in_transit",
+] as const satisfies readonly LoadStatus[]
+
+/** The subset of COMMITTED_STATUSES that is physically impossible without a driver and a truck. */
+export const CREW_REQUIRED_STATUSES = [
+  "dispatched",
+  "at_pickup",
+  "in_transit",
+] as const satisfies readonly LoadStatus[]
+
 export const EQUIPMENT_TYPES = ["flatbed", "reefer", "dry_van"] as const
 export type EquipmentType = (typeof EQUIPMENT_TYPES)[number]
 

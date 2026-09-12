@@ -1,6 +1,6 @@
 # Handoff — LoadOff + Thind Transport website
 
-**Written 2026-09-10 against `main` = `d8476cd4` (2026-09-06, "Free hiring kit: share posts, Google Jobs listings, phone-first apply (#63)").** This is the current-state map for whoever builds next — the Grok bot team booted by `GROK-MASTER-PROMPT.md` in `ranvir01/grok-bot-org`, a Cursor or Claude cloud agent, or a human. Every claim below names the file, commit, PR, issue, or command it came from. Numbers marked *measured* were produced in this session; numbers quoted from older docs say so, and those docs (2026-07-25 audits) predate later commits — verify before acting.
+**Written 2026-09-10 against `main` = `d8476cd4` (2026-09-06, "Free hiring kit: share posts, Google Jobs listings, phone-first apply (#63)"). Refreshed 2026-09-12 against `main` = `abde1042`, from branch `claude/loadoff-plugin-handoff-5huykl` (six commits ahead: #65, #68 hardening, #66, offline-replay idempotency, the $0.65 copy fix, this refresh) — where a §2 or §4 line says "this branch", it is true on `main` once that branch is absorbed.** This is the current-state map for whoever builds next — the Grok bot team booted by `GROK-MASTER-PROMPT.md` in `ranvir01/grok-bot-org`, a Cursor or Claude cloud agent, or a human. Every claim below names the file, commit, PR, issue, or command it came from. Numbers marked *measured* were produced in this session; numbers quoted from older docs say so, and those docs (2026-07-25 audits) predate later commits — verify before acting.
 
 Rulebook, in order: [`AGENTS.md`](AGENTS.md) (standing rules) → [`.cursorrules`](.cursorrules) (exact stack and style constraints) → this file → [`docs/ops/AGENT_INTEROP.md`](docs/ops/AGENT_INTEROP.md) (the clock, who pushes where, the `Backlog:` protocol, credit and telemetry) → [`docs/agent-improvement-loop.md`](docs/agent-improvement-loop.md) (the loop, guardrails §4, lane territories §5) → [`DESIGN.md`](DESIGN.md) → the matching skill in [`.cursor/skills/`](.cursor/skills/). Decisions only the owner makes go to [`docs/ops/DECISIONS.md`](docs/ops/DECISIONS.md) or a `[needs-owner]` line in a commit body.
 
@@ -25,9 +25,9 @@ Stack, pinned: Next 16 / React 19 / TypeScript 5.9 strict / Tailwind 3.4 / NextA
 | --- | --- | --- |
 | `npm ci --ignore-scripts && npm rebuild bcrypt sharp` | ok | the CI / Cursor install path |
 | `npm run db:migrate` → `npm run seed:demo` | ok | against a local `postgres:16`-equivalent cluster |
-| `npx vitest run` | **375 files, 3,625 tests, 0 skipped, all passed** | with `POSTGRES_URL` set, so the three DB-gated isolation suites ran instead of skipping (`portal-isolation`, `driver-file-isolation`, `cross-tenant-harness`) |
+| `npx vitest run` | **380 files, 3,669 tests, 0 skipped, all passed** (2026-09-12, this branch; 09-10 was 375 / 3,625) | with `POSTGRES_URL` set, so the DB-gated suites ran instead of skipping (`portal-isolation`, `driver-file-isolation`, `cross-tenant-harness`, the `sandbox-*` suites) |
 | `node scripts/typecheck-gate.mjs` | pass | app code 0 errors; test files 0 errors; ratchet baseline 0 |
-| `npm run lint` | **1 error, pre-existing** | `react-hooks/set-state-in-effect` in `src/components/application/CopyPostButton.tsx:19` (introduced by `d8476cd4`, PR #63) — not touched by this handoff; untagged backlog item, claimable |
+| `npm run lint` | pass (2026-09-12) | was 1 error on 09-10 (`react-hooks/set-state-in-effect` in `CopyPostButton.tsx:19`, from PR #63); fixed on `main` by `485d51f2` on 09-11; green on this branch |
 | `npm run license:audit` | pass | no AGPL/SSPL/GPL/LGPL in production deps |
 | `node scripts/token-lint.mjs` | pass | |
 | `node scripts/cursor-env-check.mjs` | pass | |
@@ -37,8 +37,9 @@ Stack, pinned: Next 16 / React 19 / TypeScript 5.9 strict / Tailwind 3.4 / NextA
 
 ### CI on `main` (GitHub Actions, `.github/workflows/e2e-suite.yml`)
 
-- `unit` job on the push of `d8476cd4`: green — [run 34083014595](https://github.com/ranvir01/thind-transport-website/actions/runs/34083014595).
-- Nightly full rig (`e2e` job, 03:40 UTC): red 2026-09-07 ([34101527777](https://github.com/ranvir01/thind-transport-website/actions/runs/34101527777)), green 2026-09-08 ([34203836584](https://github.com/ranvir01/thind-transport-website/actions/runs/34203836584)), red 2026-09-09 ([34328713358](https://github.com/ranvir01/thind-transport-website/actions/runs/34328713358)). Tracked as **#68 `[fleet] E2E suite red`** (`should` + `venture:loadoff`). Steve's first ticket in the Grok plan.
+- `unit` job on every push: green on `main` through `abde1042` ([run 34685824438](https://github.com/ranvir01/thind-transport-website/actions/runs/34685824438), 2026-09-12).
+- Nightly full rig (schedule `40 3 * * *` UTC; the last two started 08:17 and 08:07 UTC after GitHub's queue delay): red 09-06 ([34020921284](https://github.com/ranvir01/thind-transport-website/actions/runs/34020921284)), red 09-07 ([34101527777](https://github.com/ranvir01/thind-transport-website/actions/runs/34101527777)), green 09-08, red 09-09 ([34328713358](https://github.com/ranvir01/thind-transport-website/actions/runs/34328713358)), green 09-10 and 09-11 ([34578442594](https://github.com/ranvir01/thind-transport-website/actions/runs/34578442594)), red 09-12 ([34682443702](https://github.com/ranvir01/thind-transport-website/actions/runs/34682443702)). Tracked as **#68 `[fleet] E2E suite red`** (`should` + `venture:loadoff`).
+- **#68 corrected (2026-09-12, measured from the four red runs' job lists and logs):** the browser rig (`e2e` job) passed on every one of those nights. The failure was the `unit` job, every time the same case — `src/lib/hub/__tests__/sandbox-scenario.test.ts:72` "keeps crunch day's late pickups late" got 0 late pickups straight after `applySandboxScenario("crunch")`. Root cause: the crunch overlay's afternoon reshuffle (`LIMIT 3`, no `ORDER BY`, no exclusion) could pick the two just-staged late loads and move their appointment forward — heap order, so it alternated nights. Fixed on `main` by `abde1042` (09-12 09:25 UTC; the 09-12 red run was on the previous head `485d51f2`); the overlay now refuses to commit a drill with nothing late in it (`a46ac533`, this branch). The `[hub action] Could not create the account: connection terminated unexpectedly` line in the red logs is a mocked error string from `accept-driver-invite-action.test.ts`, printed on green runs too. Close #68 after three consecutive green nightlies on a head at or after `abde1042`; a red one after that is a new bug.
 - Publishing: `drain-integrator.yml` (`17,47 * * * *` UTC) drains the integrator branch to `main` with `--no-ff` + `.drain-stamp`; last stamp in the tree is `sha=8250d03d`, `2026-09-04T05:06:54Z`.
 
 ### Measured inventory
@@ -51,14 +52,16 @@ Stack, pinned: Next 16 / React 19 / TypeScript 5.9 strict / Tailwind 3.4 / NextA
 | Driver PWA route directories | 7 | `src/app/hub/driver/` |
 | Hub API route files | 12 | `src/app/api/hub/**/route.ts` |
 | Public marketing route directories | 29 | `src/app/` (excluding `hub`, `api`, `app`) |
-| SQL migrations | 34 | `migrations/hub/` — append-only; note two number collisions already in the tree (`024_pay_per_mile_cents` / `024_share_link_expiry`, `029_intake_drafts` / `029_thind_dot_number`); the next migration is `033_` |
+| SQL migrations | 35 on this branch (34 on `main`) | `migrations/hub/` — append-only; two number collisions already in the tree (`024_pay_per_mile_cents` / `024_share_link_expiry`, `029_intake_drafts` / `029_thind_dot_number`); `033_offline_idempotency.sql` is on this branch, so the next free prefix is `034_`. `src/lib/__tests__/migration-prefix-guard.test.ts` (`e41d5ca7`) fails CI on a third collision and pins the next free prefix — bump its expectation in the same commit as a new migration |
 | Vercel crons | 19 | `vercel.json` → `src/app/api/hub/cron/[job]/route.ts`, all behind `CRON_SECRET` |
 | Integration providers in the registry | 19 (8 `live`, 11 `stub`) | `src/lib/hub/integrations/registry.ts` — `live` means "client implemented, activatable with credentials", not "connected" |
 | E2E smoke scripts | 58 | `scripts/e2e-*-smoke.mjs`, run by `scripts/e2e-run-all.mjs` in the nightly job |
-| Test files | 375 | `src/**/*.test.ts` |
+| Test files | 380 on this branch (376 on `main`) | `src/**/*.test.ts` |
 | Ops audit docs | 14 | `docs/ops/` |
 
-### Open pull requests (2026-09-10)
+### Open pull requests (2026-09-10; re-listed 2026-09-12 — the same 16 are open)
+
+Merged since: #101 (this handoff, absorbed by the integrator and merged 09-10) and #102 (`grok/rex-hiring-oo-audit`, merged 09-10 — the first write-mode-B PR from the Grok team, and the proof the mode works end to end).
 
 | PR | Head | Disposition |
 | --- | --- | --- |
@@ -80,7 +83,7 @@ Stack, pinned: Next 16 / React 19 / TypeScript 5.9 strict / Tailwind 3.4 / NextA
 
 ### Open issues
 
-#90 and #87 — fleet patches on the issue bus, waiting for a collaborator to label `should` + `venture:loadoff` (patch copies in `grok-bot-org/fleet/patches/`); #85, #81 superseded by #87, close when it lands; #68 nightly E2E red (`should`); #67 Career OS parked (`needs-owner`, never `should`); #66 DVIR `awaiting_repair` not surfaced at dispatch; #65 shared `COMMITTED_STATUSES` for `checkSandboxInvariants`.
+#90 and #87 — fleet patches on the issue bus, waiting for a collaborator to label `should` + `venture:loadoff` (patch copies in `grok-bot-org/fleet/patches/`); #85, #81 superseded by #87, close when it lands; #68 nightly red (`should`) — root cause fixed, see the CI note above; #67 Career OS parked (`needs-owner`, never `should`); #66 and #65 are fixed on this branch (`9d3d65ae`, `acfe1394`, both commits say `Closes`, so GitHub closes them when the branch reaches `main`).
 
 ### Branches
 
@@ -126,24 +129,24 @@ Ordered roughly by consequence. Source in brackets. Tags follow `docs/ops/AGENT_
 **Integrations**
 - `[needs-owner]` DAT: the two-level token exchange is built (`101fc4c3`, `src/lib/hub/integrations/dat.ts`) but unverified against real DAT staging; registry stays `stub` until confirmed. [`docs/ops/STUB_INVENTORY.md`, 2026-09-06 pass]
 - EFS / WEX / Comdata REST endpoints do not exist; the working path is the signed file drop, which needs a forwarder built. Factor posts to a placeholder host until `FACTOR_API_BASE` names a real vendor. Truckstop defaults to the sandbox host. Terminal cannot receive webhooks (no `webhookSecret` field, no event processor). QBO cannot mint its first refresh token (no `authorization_code` grant). [`docs/ops/STUB_INVENTORY.md` §1, §4]
-- Nine newer registry entries (`axle`, `atob`, `plaid`, `bestpass`, `prepass`, `drivewyze`, `fleetio`, `sambasafety`, `stedi`) are `stub` and are not covered by the 2026-07-25 inventory at all — inventory them before promising anything. [measured from `registry.ts`]
+- Nine newer registry entries (`axle`, `atob`, `plaid`, `bestpass`, `prepass`, `drivewyze`, `fleetio`, `sambasafety`, `stedi`) are `stub`: inventoried 2026-09-12 in `docs/ops/STUB_INVENTORY.md` §2b (credential fields, sync path, fallback, client file). Their response shapes are documented assumptions until a real payload is seen; none has a dollar figure. [measured from `registry.ts`, `universal-sync.ts`]
 
 **Product**
 - `[needs-owner]` Fuel / toll auto-chargeback into owner-operator settlements: attribution window, who, filter — do not implement until decided. [`docs/qa/_handoff.md`, commit Backlogs]
-- Hub seed, `src/lib/hub/outreach` drafts, `public/llms.txt` and a branding SVG still say $0.63/mi while the public site moved to $0.65 (`d5c412b`). `[blocked-by integrator]` — shared files.
+- The $0.63 → $0.65 company-driver rate drift: copy is fixed on this branch (`815ef165` — outreach drafts read `PAY_RATES`, `llms.txt`, the business-card SVG, the regenerated OG image, and the generator now refuses a fallback-font render). `[needs-owner]` What still says 63¢ is arithmetic, not copy: `scripts/seed-demo.mjs` pay rules and settlement lines, `docs/qa/` worksheets and fixtures, `scripts/e2e-settlements-smoke.mjs`, the demo seat scene, the offer-form defaults in `ApplicantPanels.tsx` / `EmploymentStep.tsx` — one coupled change, and whether the seeded tenant's drivers move to 65¢ is the owner's call.
 - `[needs-owner]` The sign-on bonus line dropped from `PayTable` renders as "$1,000 (First Year)" verbatim; confirm the wording before it returns.
-- #66 DVIR `awaiting_repair` not surfaced at dispatch; #65 shared `COMMITTED_STATUSES` for `checkSandboxInvariants`.
+- #66 and #65 are done on this branch (`9d3d65ae`, `acfe1394`). Follow-ups in their commit bodies: widen `dispatchLegality` to name the grounding defect on the assign action; the planner's overlap warning and the sim's crew query now share `COMMITTED_STATUSES`, but `today.ts` / `digest.ts` report copy still hand-lists statuses.
 - Decisions carried from `docs/ops/HANDOFF.md` §2 (2026-07-25) that may still be open: IFTA re-import REPLACE vs MERGE; chase draft invoices or not; real cost per mile (defaults to 185¢); owner-dashboard net margin; reports net-margin revenue base; signup throttle budget; carrier timezone; 1099 year picker UI. Check each against current code before re-filing.
 - Career OS is parked (#67): proof-only hunt, `needs-owner`, never `should`.
 
 **Quality and performance**
-- #68 nightly e2e rig red on alternating nights — the two selector fixes in `992edc2` landed; something else still fails. Artifacts upload on every red run.
+- #68: not the browser rig. Every red night was the `unit` job's `sandbox-scenario.test.ts` case; root cause fixed on `main` (`abde1042`), guard added on this branch (`a46ac533`). Watch three nightlies, then close. Carried from that fix: a rolled-back crunch overlay leaves `settings.sim.scenario = 'crunch'` on a steady world; the pinned tenant-lock clients in `__tests__/sandbox-tenant-lock.ts` have no `error` listener.
 - `[needs-browser]` 12 marketing routes sit above the 170 KB JS target (worst `/pay-rates` ~255 KB; ceiling ratchet 285 KB in `scripts/js-budget.mjs`). Measure only from a verified-complete `rm -rf .next && npm run build`.
 - `/resources` is ~13.8 phone screens; splitting per category is an IA call. FAQ items beyond eight have no page. `.brand-page-shell` / `[data-light]` carry ~78 `!important` overrides.
 - Decide the hub token-lint allowlist (QrCode, FleetMap canvas, swatch presets) and flip `TOKEN_LINT_HUB_STRICT` on.
-- `npm run lint`: one pre-existing `react-hooks/set-state-in-effect` error (see §2) — fix it and add lint to the local verify chain.
+- `npm run lint` is green on `main` since `485d51f2`; it is in the §7 chain — keep it there.
 - `TEST_GAPS.md` still-open rows: #11 detention downward revision (owner design decision), #12 `scorecard_bonus` tier table (product decision). Coverage on `src/app/**` (actions and routes) was 20% statements on 2026-07-25 — the engine is well tested, the layer that calls it is thinner.
-- Offline-queue replay idempotency for `submitDvirAction` / `fileDriverIncidentReport` (a `clientRequestId` + unique index) — carried from closed PR #19. [`docs/ops/TEST_GAPS.md` tail]
+- Offline-queue replay idempotency for DVIRs and incident reports is done on this branch (`64b9ff1a`: migration 033, `client_request_id` on `hub.dvirs` / `hub.incidents`, replays return the first row and skip the audit row and the office page). Still open from it: the office incident form has no id; `e2e-driver-offline-smoke.mjs` could replay one queued DVIR twice against a live server and assert one row `[needs-browser]`.
 
 **Fleet and docs**
 - `[needs-owner]` Protect `main` on this repo (require a pull request, no direct pushes) now that the Grok bots hold a push-capable token for their `grok/*` branches; confirm `drain-integrator.yml` keeps its bypass first, since it pushes `main` with the Actions token.
@@ -161,7 +164,8 @@ Ordered roughly by consequence. Source in brackets. Tags follow `docs/ops/AGENT_
 | Every hub query is carrier-scoped; cross-table writes guard both sides with `assertCarrierRefs` (`src/lib/hub/tenancy.ts`); new tenant-owned table = isolation test | `*-tenancy.test.ts` (30+ files), `cross-tenant-harness.test.ts`, `portal-isolation.test.ts`, `driver-file-isolation.test.ts`; ADR `docs/decisions/0002` |
 | Mutations only in `src/app/hub/_actions/*` behind `requirePermission`; money mutations call `logAudit`; driver and portal have their own guards | `money-actions-permissions.test.ts`, `office-actions-permissions.test.ts`, `portal-actions-validation.test.ts` |
 | Office surfaces use semantic tokens only; driver and portal are forced dark and never use `text-fg*` / `bg-surface*` / `border-border*`; no opacity modifiers on CSS-var colours | `driver-accent-tokens.test.ts`, `hub-theme-tokens.test.ts`, `npm run token-lint`, `npm run design-qa` |
-| Migrations are append-only `migrations/hub/NNN_*.sql`, idempotent, applied by `npm run db:migrate`; never edit an applied one | `scripts/hub-migrate.mjs`, the `migrate` cron |
+| Migrations are append-only `migrations/hub/NNN_*.sql`, idempotent, applied by `npm run db:migrate`; never edit an applied one; one file per prefix from `033` on | `scripts/hub-migrate.mjs`, the `migrate` cron, `migration-prefix-guard.test.ts` (allowlists only the shipped `024` / `029` pairs and pins the next free prefix) |
+| A driver filing that can replay from the offline queue (DVIR, incident report) carries the tap's `clientRequestId`; the writer inserts `ON CONFLICT DO NOTHING` on the partial unique index and returns the first row with `replayed: true`; the action then skips the audit row and the office alert | `dvir-idempotency.test.ts`, `incident-idempotency.test.ts`, `driver-forms-request-id-guard.test.ts`, the replay cases in `dvir-driver-scope.test.ts` / `driver-incident-report.test.ts` |
 | `registry.ts` is the only provider list; adapters are stub-first against `mock.ts`; upsert on `(carrier_id, source, external_id)`; a `hub.integration_syncs` row every run; CSV fallback never removed; webhooks HMAC-only; never log credentials | `integration-contract.test.ts`, per-adapter tests, `webhooks-route.test.ts`, `integration-webhook-url.test.ts`, `credentials.test.ts` |
 | Three languages, fixed boundaries: TS gateway, one Go worker, one Rust compute; sidecars never touch Postgres; `HAULDESK_SIDECAR_SECRET` gates work endpoints; Rust/TS golden parity in one commit | `sidecars.test.ts`, `npm run test:sidecars`, `docs/architecture/trilingual-stack.md` |
 | Company facts from `src/lib/constants.ts`; no unverifiable public claims | `unverifiable-claims.test.ts`, `pay-figures-in-range.test.ts`, `recruiting-copy.test.ts` |
@@ -218,7 +222,7 @@ Gates that ratchet: `TEST_ERROR_BASELINE` (0) and `CEILING_KB` (285). If a chang
 
 ## 9. Decisions only the owner makes
 
-Standing queue: [`docs/ops/DECISIONS.md`](docs/ops/DECISIONS.md) on `main` holds D-001 (branch reaper), D-002 (semver-major bumps) and D-003; the later rows (D-004 … D-017, including D-005/D-006 on the Cursor automations) exist only on PR #42's branch and in the reference copy `ranvir01/grok-bot-org/fleet/docs/DECISIONS.md`. Plus, from this file: the production env confirmations in §4, the legacy-blob migration choice, the DAT staging verification, fuel/toll chargebacks, the sign-on bonus wording, IFTA re-import semantics, the real cost per mile, and `main` branch protection now that the Grok team runs in write mode B (`ranvir01/grok-bot-org/GROK-BOT-SETUP-V2.md` rule 2, since 2026-09-10: Dexter, Rex and Steve commit on their own `grok/<seat>-<ticket>` branches and open PRs; the owner merges).
+Standing queue: [`docs/ops/DECISIONS.md`](docs/ops/DECISIONS.md) on `main` holds D-001 (branch reaper), D-002 (semver-major bumps) and D-003; the later rows (D-004 … D-017, including D-005/D-006 on the Cursor automations) exist only on PR #42's branch and in the reference copy `ranvir01/grok-bot-org/fleet/docs/DECISIONS.md`. Plus, from this file: the production env confirmations in §4, the legacy-blob migration choice, the DAT staging verification, fuel/toll chargebacks, the sign-on bonus wording, IFTA re-import semantics, the real cost per mile, and `main` branch protection now that the Grok team runs in write mode B (`ranvir01/grok-bot-org/GROK-BOT-SETUP-V2.md` rule 2, since 2026-09-10: Dexter, Rex and Steve commit on their own `grok/<seat>-<ticket>` branches and open PRs; the owner merges — PR #102 from `grok/rex-hiring-oo-audit`, merged 09-10, is the first one through), plus the 63¢ → 65¢ seed and worksheet change in §4.
 
 ---
 

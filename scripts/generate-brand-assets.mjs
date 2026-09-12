@@ -6,11 +6,21 @@
  */
 import sharp from "sharp"
 import puppeteer from "puppeteer"
-import { writeFileSync } from "fs"
+import { readFileSync, writeFileSync } from "fs"
 import { join, dirname } from "path"
 import { fileURLToPath } from "url"
 
 const publicDir = join(dirname(fileURLToPath(import.meta.url)), "..", "public")
+
+// The published company-driver rate. This is an .mjs script and cannot import
+// src/lib/constants.ts, so it is read out of that file rather than retyped —
+// the OG image used to carry a rate the site had moved off of.
+const constantsSource = readFileSync(
+  join(dirname(fileURLToPath(import.meta.url)), "..", "src", "lib", "constants.ts"),
+  "utf8"
+)
+const COMPANY_PER_MILE = constantsSource.match(/companyDriver:[\s\S]*?perMile:\s*"(\$[0-9.]+)"/)?.[1]
+if (!COMPANY_PER_MILE) throw new Error("PAY_RATES.companyDriver.*.perMile not found in src/lib/constants.ts")
 
 // Brand palette (kept in sync with tailwind.config.ts)
 const NAVY = "#0E1621"
@@ -127,7 +137,7 @@ const ogHtml = `<!doctype html>
     <div>
       <div class="badge"><span class="dot"></span> Family-run since 2014 · Kent, WA</div>
       <h1>Keep <span class="accent">90%</span> of<br>your gross.</h1>
-      <div class="sub">Company drivers <span class="gold">$0.63/mi</span> · New Cascadias · Weekly pay · Zero forced dispatch</div>
+      <div class="sub">Company drivers <span class="gold">${COMPANY_PER_MILE}/mi</span> · New Cascadias · Weekly pay · Zero forced dispatch</div>
     </div>
     <div class="bottom">
       <div class="wordmark">THIND <span>TRANSPORT</span></div>
@@ -143,7 +153,21 @@ async function generateOgImage() {
   const page = await browser.newPage()
   await page.setViewport({ width: 1200, height: 630, deviceScaleFactor: 1 })
   await page.setContent(ogHtml, { waitUntil: "networkidle0" })
-  await page.evaluateHandle("document.fonts.ready")
+  await page.evaluate(() => document.fonts.ready)
+  // Refuse to overwrite the committed image with a fallback-font render: when
+  // Google Fonts cannot be fetched (offline, a proxy Chromium does not trust)
+  // the page still "loads", networkidle0 still fires, and the card comes out
+  // in the system serif. Not document.fonts.check() — that answers true when
+  // the stylesheet never arrived and no @font-face matches at all. Require a
+  // face of each family to have actually loaded.
+  const loadedFamilies = await page.evaluate(() =>
+    [...document.fonts].filter((f) => f.status === "loaded").map((f) => f.family.replace(/["']/g, ""))
+  )
+  const missing = ["Barlow Condensed", "Source Sans 3"].filter((family) => !loadedFamilies.includes(family))
+  if (missing.length > 0) {
+    await browser.close()
+    throw new Error(`Brand fonts did not load (${missing.join(", ")}) — og-image.png not written`)
+  }
   const buffer = await page.screenshot({ type: "png" })
   await browser.close()
   await sharp(buffer).png({ compressionLevel: 9, palette: true }).toFile(join(publicDir, "og-image.png"))

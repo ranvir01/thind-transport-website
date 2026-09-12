@@ -28,11 +28,13 @@ import { fileDriverIncidentReport } from "@/app/hub/_actions/safety"
 import { requireDriverUser } from "@/lib/hub/session"
 import { createIncident } from "@/lib/hub/incidents"
 import { logAudit } from "@/lib/hub/audit"
+import { notifyRoles } from "@/lib/hub/notify"
 import { queryOne } from "@/lib/hub/db"
 
 const requireDriverUserMock = vi.mocked(requireDriverUser)
 const createIncidentMock = vi.mocked(createIncident)
 const logAuditMock = vi.mocked(logAudit)
+const notifyRolesMock = vi.mocked(notifyRoles)
 const queryOneMock = vi.mocked(queryOne)
 
 const DRIVER = {
@@ -57,6 +59,7 @@ beforeEach(() => {
   requireDriverUserMock.mockReset()
   createIncidentMock.mockClear()
   logAuditMock.mockClear()
+  notifyRolesMock.mockClear()
   queryOneMock.mockReset()
   queryOneMock.mockResolvedValue(null)
   requireDriverUserMock.mockResolvedValue(DRIVER)
@@ -87,6 +90,31 @@ describe("fileDriverIncidentReport", () => {
     expect(String(sql)).toMatch(/hub\.trucks/)
     expect(String(sql)).not.toMatch(/hub\.users/)
     expect(params).toEqual(["carrier-1", "driver-1"])
+  })
+
+  it("forwards the tap's clientRequestId to createIncident, null when the app sent none", async () => {
+    await fileDriverIncidentReport({ ...input, clientRequestId: "req-1" })
+    expect(createIncidentMock.mock.calls[0][1]).toMatchObject({ clientRequestId: "req-1" })
+
+    await fileDriverIncidentReport(input)
+    expect(createIncidentMock.mock.calls[1][1]).toMatchObject({ clientRequestId: null })
+  })
+
+  it("a replayed report files no audit row and pages nobody a second time", async () => {
+    createIncidentMock.mockResolvedValueOnce({ id: "inc-first", replayed: true } as never)
+
+    const result = await fileDriverIncidentReport({ ...input, clientRequestId: "req-1" })
+
+    // The tap still succeeds — the driver's queue drops it as sent.
+    expect(result).toEqual({ ok: true, id: "inc-first" })
+    expect(logAuditMock).not.toHaveBeenCalled()
+    expect(notifyRolesMock).not.toHaveBeenCalled()
+  })
+
+  it("a first-time report still audits and pages the office (unchanged)", async () => {
+    await fileDriverIncidentReport({ ...input, clientRequestId: "req-1" })
+    expect(logAuditMock).toHaveBeenCalledTimes(1)
+    expect(notifyRolesMock).toHaveBeenCalledTimes(1)
   })
 
   it("does not insert when requireDriverUser rejects (inactive, unlinked, or suspended)", async () => {

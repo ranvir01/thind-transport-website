@@ -24,13 +24,15 @@ export async function submitDvirAction(input: {
   safeToOperate: boolean
   signature: string
   priorDvirId?: string | null
+  /** Minted once per tap by DvirForm; an offline replay sends the same one. */
+  clientRequestId?: string
 }): Promise<Result> {
   try {
     const user = await requireDriverUser()
     if (!input.signature) return { ok: false, error: "Sign the report first" }
     const truck = await driverOwnsTruck(user.carrierId, user.driverId, input.truckId)
     if (!truck) return { ok: false, error: "Truck not found" }
-    const { id, grounded } = await submitDvir(user.carrierId, {
+    const { id, grounded, replayed } = await submitDvir(user.carrierId, {
       truckId: input.truckId,
       driverId: user.driverId,
       type: input.type,
@@ -41,25 +43,31 @@ export async function submitDvirAction(input: {
       signature: input.signature,
       signedName: user.name,
       priorDvirId: input.priorDvirId ?? null,
+      clientRequestId: input.clientRequestId ?? null,
     })
-    await logAudit({
-      carrierId: user.carrierId, actorId: user.id, actorName: user.name,
-      entityType: "dvir", entityId: id, action: `submit_${input.type}_trip`,
-      newValue: { truck: truck.unit_number, defects: input.defects.length, safe: input.safeToOperate },
-    })
-    if (grounded) {
-      await notifyRoles(user.carrierId, ["owner", "dispatcher"], {
-        kind: "dvir",
-        title: `Truck #${truck.unit_number} grounded — unsafe DVIR defect`,
-        body: input.defects.map((d) => d.label).join("; ").slice(0, 120),
-        link: `/hub/fleet/trucks/${input.truckId}`,
+    // A replay of a tap that already landed: the first arrival wrote the
+    // audit row and paged the office. Saying it twice would read as two
+    // inspections.
+    if (!replayed) {
+      await logAudit({
+        carrierId: user.carrierId, actorId: user.id, actorName: user.name,
+        entityType: "dvir", entityId: id, action: `submit_${input.type}_trip`,
+        newValue: { truck: truck.unit_number, defects: input.defects.length, safe: input.safeToOperate },
       })
-    } else if (input.defects.length > 0) {
-      await notifyRoles(user.carrierId, ["owner", "dispatcher"], {
-        kind: "dvir",
-        title: `DVIR defects on #${truck.unit_number} (safe to operate)`,
-        link: `/hub/fleet/trucks/${input.truckId}`,
-      })
+      if (grounded) {
+        await notifyRoles(user.carrierId, ["owner", "dispatcher"], {
+          kind: "dvir",
+          title: `Truck #${truck.unit_number} grounded — unsafe DVIR defect`,
+          body: input.defects.map((d) => d.label).join("; ").slice(0, 120),
+          link: `/hub/fleet/trucks/${input.truckId}`,
+        })
+      } else if (input.defects.length > 0) {
+        await notifyRoles(user.carrierId, ["owner", "dispatcher"], {
+          kind: "dvir",
+          title: `DVIR defects on #${truck.unit_number} (safe to operate)`,
+          link: `/hub/fleet/trucks/${input.truckId}`,
+        })
+      }
     }
     revalidatePath("/hub/driver")
     revalidatePath(`/hub/fleet/trucks/${input.truckId}`)

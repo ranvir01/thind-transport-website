@@ -458,11 +458,18 @@ NEXT:     Write src/lib/hub/__tests__/draft-settlements-loads.test.ts — assert
 BLOCKED:  Three things from Ranvir: (1) production DB read access to confirm real deadhead %, AR book size, real avg settlement net (the seed has n=2), and whether ATS Transport exists as a carrier row — the seed has "Cascade Demo Lines" as tenant 2; (2) the intended scorecard_bonus tier table (0 of the 11 seeded hub.pay_rules rows contain a scorecard_bonus rule); (3) a decision on whether detention may ever be revised downward after a timestamp correction (detention.ts:135-136 currently forbids it)
 ```
 
-## Carried over from closed PR #19 (2026-08-04)
+## Carried over from closed PR #19 (2026-08-04) — CLOSED 2026-09-12
 
-The PR's code was unmergeable (pre-rework offline-queue base), but its concern survives review:
-`submitDvirAction` / `fileDriverIncidentReport` show no server-side idempotency key, so an
-offline-queue replay after a lost ACK could double-file a DVIR or incident. Add a
-client-generated `clientRequestId` + `ON CONFLICT DO NOTHING` unique index, and a test that
-replays the queue twice asserting one row. (~45 min, medium value — the queue's connectivity-error
-handling makes the window small but real.)
+The PR's code was unmergeable (pre-rework offline-queue base), but its concern survived review:
+`submitDvirAction` / `fileDriverIncidentReport` showed no server-side idempotency key, so an
+offline-queue replay after a lost ACK could double-file a DVIR or incident.
+
+Closed by migration `033_offline_idempotency.sql` (`client_request_id` + partial unique index on
+`hub.dvirs` and `hub.incidents`), `submitDvir` / `createIncident` inserting `ON CONFLICT DO
+NOTHING` and re-selecting the first row (`replayed: true`, the DVIR path stops before the
+grounding branch), both actions skipping the audit row and the office page on a replay, and the
+two driver forms minting `newClientRequestId()` once per tap inside the queued payload. Pinned by
+`dvir-idempotency.test.ts`, `incident-idempotency.test.ts`, the replay cases in
+`dvir-driver-scope.test.ts` / `driver-incident-report.test.ts`, and
+`driver-forms-request-id-guard.test.ts`. The queue schema version was not bumped: the field is
+optional, so v2 rows queued before it still replay (without the dedupe) instead of being dropped.
