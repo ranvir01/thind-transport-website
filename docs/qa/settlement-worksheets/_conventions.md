@@ -39,10 +39,14 @@ Company (`per_mile`) drivers **do not** appear on the 1099 export.
 | Company per-mile | Harpreet Singh | `per_mile` 63¢/loaded mile (`loadedOnly: true`); insurance `$75.00`/wk; escrow `$0` |
 | Owner-operator | Jasdeep Brar | `percent_linehaul` 9000 bps of **linehaul + accessorials** + `fsc_passthrough` 10000 bps; escrow `$50.00`/wk |
 
-`PAY_RATES.companyDriver.*.perMile` is `"$0.63"`. `PAY_RATES.ownerOperator` is
-`90%` + `100%` FSC. `DEFAULT_SETTINGS.pay.companyDriverPerMileCents` is **60** —
-a settings default for *new* tenants, **not** Thind's published rate. Worksheets
-use **63¢** / **90%**. Cascade Demo Lines seeds at 60¢ / 88% (isolation tenant).
+`PAY_RATES.companyDriver.*.perMile` is `"$0.65"` (the public site's published rate since
+`d5c412b`). `PAY_RATES.ownerOperator` is `90%` + `100%` FSC.
+`DEFAULT_SETTINGS.pay.companyDriverPerMileCents` is **60** — a settings default for *new*
+tenants, **not** Thind's published rate. The seed (`scripts/seed-demo.mjs`) still pays its
+company drivers **63¢**, and every worksheet, fixture and the settlements smoke pin 63¢
+arithmetic to it — so worksheets use **63¢** / **90%** until the seed, these worksheets and
+the smoke move to 65¢ together (one coupled change, owner-approved). Cascade Demo Lines
+seeds at 60¢ / 88% (isolation tenant).
 
 ## What the engine does **not** auto-apply
 

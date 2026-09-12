@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest"
 import { draftOutreach, canSpamFooter, type CompanyFacts } from "../draft"
+import { PAY_RATES } from "@/lib/constants"
 
 const C: CompanyFacts = {
   name: "Thind Transport",
@@ -52,8 +53,18 @@ describe("draftOutreach — every audience", () => {
   it("driver draft leads with the 90% split and the apply link", () => {
     const d = draftOutreach({ audience: "driver" }, C)
     expect(d.body).toContain("90%")
-    expect(d.body).toContain("$0.63")
     expect(d.body).toContain("thindtransport.com/apply")
+  })
+
+  it("driver draft quotes the published company per-mile rate in every channel, never a stale literal", () => {
+    // The rate is the site's PAY_RATES, not a number typed into the template:
+    // the drafts carried $0.63 for weeks after the site moved to $0.65.
+    const rate = PAY_RATES.companyDriver.otr.perMile
+    const d = draftOutreach({ audience: "driver" }, C)
+    expect(d.body).toContain(`${rate}/mile`)
+    expect(d.sms).toContain(`${rate}/mi`)
+    expect(d.callScript).toContain(`${rate} a mile`)
+    for (const text of [d.body, d.sms, d.callScript]) expect(text).not.toContain("$0.63")
   })
 
   it("personalizes with a first name when we have one", () => {

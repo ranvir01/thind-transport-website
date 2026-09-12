@@ -33,6 +33,12 @@ the two-level identity flow (`dat.ts:153-179` org token → user token, `:195-19
 freight search). Registry remains `status: "stub"` (`registry.ts:92`). Token/search paths are
 still unconfirmed against real DAT staging — do not flip the registry live.
 
+**Universal-coverage pass 2026-09-12:** the registry grew from 10 to 19 providers in the 2026-08
+integration research wave (`registry.ts:156-227`). The nine new entries were not in any section
+below; §2b inventories them from `registry.ts`, `universal-sync.ts` and `telematics.ts` — fields,
+sync path, fallback, client file, and what is still an assumption. No dollar figures: none of the
+nine has been quoted, and every response shape is a documented guess until a real payload is seen.
+
 ---
 
 ## 0. The one finding that outranks the table
@@ -137,6 +143,36 @@ or inference as marked. Hours = your hours, after `CREDENTIALS_KEY` is set.
 
 **Everything worth doing is 7 hours total and worth ~$914/month** (195 + 475 + 244), plus FMCSA in
 §5 at $70/mo for another 0.5 hr. The other five providers are 27+ hours for approximately nothing.
+
+---
+
+## 2b. The nine universal-coverage entries (2026-08; inventoried 2026-09-12)
+
+All nine are `status: "stub"` in `src/lib/hub/integrations/registry.ts:161-227`: the settings card
+renders, credentials can be pasted (behind the same `CREDENTIALS_KEY` gate as §0), and the mock
+adapter satisfies the contract suite. Seven have a client; every client's response shape is a
+**documented assumption** isolated in one `normalize*` function (`universal-sync.ts:9-13`), with an
+env-overridable base URL, exactly EFS's posture before its rep replied. Nothing goes live until the
+matching `docs/OWNER-CHECKLIST.md` step (signup, agreement, credential paste) is done. Landing paths
+reuse existing tables — no new tables, no new read paths (`universal-sync.ts:15-25`). No value or
+hours column: none of the nine has a vendor quote or a Thind account, so any figure would be invented.
+
+| Provider | Domain | Credential fields (`registry.ts`) | Sync / cron | Lands in | Fallback (always works) | Client | What is still a guess |
+|---|---|---|---|---|---|---|---|
+| **axle** | telematics | `apiKey` (`:164`) | poll / `telematics-sync` | positions + HOS through the `TelematicsSource` seam | FMCSA ELD output-file upload, or positions CSV | `src/lib/hub/telematics.ts:197` `axleSource` (third aggregator beside Terminal / TruckerCloud; `AXLE_API_BASE`) | endpoint paths and payload; `activeTelematicsSource()` still picks one source, Terminal first |
+| **atob** | fuel | `apiKey` (`:170`) | poll / `universal-sync` | `hub.fuel_transactions`, source `atob`, same `(carrier_id, source, external_id)` key as EFS/WEX | Fuel statement CSV import | `universal-sync.ts:191` (`ATOB_API_BASE`) | transaction schema; whether AtoB issues API keys to a 12-truck fleet |
+| **plaid** | banking | `clientId`, `secret`, `accessToken` (`:177-179`) | poll / `universal-sync` | `hub.fuel_transactions`, source `plaid`, gallons 0 (spend only — MPG/IFTA sum gallons, so these rows add spend visibility without touching them) | Bank statement CSV import | `universal-sync.ts:205` (`PLAID_API_BASE`) | which merchant categories count as fuel; the per-account `accessToken` needs a Link flow nothing in the repo runs |
+| **bestpass** | tolls | `clientId`, `clientSecret` (`:187-188`) | poll / `universal-sync` | `hub.toll_transactions`, source `bestpass` | Toll statement CSV import | `universal-sync.ts:306` `tollSource` (`BESTPASS_API_BASE`) | partner API access is by application (developer.bestpass.com); response fields |
+| **prepass** | bypass | `apiKey` (`:195`) | poll / `universal-sync` | `hub.toll_transactions`, source `prepass` | Toll/bypass statement CSV import | `universal-sync.ts:313` `tollSource` (`PREPASS_API_BASE`) | whether the REST feed or the FTP feed is what PrePass actually issues; bypass events are not stored, only toll charges |
+| **drivewyze** | bypass | `apiKey` (`:201`) | manual — no cron | nothing — bypass works in-cab; the card exists so the credential has a home | No feed; nothing to import | **none** (credentials UI only) | everything; there is no sync to build until a use for VMAPI data exists |
+| **fleetio** | maintenance | `apiToken`, `accountToken` (`:208-209`) | poll / `universal-sync` | `hub.maintenance_records`, deduped through the `hub.integration_events` ledger (the table has no natural key) | Built-in maintenance panel + CSV import | `universal-sync.ts:346` (`FLEETIO_API_BASE`) | work-order and service-reminder schema; two-way push is described in the blurb (`:206`) but only the pull exists |
+| **sambasafety** | safety | `clientId`, `clientSecret` (`:217-218`) | poll / `universal-sync` | owner/safety notifications (an MVR alert is a "call the driver today" fact, not a table), deduped through the ledger | Annual MVR pull, filed to the driver's DQ file | `universal-sync.ts` (SambaSafety source; see the header `:24-25`) | alert schema; driver matching by license number |
+| **stedi** | edi | `apiKey` (`:225`) | webhook — no cron | nothing yet | Email/portal tender handling + manual load entry | **none** — no `EVENT_PROCESSORS` entry (`event-processors.ts`) and no `stedi` case in the webhook route | 204 → load mapping, 990/214/210 outbound; the whole adapter |
+
+Net for the nine: **seven pulls exist and can be tried the day a credential lands** (axle, atob,
+plaid, bestpass, prepass, fleetio, sambasafety), each likely to need its one normalizer corrected
+against the first real payload; **two are cards with nothing behind them** (drivewyze, stedi).
+None is on the §2 ranking because none has a number that was measured.
 
 ---
 

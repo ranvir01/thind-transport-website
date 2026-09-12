@@ -12,7 +12,7 @@ import { toast } from "sonner"
 import { Check, Loader2, ShieldAlert, Wrench } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { submitDvirAction } from "@/app/hub/_actions/dvir"
-import { runOrQueue } from "@/components/hub/driver/offline-queue"
+import { newClientRequestId, runOrQueue } from "@/components/hub/driver/offline-queue"
 import { SignaturePad } from "@/components/hub/SignaturePad"
 import {
   btnDriverPrimaryCls, btnDriverSecondaryCls, fieldDarkCls, labelDarkCls,
@@ -60,6 +60,10 @@ export function DvirForm({
         safeToOperate: defects.length === 0 ? true : safeToOperate,
         signature: signature ?? "",
         priorDvirId: priorDvir?.id ?? null,
+        // One id per tap: a queued replay of this inspection sends the same
+        // one, and the server returns the first filing instead of grounding
+        // the truck twice.
+        clientRequestId: newClientRequestId(),
       }
       const result = await runOrQueue({ kind: "dvir", payload: input }, () => submitDvirAction(input))
       if ("queued" in result) {

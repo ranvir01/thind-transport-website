@@ -13,6 +13,7 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest"
 import type { PoolClient } from "pg"
 import { lockSandboxTenant, unlockSandboxTenant } from "./sandbox-tenant-lock"
+import { COMMITTED_STATUSES } from "../types"
 import { loadEnvLocal } from "../../../../scripts/env-local.mjs"
 
 loadEnvLocal({ skipWhenSet: "POSTGRES_URL" })
@@ -42,6 +43,39 @@ suite("sandbox invariant checks fire on a broken world", () => {
   }, 180_000)
 
   it("a freshly seeded world satisfies every rule", async () => {
+    expect(await checkSandboxInvariants()).toEqual([])
+  })
+
+  // Runs while the world is still clean: the case after this one leaves a
+  // rolled load behind, which would muddy the "nothing else fired" assertion.
+  it("catches two booked loads on one truck — booked is committed too (#65)", async () => {
+    const [{ id: truck }] = await query<{ id: string }>(
+      `SELECT t.id FROM hub.trucks t
+        WHERE t.carrier_id = $1 AND t.deleted_at IS NULL
+          AND NOT EXISTS (
+            SELECT 1 FROM hub.loads l
+             WHERE l.carrier_id = $1 AND l.truck_id = t.id AND l.deleted_at IS NULL
+               AND l.status = ANY($2::text[]))
+        ORDER BY t.unit_number LIMIT 1`,
+      [C, [...COMMITTED_STATUSES]]
+    )
+    const victims = await query<{ id: string; truck_id: string | null }>(
+      `SELECT id, truck_id FROM hub.loads
+        WHERE carrier_id = $1 AND deleted_at IS NULL AND status = 'booked'
+        ORDER BY reference LIMIT 2`,
+      [C]
+    )
+    expect(victims).toHaveLength(2)
+    await query(`UPDATE hub.loads SET truck_id = $2 WHERE carrier_id = $1 AND id = ANY($3::uuid[])`,
+      [C, truck, victims.map((v) => v.id)])
+    const found = await checkSandboxInvariants()
+    // Nothing rolled, so the crew rules stay quiet — only the double booking fires.
+    expect(found.map((v) => v.rule)).toEqual(["one-load-per-truck"])
+    expect(found[0].detail).toContain(`truck ${truck} on 2 committed loads`)
+    // Put the two back so the cases below start from the world they expect.
+    for (const v of victims) {
+      await query(`UPDATE hub.loads SET truck_id = $2 WHERE carrier_id = $1 AND id = $3`, [C, v.truck_id, v.id])
+    }
     expect(await checkSandboxInvariants()).toEqual([])
   })
 

@@ -34,7 +34,8 @@ Lives at **`/hub/outreach`** (office-gated). It is the outbound complement to
   van, 48 states, live tracking, dispatch that answers — "put us on your carrier list."
 - **Shippers** → haul direct, skip the broker markup, live tracking + POD, fully
   insured — "want a lane quote?"
-- **Drivers** → 90% owner-op split / $0.63 company mile, weekly pay, no forced
+- **Drivers** → 90% owner-op split / the published company per-mile rate
+  (`PAY_RATES.companyDriver.otr.perMile`, $0.65 today), weekly pay, no forced
   dispatch, 2024 Cascadias, family-run — "apply in 60 seconds."
 
 ## Compliance (built in, not optional)

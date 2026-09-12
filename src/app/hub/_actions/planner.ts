@@ -13,7 +13,7 @@ import { driverTimeOffConflict } from "@/lib/hub/timeoff"
 import { query, queryOne } from "@/lib/hub/db"
 import { logAudit } from "@/lib/hub/audit"
 import { actionError } from "@/lib/hub/action-error"
-import type { Driver } from "@/lib/hub/types"
+import { COMMITTED_STATUSES, type Driver } from "@/lib/hub/types"
 
 interface Result {
   ok: boolean
@@ -139,9 +139,9 @@ export async function plannerMoveLoadAction(
                             MAX(COALESCE(appt_end, appt_start, l.created_at + INTERVAL '1 day'))::date AS e
                      FROM hub.stops WHERE load_id = l.id AND carrier_id = l.carrier_id) w ON TRUE
        WHERE l.carrier_id = $1 AND l.deleted_at IS NULL AND l.id <> $2
-         AND l.truck_id = $3 AND l.status IN ('booked','dispatched','at_pickup','in_transit')
+         AND l.truck_id = $3 AND l.status = ANY($6::text[])
          AND w.s <= $5::date AND w.e >= $4::date`,
-      [user.carrierId, loadId, target.truckId ?? load.truck_id, window.starts, window.ends]
+      [user.carrierId, loadId, target.truckId ?? load.truck_id, window.starts, window.ends, [...COMMITTED_STATUSES]]
     )
     if (Number(overlapping?.count ?? 0) > 0) {
       warning = [warning, `heads up: this truck already has ${overlapping!.count} load(s) in that window`]

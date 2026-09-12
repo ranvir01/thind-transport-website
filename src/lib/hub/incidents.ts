@@ -55,30 +55,50 @@ export interface IncidentInput {
   towAwayDisabling: boolean
   lat?: number | null
   lng?: number | null
+  /**
+   * The driver app's per-tap id (create only). The online attempt and any
+   * offline-queue replay of the same tap carry the same one; a second arrival
+   * returns the first arrival's row (`replayed: true`) instead of filing a
+   * second report. Null from the office form.
+   */
+  clientRequestId?: string | null
 }
 
 export async function createIncident(
   carrierId: string,
   input: IncidentInput,
   reporter: { id: string; name: string }
-): Promise<Incident> {
+): Promise<Incident & { replayed: boolean }> {
   await assertCarrierRefs(carrierId, { truck_id: input.truckId, driver_id: input.driverId, load_id: input.loadId })
+  // The partial unique index (033) makes a replayed client_request_id a
+  // no-op insert; rows without one never enter the index and insert as before.
   const rows = await query<Incident>(
     `INSERT INTO hub.incidents (
        carrier_id, truck_id, driver_id, load_id, occurred_at, location, description,
        police_report, fatality, injury_treated_away, tow_away_disabling, lat, lng,
-       reported_by, reported_by_name
-     ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)
+       reported_by, reported_by_name, client_request_id
+     ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16)
+     ON CONFLICT (carrier_id, client_request_id) WHERE client_request_id IS NOT NULL DO NOTHING
      RETURNING *`,
     [
       carrierId, input.truckId ?? null, input.driverId ?? null, input.loadId ?? null,
       input.occurredAt, input.location ?? null, input.description ?? null,
       input.policeReport ?? null, input.fatality, input.injuryTreatedAway,
       input.towAwayDisabling, input.lat ?? null, input.lng ?? null,
-      reporter.id, reporter.name,
+      reporter.id, reporter.name, input.clientRequestId ?? null,
     ]
   )
-  return rows[0]
+  if (rows.length === 0 && input.clientRequestId) {
+    // A replay of a tap that already landed. Pinned to the same reporter so
+    // a foreign id can only fail, never read another account's report.
+    const existing = await queryOne<Incident>(
+      `${INCIDENT_SELECT} WHERE i.carrier_id = $1 AND i.client_request_id = $2 AND i.reported_by = $3`,
+      [carrierId, input.clientRequestId, reporter.id]
+    )
+    if (!existing) throw new Error("This report was already filed under another account")
+    return { ...existing, replayed: true }
+  }
+  return { ...rows[0], replayed: false }
 }
 
 export async function updateIncident(

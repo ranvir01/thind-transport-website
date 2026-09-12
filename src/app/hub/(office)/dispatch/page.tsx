@@ -1,8 +1,10 @@
 import Link from "next/link"
-import { ShieldCheck, ShieldAlert, Plus, CloudLightning, ClipboardPaste, AlertTriangle, Clock } from "lucide-react"
+import { ShieldCheck, ShieldAlert, Plus, CloudLightning, ClipboardPaste, AlertTriangle, Clock, Wrench } from "lucide-react"
 import { listLoads, getLoadStops } from "@/lib/hub/loads"
 import { listDrivers, dispatchLegality } from "@/lib/hub/drivers"
 import { listTrucks } from "@/lib/hub/fleet"
+import { trucksAwaitingRepair } from "@/lib/hub/dvir"
+import { dispatchCardAlerts, groundedByTruck } from "@/lib/hub/dispatch-alerts"
 import { getCarrierSettings } from "@/lib/hub/settings"
 import { getActiveAlerts, type WeatherAlert } from "@/lib/hub/weather"
 import { getDwellingStops } from "@/lib/hub/detention"
@@ -49,16 +51,21 @@ async function weatherForLoads(carrierId: string, loads: Load[]): Promise<Map<st
 
 export default async function DispatchBoardPage() {
   const user = await requireOfficeUser()
-  const [loads, drivers, trucks, settings, dwelling] = await Promise.all([
+  const [loads, drivers, trucks, settings, dwelling, grounded] = await Promise.all([
     listLoads(user.carrierId, { status: "active" }),
     listDrivers(user.carrierId),
     listTrucks(user.carrierId),
     getCarrierSettings(user.carrierId),
     getDwellingStops(user.carrierId),
+    // Trucks parked on an unsafe DVIR nobody has certified a repair for —
+    // one fleet-wide query, so the board can name the defect on the card
+    // instead of hiding it behind "in the shop" (#66).
+    trucksAwaitingRepair(user.carrierId),
   ])
   const weather = await weatherForLoads(user.carrierId, loads)
   const driverById = new Map(drivers.map((d) => [d.id, d]))
   const truckById = new Map(trucks.map((t) => [t.id, t]))
+  const groundedTruck = groundedByTruck(grounded)
   const dwellingByLoad = new Map(dwelling.map((d) => [d.loadId, d]))
   // Pickup verification chips: verified/mismatch only. "unverified" is the
   // normal offline case and would put a shrug on every card.
@@ -119,6 +126,10 @@ export default async function DispatchBoardPage() {
                       load.driver_id ? driverById.get(load.driver_id) ?? null : null,
                       load.truck_id ? truckById.get(load.truck_id) ?? null : null
                     )
+                    const alerts = dispatchCardAlerts({
+                      legality,
+                      grounded: load.truck_id ? groundedTruck.get(load.truck_id) ?? null : null,
+                    })
                     return (
                       <Panel key={load.id} className="p-3.5">
                         <Link href={`/hub/loads/${load.id}`} className="block group">
@@ -150,15 +161,27 @@ export default async function DispatchBoardPage() {
                             </p>
                           ) : null}
                         </Link>
-                        {!legality.legal ? (
-                          <p className="mt-2 flex items-center gap-1.5 rounded-control bg-bad-soft border border-bad-soft px-2 py-1 text-[11px] font-semibold text-bad">
-                            <AlertTriangle className="h-3.5 w-3.5 shrink-0" /> {legality.stops[0]}
-                          </p>
-                        ) : legality.warnings.length > 0 ? (
-                          <p className="mt-2 flex items-center gap-1.5 rounded-control bg-warn-soft border border-warn-soft px-2 py-1 text-[11px] font-semibold text-warn">
-                            <AlertTriangle className="h-3.5 w-3.5 shrink-0" /> {legality.warnings[0]}
-                          </p>
-                        ) : null}
+                        {alerts.map((a) =>
+                          a.href ? (
+                            <Link
+                              key={a.text}
+                              href={a.href}
+                              className="mt-2 flex items-center gap-1.5 rounded-control bg-bad-soft border border-bad-soft px-2 py-1 text-[11px] font-semibold text-bad hover:bg-hover"
+                            >
+                              <Wrench className="h-3.5 w-3.5 shrink-0" /> {a.text}
+                            </Link>
+                          ) : (
+                            <p
+                              key={a.text}
+                              className={cn(
+                                "mt-2 flex items-center gap-1.5 rounded-control border px-2 py-1 text-[11px] font-semibold",
+                                a.tone === "bad" ? "bg-bad-soft border-bad-soft text-bad" : "bg-warn-soft border-warn-soft text-warn"
+                              )}
+                            >
+                              <AlertTriangle className="h-3.5 w-3.5 shrink-0" /> {a.text}
+                            </p>
+                          )
+                        )}
                         {alert ? (
                           <p className="mt-2 flex items-center gap-1.5 rounded-control bg-warn-soft border border-warn-soft px-2 py-1 text-[11px] font-semibold text-warn">
                             <CloudLightning className="h-3.5 w-3.5 shrink-0" /> {alert.event} on route
