@@ -8,6 +8,7 @@ import { checkSandboxInvariants } from "./sandbox-sim-invariants"
 import { hash01 } from "./sandbox-sim-math"
 import { planSandboxTick, type SimOp, type SimState, type WorldSnapshot } from "./sandbox-sim-plan"
 import { CITIES, type WorldCityKey } from "./sandbox-world"
+import { COMMITTED_STATUSES } from "./types"
 import type { LoadStatus } from "./types"
 
 /**
@@ -292,10 +293,10 @@ async function snapshotWorld(): Promise<WorldSnapshot> {
       WHERE d.carrier_id = $1 AND d.user_id IS NULL AND d.status = 'active'
         AND NOT EXISTS (
           SELECT 1 FROM hub.loads l WHERE l.carrier_id = $1 AND l.driver_id = d.id
-            AND l.status IN ('booked','dispatched','at_pickup','in_transit')
+            AND l.status = ANY($2::text[])
         )
       LIMIT 5`,
-    [C]
+    [C, [...COMMITTED_STATUSES]]
   )
   const playerDrivers = await query<{
     driver_id: string

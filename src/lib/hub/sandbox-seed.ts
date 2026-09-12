@@ -10,6 +10,7 @@ import { ORIENTATION_TEMPLATE } from "./recruiting-shared"
 import { SANDBOX_CARRIER_ID, SANDBOX_CARRIER_NAME, SANDBOX_PASSWORD, SANDBOX_SEATS } from "./sandbox"
 import type { SafetyEventKind } from "./safety-score"
 import { interpolate, progressAt } from "./sandbox-sim-math"
+import { COMMITTED_STATUSES, CREW_REQUIRED_STATUSES } from "./types"
 import { AVG_MPH, BROKERS, CITIES, COMMODITY, LANES, MERCHANTS } from "./sandbox-world"
 
 /**
@@ -358,10 +359,10 @@ export async function seedSandbox(): Promise<void> {
     const plans: LoadPlan[] = []
     let loadIdx = 0
     const activeDriverIdxs = [...Array(40).keys()].filter((i) => truckOfDriver.has(driverIds[i]))
-    /** Statuses where the driver and truck are committed right now. */
-    const CONCURRENT_STATUSES = new Set(["booked", "dispatched", "at_pickup", "in_transit"])
+    /** Statuses where the driver and truck are committed right now — the one shared definition (#65). */
+    const CONCURRENT_STATUSES = new Set<string>(COMMITTED_STATUSES)
     /** …and the subset that is physically impossible without a crew. */
-    const CREW_REQUIRED = new Set(["dispatched", "at_pickup", "in_transit"])
+    const CREW_REQUIRED = new Set<string>(CREW_REQUIRED_STATUSES)
     const busyDrivers = new Set<number>()
     // Jordan (0) and Sam (1) are force-assigned to the first two in-transit
     // loads below, and that path deliberately skips the free-list. In-transit
