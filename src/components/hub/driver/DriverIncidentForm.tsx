@@ -10,7 +10,7 @@ import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { Loader2, MapPin, ShieldAlert } from "lucide-react"
 import { fileDriverIncidentReport } from "@/app/hub/_actions/safety"
-import { runOrQueue } from "@/components/hub/driver/offline-queue"
+import { newClientRequestId, runOrQueue } from "@/components/hub/driver/offline-queue"
 import {
   btnDriverPrimaryCls, fieldDarkCls, fieldDarkTextareaCls, labelDarkCls,
 } from "@/components/hub/ui"
@@ -65,6 +65,10 @@ export function DriverIncidentForm({ loads }: { loads: { id: string; reference: 
         towAwayDisabling: form.towAwayDisabling,
         lat: coords?.lat ?? null,
         lng: coords?.lng ?? null,
+        // One id per tap: a queued replay of this report sends the same one,
+        // and the server returns the first filing instead of paging the
+        // office about a second crash.
+        clientRequestId: newClientRequestId(),
       }
       // A crash scene is exactly where signal dies — the report must queue,
       // never vanish. Same offline path as the DVIR and load-card taps.

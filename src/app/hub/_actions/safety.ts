@@ -63,6 +63,8 @@ export async function fileDriverIncidentReport(input: {
   loadId?: string | null
   lat?: number | null
   lng?: number | null
+  /** Minted once per tap by DriverIncidentForm; an offline replay sends the same one. */
+  clientRequestId?: string
 }): Promise<IncidentFormResult> {
   try {
     // requireDriverUser re-checks `active` + carrier status on every call
@@ -102,20 +104,25 @@ export async function fileDriverIncidentReport(input: {
         towAwayDisabling: input.towAwayDisabling,
         lat: input.lat ?? null,
         lng: input.lng ?? null,
+        clientRequestId: input.clientRequestId ?? null,
       },
       { id: user.id, name: user.name }
     )
-    await logAudit({
-      carrierId: user.carrierId, actorId: user.id, actorName: user.name,
-      entityType: "incident", entityId: incident.id, action: "driver_first_report",
-      newValue: { location: input.location },
-    })
-    await notifyRoles(user.carrierId, ["owner", "dispatcher"], {
-      kind: "incident",
-      title: `Incident reported by ${user.name}`,
-      body: input.location ? `At ${input.location}` : undefined,
-      link: `/hub/safety`,
-    })
+    // A replay of a tap that already landed: the first arrival wrote the
+    // audit row and paged the office. A second page reads as a second crash.
+    if (!incident.replayed) {
+      await logAudit({
+        carrierId: user.carrierId, actorId: user.id, actorName: user.name,
+        entityType: "incident", entityId: incident.id, action: "driver_first_report",
+        newValue: { location: input.location },
+      })
+      await notifyRoles(user.carrierId, ["owner", "dispatcher"], {
+        kind: "incident",
+        title: `Incident reported by ${user.name}`,
+        body: input.location ? `At ${input.location}` : undefined,
+        link: `/hub/safety`,
+      })
+    }
     revalidatePath("/hub/safety")
     return { ok: true, id: incident.id }
   } catch (err) {

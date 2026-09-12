@@ -165,8 +165,15 @@ export async function submitDvir(
     signature: string
     signedName: string
     priorDvirId?: string | null
+    /**
+     * The driver app's per-tap id. The online attempt and any offline-queue
+     * replay of the same tap carry the same one; a second arrival returns the
+     * first arrival's row (`replayed: true`) instead of grounding the truck a
+     * second time. Null from the office and from app versions before the id.
+     */
+    clientRequestId?: string | null
   }
-): Promise<{ id: string; grounded: boolean }> {
+): Promise<{ id: string; grounded: boolean; replayed: boolean }> {
   const client = await hubDb().connect()
   try {
     await client.query("BEGIN")
@@ -183,16 +190,38 @@ export async function submitDvir(
       prior = priorLookup.rows[0] ?? null
       if (!prior) throw new Error("Prior inspection not found on this truck")
     }
+    // The partial unique index (033) makes a replayed client_request_id a
+    // no-op insert; rows without one never enter the index and insert as
+    // before.
     const { rows } = await client.query(
       `INSERT INTO hub.dvirs (carrier_id, truck_id, driver_id, type, odometer, checklist, defects,
-         safe_to_operate, signature, signed_name, prior_dvir_id)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING id`,
+         safe_to_operate, signature, signed_name, prior_dvir_id, client_request_id)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
+       ON CONFLICT (carrier_id, client_request_id) WHERE client_request_id IS NOT NULL DO NOTHING
+       RETURNING id`,
       [
         carrierId, input.truckId, input.driverId, input.type, input.odometer ?? null,
         JSON.stringify(input.checklist), JSON.stringify(input.defects),
         input.safeToOperate, input.signature, input.signedName, input.priorDvirId ?? null,
+        input.clientRequestId ?? null,
       ]
     )
+    if (rows.length === 0 && input.clientRequestId) {
+      // A replay of a tap that already landed. Return that row and stop
+      // BEFORE the grounding branch: the first arrival already parked the
+      // truck and opened its work order, and the caller uses `replayed` to
+      // skip the audit row and the office alert too. Pinned to this driver
+      // and truck so a foreign id can only fail, never read another report.
+      const existing = await client.query<{ id: string; safe_to_operate: boolean; defects: DvirDefect[] }>(
+        `SELECT id, safe_to_operate, defects FROM hub.dvirs
+          WHERE carrier_id = $1 AND client_request_id = $2 AND driver_id = $3 AND truck_id = $4`,
+        [carrierId, input.clientRequestId, input.driverId, input.truckId]
+      )
+      const prev = existing.rows[0]
+      if (!prev) throw new Error("This inspection was already filed under another report")
+      await client.query("COMMIT")
+      return { id: prev.id, grounded: prev.defects.length > 0 && !prev.safe_to_operate, replayed: true }
+    }
     const dvirId = rows[0].id as string
     let grounded = false
 
@@ -233,7 +262,7 @@ export async function submitDvir(
     }
 
     await client.query("COMMIT")
-    return { id: dvirId, grounded }
+    return { id: dvirId, grounded, replayed: false }
   } catch (err) {
     await client.query("ROLLBACK")
     throw err

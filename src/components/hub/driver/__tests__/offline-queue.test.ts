@@ -1,9 +1,35 @@
 import { afterEach, describe, expect, it, vi } from "vitest"
 
 import {
-  enqueueIntent, isOfflineError, listIntents, queueCount, QUEUE_SCHEMA_VERSION, removeIntent,
-  replayQueue, runOrQueue,
+  enqueueIntent, isOfflineError, listIntents, newClientRequestId, queueCount, QUEUE_SCHEMA_VERSION,
+  removeIntent, replayQueue, runOrQueue,
 } from "../offline-queue"
+
+/**
+ * newClientRequestId is the per-tap id the server dedupes DVIRs and incident
+ * reports on. It has to be unique per call and must never throw — a phone on
+ * a LAN http:// dev server has no crypto.randomUUID, and a crash here would
+ * lose the tap it exists to protect.
+ */
+describe("newClientRequestId", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  it("mints a UUID when the runtime has crypto.randomUUID", () => {
+    const id = newClientRequestId()
+    expect(id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/)
+    expect(newClientRequestId()).not.toBe(id)
+  })
+
+  it("falls back to a random id (never throws) when crypto.randomUUID is missing", () => {
+    vi.stubGlobal("crypto", {})
+    const a = newClientRequestId()
+    const b = newClientRequestId()
+    expect(a.length).toBeGreaterThan(16)
+    expect(a).not.toBe(b)
+  })
+})
 
 /**
  * isOfflineError decides whether a failed driver tap gets queued for replay

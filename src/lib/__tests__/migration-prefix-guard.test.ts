@@ -122,7 +122,7 @@ describe("migrations/hub prefixes", () => {
   })
 
   it("next free prefix is max(existing) + 1", () => {
-    expect(nextFreePrefix(sqlFiles)).toBe("033")
-    expect(sqlFiles.some((file) => file.startsWith("033_"))).toBe(false)
+    expect(nextFreePrefix(sqlFiles)).toBe("034")
+    expect(sqlFiles.some((file) => file.startsWith("034_"))).toBe(false)
   })
 })

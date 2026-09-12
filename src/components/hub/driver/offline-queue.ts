@@ -63,8 +63,28 @@ export type PendingIntent = {
  * not when the queue happened to sync — detention billing runs off this
  * timestamp. A v1 "stop" row has no `at` and must be dropped, not replayed
  * with a stale server-time fallback.
+ *
+ * Not bumped for `clientRequestId` on "dvir" and "incident": the field is
+ * optional, so a v2 row queued before it existed still replays — without the
+ * dedupe, exactly as it would have before — rather than being dropped on a
+ * phone that was parked offline across the upgrade.
  */
 export const QUEUE_SCHEMA_VERSION = 2
+
+/**
+ * A per-tap id the server dedupes on (hub.dvirs / hub.incidents
+ * client_request_id). Mint it once when the driver taps, inside the payload,
+ * so the online attempt and any queued replay of the same tap share it and
+ * the second arrival returns the first one's row instead of filing again.
+ *
+ * crypto.randomUUID needs a secure context; a phone on a LAN http:// dev
+ * server is not one, so fall back to the queue's own id recipe rather than
+ * crash the tap.
+ */
+export function newClientRequestId(): string {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") return crypto.randomUUID()
+  return `${Date.now()}-${Math.random().toString(36).slice(2, 10)}-${Math.random().toString(36).slice(2, 10)}`
+}
 
 // Persisted rows carry whatever shape was current when queued — the typed map
 // guards call sites at compile time, not old IndexedDB data at replay.

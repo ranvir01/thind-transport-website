@@ -69,13 +69,17 @@ describe("executeIntent", () => {
   })
 
   it("dispatches dvir, incident, facility-note, time-off, and advance straight through as their input object", async () => {
-    const dvirInput = { loadId: "L1" } as unknown as Parameters<typeof submitDvirAction>[0]
+    // clientRequestId rides along untouched: it is what lets the server tell
+    // a replay of this tap from a new one.
+    const dvirInput = { loadId: "L1", clientRequestId: "req-dvir" } as unknown as Parameters<typeof submitDvirAction>[0]
     await executeIntent(baseIntent({ kind: "dvir", payload: dvirInput }))
     expect(submitDvirAction).toHaveBeenCalledWith(dvirInput)
+    expect(vi.mocked(submitDvirAction).mock.calls.at(-1)![0]).toMatchObject({ clientRequestId: "req-dvir" })
 
-    const incidentInput = { loadId: "L1" } as Parameters<typeof fileDriverIncidentReport>[0]
+    const incidentInput = { loadId: "L1", clientRequestId: "req-inc" } as Parameters<typeof fileDriverIncidentReport>[0]
     await executeIntent(baseIntent({ kind: "incident", payload: incidentInput }))
     expect(fileDriverIncidentReport).toHaveBeenCalledWith(incidentInput)
+    expect(vi.mocked(fileDriverIncidentReport).mock.calls.at(-1)![0]).toMatchObject({ clientRequestId: "req-inc" })
 
     const noteInput = { facilityId: "F1", body: "gate 4", tags: ["fast"] }
     await executeIntent(baseIntent({ kind: "facility-note", payload: noteInput }))
