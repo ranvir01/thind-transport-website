@@ -107,4 +107,15 @@ if (problems.length) {
   process.exit(1);
 }
 
+const notes = [];
+if (!env.build?.dockerfile && !env.snapshot) {
+  notes.push('no `build` (Cursor default machine + install) — a Docker build in the dashboard log means the saved copy is stale');
+}
+for (const dockerfile of dockerfiles) {
+  const bytes = Buffer.byteLength(readFileSync(dockerfile));
+  const role = referenced && dockerfile === referenced ? 'referenced' : 'opt-in, unreferenced';
+  notes.push(`${relative(process.cwd(), dockerfile)} is ${bytes} bytes (${role}) — dashboard \`transferring dockerfile: NNNB\` must match`);
+}
+
 console.log('cursor-env-check: .cursor environment looks buildable');
+for (const note of notes) console.log(`  ${note}`);
