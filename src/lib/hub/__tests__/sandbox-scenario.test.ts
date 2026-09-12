@@ -68,13 +68,33 @@ suite("the loaded scenario has a name the app can read", () => {
       )
     )[0].n
 
+  /**
+   * The overlay's own two loads regardless of lateness — so a failure says
+   * whether the overlay staged nothing, or staged them and something later
+   * moved their appointment.
+   */
+  const noShowPickups = async () =>
+    query<{ reference: string; status: string; driver_id: string | null; appt_start: string | null }>(
+      `SELECT l.reference, l.status, l.driver_id, s.appt_start
+         FROM hub.loads l
+         JOIN hub.stops s ON s.load_id = l.id AND s.carrier_id = l.carrier_id AND s.type = 'pickup'
+        WHERE l.carrier_id = $1 AND l.deleted_at IS NULL
+          AND EXISTS (SELECT 1 FROM hub.load_events e
+                       WHERE e.carrier_id = $1 AND e.load_id = l.id AND e.kind = 'note'
+                         AND e.payload->>'text' LIKE 'Driver no-show%')
+        ORDER BY l.reference`,
+      [C]
+    )
+
   it("keeps crunch day's late pickups late through the autopilot's first tick", async () => {
     // The overlay used to leave the two late loads 'dispatched' with a driver.
     // The first tick converged them — stamped an arrival AT the appointment
     // and rolled them — so the lateness the scenario promised was gone before
     // the dispatcher's page loaded. The drill only exists if it survives.
     await applySandboxScenario("crunch")
-    expect(await latePickups()).toBe(2)
+    const staged = await noShowPickups()
+    expect(staged, "the overlay staged no no-show loads").toHaveLength(2)
+    expect(await latePickups(), `staged but no longer late: ${JSON.stringify(staged)}`).toBe(2)
     const tick = await tickSandboxSim(null, new Date())
     expect(tick.reason).not.toBe("unseeded")
     expect(await latePickups()).toBe(2)

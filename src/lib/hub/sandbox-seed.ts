@@ -1097,13 +1097,31 @@ export async function applySandboxScenario(scenario: "steady" | "crunch"): Promi
     // gone before the dispatcher's page loads. Unassigned, the sim has no
     // driver to move and leaves them exactly this wrong until a human puts a
     // truck on them — which is the drill.
-    const late = await client.query<{ id: string }>(
-      `SELECT id FROM hub.loads
-        WHERE carrier_id = $1 AND status = 'dispatched' AND driver_id IS NOT NULL
+    const late = await client.query<{ id: string; reference: string }>(
+      `SELECT id, reference FROM hub.loads
+        WHERE carrier_id = $1 AND deleted_at IS NULL
+          AND status = 'dispatched' AND driver_id IS NOT NULL
         ORDER BY reference LIMIT 2`,
       [C]
     )
     const lateIds = late.rows.map((r) => r.id)
+    // A healthy seed always has eight crewed dispatched loads, so this can
+    // only fire when the seed did not land. Say what the world looks like
+    // rather than commit a "crunch day" with nothing late in it — the
+    // scenario test used to report that as "expected 2, got 0" with no
+    // clue which half of the overlay had failed.
+    if (lateIds.length < 2) {
+      const histogram = await client.query<{ status: string; n: number; crewed: number }>(
+        `SELECT status, COUNT(*)::int AS n, COUNT(driver_id)::int AS crewed
+           FROM hub.loads WHERE carrier_id = $1 AND deleted_at IS NULL
+          GROUP BY status ORDER BY status`,
+        [C]
+      )
+      throw new Error(
+        `crunch overlay: needed 2 crewed dispatched loads to make late, found ${lateIds.length}; loads by status: ` +
+          histogram.rows.map((r) => `${r.status}=${r.n} (${r.crewed} crewed)`).join(", ")
+      )
+    }
     await client.query(
       `UPDATE hub.loads SET status = 'booked', driver_id = NULL, truck_id = NULL, updated_at = NOW()
         WHERE carrier_id = $1 AND id = ANY($2::uuid[])`,
@@ -1172,6 +1190,23 @@ export async function applySandboxScenario(scenario: "steady" | "crunch"): Promi
         LIMIT 3`,
       [C]
     )
+    // The drill is the two late pickups. Recount them as the last thing before
+    // COMMIT so a later overlay statement that touches them fails the whole
+    // overlay by name instead of shipping a crunch day with nothing wrong in it.
+    const staged = await client.query<{ n: number }>(
+      `SELECT COUNT(*)::int AS n FROM hub.loads l
+         JOIN hub.stops s ON s.load_id = l.id AND s.carrier_id = l.carrier_id AND s.type = 'pickup'
+        WHERE l.carrier_id = $1 AND l.id = ANY($2::uuid[])
+          AND l.status = 'booked' AND l.driver_id IS NULL
+          AND s.arrived_at IS NULL AND s.appt_start < NOW() - interval '3 hours'`,
+      [C, lateIds]
+    )
+    if (staged.rows[0].n !== lateIds.length) {
+      throw new Error(
+        `crunch overlay: staged ${lateIds.length} late pickups (${late.rows.map((r) => r.reference).join(", ")}) ` +
+          `but ${staged.rows[0].n} are late at commit — a later overlay statement touched them`
+      )
+    }
     await client.query("COMMIT")
   } catch (error) {
     await client.query("ROLLBACK")
