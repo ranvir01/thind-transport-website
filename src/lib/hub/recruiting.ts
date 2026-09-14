@@ -279,14 +279,16 @@ export async function createOffer(
 
 export async function signOffer(
   carrierId: string,
+  applicantId: string,
   offerId: string,
   signature: string,
   signedName: string
 ): Promise<boolean> {
+  await assertCarrierRefs(carrierId, { applicant_id: applicantId })
   const rows = await query(
     `UPDATE hub.offers SET status = 'signed', signature = $3, signed_name = $4, signed_at = NOW()
-     WHERE carrier_id = $1 AND id = $2 AND status = 'sent' RETURNING id`,
-    [carrierId, offerId, signature, signedName]
+     WHERE carrier_id = $1 AND id = $2 AND applicant_id = $5 AND status = 'sent' RETURNING id`,
+    [carrierId, offerId, signature, signedName, applicantId]
   )
   return rows.length > 0
 }

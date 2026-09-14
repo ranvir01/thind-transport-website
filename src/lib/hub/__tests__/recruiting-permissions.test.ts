@@ -46,7 +46,8 @@ vi.mock("@/lib/mailer", () => ({
   mailFrom: vi.fn(() => "carrier@example.com"),
 }))
 
-import { addApplicantAction, attachReferralAction, convertApplicantAction, createOfferAction } from "@/app/hub/_actions/recruiting"
+import { addApplicantAction, attachReferralAction, convertApplicantAction, createOfferAction, signOfferAction } from "@/app/hub/_actions/recruiting"
+import { signOffer } from "@/lib/hub/recruiting"
 import { vetCustomerAction } from "@/app/hub/_actions/vetting"
 import { invitePortalUserAction } from "@/app/hub/_actions/portal"
 import { logAudit } from "@/lib/hub/audit"
@@ -54,10 +55,12 @@ import { requirePermission } from "@/lib/hub/session"
 
 const logAuditMock = vi.mocked(logAudit)
 const requirePermissionMock = vi.mocked(requirePermission)
+const signOfferMock = vi.mocked(signOffer)
 
 beforeEach(() => {
   requirePermissionMock.mockClear()
   logAuditMock.mockClear()
+  signOfferMock.mockClear()
 })
 
 describe("attachReferralAction", () => {
@@ -100,6 +103,20 @@ describe("createOfferAction", () => {
     const result = await createOfferAction("a1", { paySummary: "   ", body: "Welcome" })
     expect(result.ok).toBe(false)
     expect(logAuditMock).not.toHaveBeenCalled()
+  })
+})
+
+describe("signOfferAction", () => {
+  it("forwards applicantId into signOffer so the UPDATE can pin it", async () => {
+    const result = await signOfferAction("applicant-a", "offer-1", "sig-bytes", "Pat Lee")
+    expect(result).toEqual({ ok: true })
+    expect(signOfferMock).toHaveBeenCalledWith(
+      "carrier-1",
+      "applicant-a",
+      "offer-1",
+      "sig-bytes",
+      "Pat Lee",
+    )
   })
 })
 

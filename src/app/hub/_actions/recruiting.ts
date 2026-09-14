@@ -124,7 +124,7 @@ export async function signOfferAction(
   try {
     const user = await requirePermission("drivers:write")
     if (!signature) return { ok: false, error: "Sign first" }
-    const ok = await signOffer(user.carrierId, offerId, signature, signedName)
+    const ok = await signOffer(user.carrierId, applicantId, offerId, signature, signedName)
     if (!ok) return { ok: false, error: "Offer already decided" }
     await moveApplicantStage(user.carrierId, applicantId, "orientation", user.name, "Offer signed")
     await logAudit({
