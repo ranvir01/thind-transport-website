@@ -468,7 +468,7 @@ export async function driverAcknowledgeAnnouncement(
       [user.carrierId, announcementId]
     )
     if (!announcement) return { ok: false, error: "Announcement not found" }
-    await acknowledgeAnnouncement(announcementId, user.id, signature)
+    await acknowledgeAnnouncement(user.carrierId, announcementId, user.id, signature)
     revalidatePath("/hub/driver")
     return { ok: true }
   } catch (err) {

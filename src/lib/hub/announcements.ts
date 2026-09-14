@@ -144,14 +144,21 @@ export async function pendingAnnouncementsForUser(
 }
 
 export async function acknowledgeAnnouncement(
+  carrierId: string,
   announcementId: string,
   userId: string,
   signature?: string | null
 ): Promise<void> {
+  // INSERT…SELECT so a foreign announcement_id or user_id writes nothing.
+  // hub.announcement_acks has no carrier_id of its own — leaving the only
+  // tenant check in one caller is how the website_leads leak happened.
   await query(
     `INSERT INTO hub.announcement_acks (announcement_id, user_id, signature)
-     VALUES ($1, $2, $3)
+     SELECT a.id, u.id, $4
+     FROM hub.announcements a
+     JOIN hub.users u ON u.id = $3 AND u.carrier_id = a.carrier_id
+     WHERE a.id = $1 AND a.carrier_id = $2
      ON CONFLICT (announcement_id, user_id) DO NOTHING`,
-    [announcementId, userId, signature ?? null]
+    [announcementId, carrierId, userId, signature ?? null]
   )
 }

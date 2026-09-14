@@ -2,10 +2,10 @@
  * Regression for ackReport's acks/pendingUsers queries joining/filtering
  * hub.users by user_id alone (no carrier_id guard), unlike every other
  * cross-table join in this codebase (assignFuelToLoad, recentFacilityStops,
- * threadReads). Not exploitable today — announcement_acks.user_id is only
- * ever written by driverAcknowledgeAnnouncement after it re-checks the
- * announcement belongs to the caller's carrier — but it was the one query in
- * this subsystem relying on that invariant instead of a WHERE/JOIN clause.
+ * threadReads). The write path used to INSERT hub.announcement_acks with
+ * raw ids and leave the only tenant check in driverAcknowledgeAnnouncement
+ * — the same "caller-only" shape as the website_leads leak. The insert now
+ * SELECT…JOINs the owned announcement and user (markThreadRead pattern).
  * (1c tenancy audit.)
  */
 import { beforeEach, describe, expect, it, vi } from "vitest"
@@ -16,13 +16,14 @@ vi.mock("../db", () => ({
 }))
 
 import { query, queryOne } from "../db"
-import { ackReport } from "../announcements"
+import { ackReport, acknowledgeAnnouncement } from "../announcements"
 
 const queryMock = vi.mocked(query)
 const queryOneMock = vi.mocked(queryOne)
 
 const CARRIER = "11111111-1111-1111-1111-111111111111"
 const ANNOUNCEMENT = "22222222-2222-2222-2222-222222222222"
+const USER = "33333333-3333-3333-3333-333333333333"
 
 beforeEach(() => {
   queryMock.mockClear()
@@ -55,5 +56,33 @@ describe("ackReport", () => {
     const result = await ackReport(CARRIER, ANNOUNCEMENT)
     expect(result).toEqual({ acked: [], pending: [] })
     expect(queryMock).not.toHaveBeenCalled()
+  })
+})
+
+describe("acknowledgeAnnouncement", () => {
+  it("inserts through an announcement+user ownership join, not VALUES on raw ids", async () => {
+    await acknowledgeAnnouncement(CARRIER, ANNOUNCEMENT, USER, "sig")
+
+    const insert = queryMock.mock.calls.find(([sql]) =>
+      String(sql).includes("INSERT INTO hub.announcement_acks")
+    )
+    expect(insert).toBeTruthy()
+    const sql = String(insert![0])
+    expect(sql).toContain("FROM hub.announcements a")
+    expect(sql).toContain("JOIN hub.users u ON u.id = $3 AND u.carrier_id = a.carrier_id")
+    expect(sql).toContain("WHERE a.id = $1 AND a.carrier_id = $2")
+    expect(sql).not.toMatch(/VALUES\s*\(/)
+    expect(insert![1]).toEqual([ANNOUNCEMENT, CARRIER, USER, "sig"])
+  })
+
+  it("writes nothing when the announcement is not this carrier's (SELECT matches zero rows)", async () => {
+    await acknowledgeAnnouncement(CARRIER, ANNOUNCEMENT, USER)
+
+    const insert = queryMock.mock.calls.find(([sql]) =>
+      String(sql).includes("INSERT INTO hub.announcement_acks")
+    )
+    expect(insert).toBeTruthy()
+    expect(String(insert![0])).toContain("a.carrier_id = $2")
+    expect(insert![1]?.[1]).toBe(CARRIER)
   })
 })
