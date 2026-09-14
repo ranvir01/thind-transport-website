@@ -1,12 +1,15 @@
 "use client"
 
-import { useSyncExternalStore } from "react"
+import { useEffect, useRef, useSyncExternalStore } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { shouldHideMobileCommandBar } from "@/components/cinematic/Footer"
 
 /** Bump the suffix to show the notice again after a material change to it. */
 const STORAGE_KEY = "tt-cookie-notice-v1"
+
+/** Published on :root while the bar is mounted so BackToTop can sit above it. */
+const HEIGHT_VAR = "--tt-cookie-notice-h"
 
 /** The app surfaces carry their own chrome; the notice is a marketing-site thing. */
 const isAppRoute = (pathname: string): boolean =>
@@ -59,6 +62,25 @@ const dismiss = () => {
 export const CookieNotice = () => {
   const pathname = usePathname()
   const dismissed = useSyncExternalStore(subscribe, readDismissed, readDismissedOnServer)
+  const barRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const el = barRef.current
+    if (!el) return
+    const sync = () => {
+      document.documentElement.style.setProperty(
+        HEIGHT_VAR,
+        `${Math.round(el.getBoundingClientRect().height)}px`
+      )
+    }
+    sync()
+    const observer = new ResizeObserver(sync)
+    observer.observe(el)
+    return () => {
+      observer.disconnect()
+      document.documentElement.style.removeProperty(HEIGHT_VAR)
+    }
+  }, [dismissed, pathname])
 
   if (dismissed || isAppRoute(pathname)) return null
 
@@ -69,6 +91,7 @@ export const CookieNotice = () => {
 
   return (
     <div
+      ref={barRef}
       role="region"
       aria-label="Cookie notice"
       className={`fixed inset-x-0 z-[95] border-t border-white/10 bg-navy-950/95 text-steel-200 motion-safe:animate-slide-up ${

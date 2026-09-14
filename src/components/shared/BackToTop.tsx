@@ -33,7 +33,7 @@ export function BackToTop() {
       {isVisible && (
         <button
           onClick={scrollToTop}
-          className="motion-safe:animate-dropdown-in fixed bottom-24 right-4 z-40 md:bottom-6 md:right-6 w-12 h-12 bg-navy/90 hover:bg-navy text-white rounded-full shadow-lg flex items-center justify-center transition-colors backdrop-blur-sm border border-white/10"
+          className="motion-safe:animate-dropdown-in fixed right-4 z-[100] bottom-[calc(6rem+var(--tt-cookie-notice-h,0px))] md:right-6 md:bottom-[calc(1.5rem+var(--tt-cookie-notice-h,0px))] w-12 h-12 bg-navy/90 hover:bg-navy text-white rounded-full shadow-lg flex items-center justify-center transition-colors backdrop-blur-sm border border-white/10"
           aria-label="Back to top"
         >
           <ChevronUp className="w-6 h-6" />
