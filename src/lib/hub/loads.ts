@@ -117,6 +117,7 @@ export async function addLoadEvent(
   payload: Record<string, unknown>,
   actor: { id?: string | null; name?: string | null }
 ): Promise<void> {
+  await assertCarrierRefs(carrierId, { load_id: loadId })
   await query(
     `INSERT INTO hub.load_events (carrier_id, load_id, kind, actor_id, actor_name, payload)
      VALUES ($1, $2, $3, $4, $5, $6)`,
