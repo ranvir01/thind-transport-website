@@ -1,4 +1,5 @@
 import type { Metadata } from "next"
+import Link from "next/link"
 import { COMPANY_INFO } from "@/lib/constants"
 import { AsphaltHero } from "@/components/shared/AsphaltHero"
 
@@ -14,7 +15,7 @@ const sections = [
     id: "analytics",
     heading: "Analytics",
     body: [
-      "This site uses Vercel Web Analytics and Speed Insights — cookieless, anonymous page and performance measurement. No advertising trackers, no cross-site tracking, and no personal information in any analytics event: form events record only which step was reached, never what was typed. If you pick an audience (drivers, shippers, brokers) we remember the choice in a small cookie so the site can lead with the right door next time; it identifies a preference, not a person.",
+      "This site uses Vercel Web Analytics and Speed Insights — cookieless, anonymous page and performance measurement. No advertising trackers, no cross-site tracking, and no personal information in any analytics event: form events record only which step was reached, never what was typed. If you pick an audience (drivers, shippers, brokers) we remember the choice in a small cookie so the site can lead with the right door next time; it identifies a preference, not a person. If you dismiss the cookie notice bar, that choice is remembered in your browser's local storage so we don't show it again on that device.",
     ],
     items: [],
   },
@@ -144,6 +145,17 @@ export default function PrivacyPage() {
               </a>
             </p>
           </section>
+
+          <p className="mx-auto mt-8 max-w-measure text-m-body text-steel-300">
+            <span>The rules for using this site and its tools are in our </span>
+            <Link
+              href="/terms"
+              className="font-semibold text-white underline-offset-4 hover:text-signal-up hover:underline"
+            >
+              terms of service
+            </Link>
+            <span>.</span>
+          </p>
         </div>
       </div>
     </div>

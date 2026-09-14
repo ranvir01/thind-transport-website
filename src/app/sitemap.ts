@@ -43,6 +43,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { path: "/pre-qualify", changeFrequency: "monthly" as const, priority: 0.6 },
     { path: "/schedule-meeting", changeFrequency: "monthly" as const, priority: 0.5 },
     { path: "/privacy", changeFrequency: "yearly" as const, priority: 0.3 },
+    { path: "/terms", changeFrequency: "yearly" as const, priority: 0.3 },
   ]
 
   return pages.map((page) => ({

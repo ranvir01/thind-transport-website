@@ -68,6 +68,7 @@ export const HeroBackground = memo(() => {
     <div className="absolute inset-0 z-0 bg-navy pointer-events-none">
       <video
         ref={videoRef}
+        aria-hidden="true"
         autoPlay
         muted
         loop

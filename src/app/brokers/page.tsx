@@ -12,7 +12,11 @@ import { RelatedLinks } from "@/components/shared/RelatedLinks"
 import { freightLinks } from "@/components/shared/link-sets"
 
 export const metadata: Metadata = {
-  title: `Carrier packet for brokers | Thind Transport — MC ${COMPANY_INFO.mc}`,
+  // `absolute` — the brand is already in the string, so the root template
+  // must not append it a second time.
+  title: {
+    absolute: `Carrier packet for brokers | ${COMPANY_INFO.name} — MC ${COMPANY_INFO.mc}`,
+  },
   description:
     `Thind Transport is an asset-based carrier in ${COMPANY_INFO.location} — ${STATS.trucksInFleet} late-model trucks, flatbed, reefer and dry van across ${STATS.statesCovered} states. USDOT ${COMPANY_INFO.dot}, MC ${COMPANY_INFO.mc}. Request our carrier packet and onboard us today.`,
   alternates: { canonical: "/brokers" },

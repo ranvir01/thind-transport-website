@@ -91,6 +91,7 @@ const SCOPE = [
   "src/app/pay-rates",
   "src/app/pre-qualify/page.tsx",
   "src/app/privacy/page.tsx",
+  "src/app/terms/page.tsx",
   "src/app/quote",
   "src/app/resources",
   "src/app/routes",

@@ -9,7 +9,11 @@ import { RelatedLinks } from "@/components/shared/RelatedLinks"
 import { driverLinks } from "@/components/shared/link-sets"
 
 export const metadata: Metadata = {
-  title: `Pay Rates — ${PAY_RATES.ownerOperator.commission} O/O Split, ${PAY_RATES.companyDriver.local.perMile}/mi Company | ${COMPANY_INFO.name}`,
+  // `absolute` — the brand is already in the string, so the root template
+  // must not append it a second time.
+  title: {
+    absolute: `Pay Rates — ${PAY_RATES.ownerOperator.commission} O/O Split, ${PAY_RATES.companyDriver.local.perMile}/mi Company | ${COMPANY_INFO.name}`,
+  },
   description: `What Thind Transport actually pays: owner-operators keep ${PAY_RATES.ownerOperator.commission} of gross with ${PAY_RATES.ownerOperator.fuelSurcharge} fuel surcharge (${PAY_RATES.ownerOperator.annualGross}/year typical). Company drivers ${PAY_RATES.companyDriver.local.perMile}/mile on every lane (${PAY_RATES.companyDriver.local.annual} local to ${PAY_RATES.companyDriver.otr.annual} OTR). Weekly pay, no hidden fees.`,
   alternates: { canonical: "/pay-rates" },
 }
