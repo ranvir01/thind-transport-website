@@ -52,16 +52,37 @@ const DEFAULT_PRICE_BOOK: ReadonlyArray<{ name: string; amountCents: number; uni
 const SIGNUP_THROTTLED = "Too many signup attempts — try again in a few minutes"
 
 /** Best-effort caller IP; unavailable (non-request context) just drops that key. */
-async function signupThrottleKeys(email: string): Promise<string[]> {
-  const keys = [`email:${email}`]
+async function callerIpKey(): Promise<string | null> {
   try {
     const { headers } = await import("next/headers")
     const h = await headers()
     const ip = h.get("x-forwarded-for")?.split(",")[0]?.trim() || h.get("x-real-ip")?.trim()
-    if (ip && ip.length <= 64) keys.push(`ip:${ip}`)
+    if (ip && ip.length <= 64) return `ip:${ip}`
   } catch {
-    /* no request headers available — the email key still applies */
+    /* no request headers available */
   }
+  return null
+}
+
+async function signupThrottleKeys(email: string): Promise<string[]> {
+  const keys = [`email:${email}`]
+  const ip = await callerIpKey()
+  if (ip) keys.push(ip)
+  return keys
+}
+
+/** Same signup-scope budget as createWorkspace: identifier + IP. */
+async function authorityThrottleKeys(input: {
+  dotNumber?: string
+  mcNumber?: string
+}): Promise<string[]> {
+  const keys: string[] = []
+  const mc = input.mcNumber?.trim().replace(/^mc[\s#:.-]*/i, "").replace(/\D/g, "")
+  const dot = input.dotNumber?.replace(/\D/g, "")
+  if (mc) keys.push(`mc:${mc}`)
+  if (dot) keys.push(`dot:${dot}`)
+  const ip = await callerIpKey()
+  if (ip) keys.push(ip)
   return keys
 }
 
@@ -75,7 +96,8 @@ export interface CarrierAuthorityCheck {
 /**
  * Live DOT/MC lookup at signup time (FMCSA QCMobile, phase-7.md M11 step 1).
  * Pre-auth and non-persisting — a failed or unconfigured lookup just falls
- * back to manual entry, it never blocks workspace creation.
+ * back to manual entry, it never blocks workspace creation. Shares
+ * createWorkspace's signup throttle (identifier + IP, 5 / 15 minutes).
  */
 export async function verifyCarrierAuthorityAction(input: {
   dotNumber?: string
@@ -86,6 +108,14 @@ export async function verifyCarrierAuthorityAction(input: {
   const dot = input.dotNumber?.trim()
   const mc = input.mcNumber?.trim()
   if (!dot && !mc) return { ok: false, result: null, error: "Enter a DOT or MC number first" }
+
+  // Same 5-in-15 signup budget as createWorkspace, charged before the live
+  // FMCSA call so a bot cycling DOT/MC numbers cannot walk the webKey.
+  const throttleKeys = await authorityThrottleKeys(input)
+  for (const key of throttleKeys) {
+    if (await isLockedOut(key, "signup")) return { ok: false, result: null, error: SIGNUP_THROTTLED }
+  }
+  for (const key of throttleKeys) await recordAttempt(key, false, "signup")
 
   const base = "https://mobile.fmcsa.dot.gov/qc/services/carriers"
   const urls: string[] = []
