@@ -7,6 +7,7 @@ import {
   MobileCommandBar,
 } from "@/components/cinematic/Footer"
 import { BackToTop } from "@/components/shared/BackToTop"
+import { CookieNotice } from "@/components/shared/CookieNotice"
 import { AttributionCapture } from "@/components/shared/AttributionCapture"
 import { SkipLink } from "@/components/shared/SkipLink"
 import { COMPANY_INFO, EQUIPMENT, PAY_RATES } from "@/lib/constants"
@@ -173,6 +174,9 @@ export default function RootLayout({
           {/* Footer */}
           <CinematicFooter />
           <MobileCommandBar />
+          {/* Cookieless-analytics notice, not a consent gate: dismissed once
+              per browser, sits above the command bar on phones. */}
+          <CookieNotice />
 
           <BackToTop />
         </Providers>

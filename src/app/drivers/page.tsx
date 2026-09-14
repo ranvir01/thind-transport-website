@@ -12,7 +12,9 @@ import { driverLinks } from "@/components/shared/link-sets"
 import { HomeTimeLanes } from "@/components/home/HomeTimeLanes"
 
 export const metadata: Metadata = {
-  title: "Drive for Thind Transport | CDL-A & owner-operators",
+  // `absolute` — the brand is already in the string, so the root template
+  // must not append it a second time.
+  title: { absolute: "Drive for Thind Transport | CDL-A & owner-operators" },
   description:
     `Owner-operators keep ${PAY_RATES.ownerOperator.commission} of gross with ${PAY_RATES.ownerOperator.fuelSurcharge} fuel surcharge pass-through; company drivers earn ${PAY_RATES.companyDriver.local.perMile}/mile with weekly pay. ${EQUIPMENT.short}, ${STATS.statesCovered} states, dispatch that picks up. The whole pay plan is one table, then apply in about a minute.`,
   alternates: { canonical: "/drivers" },

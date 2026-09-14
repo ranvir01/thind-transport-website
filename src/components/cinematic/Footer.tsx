@@ -248,12 +248,20 @@ export const CinematicFooter = () => {
       <div className="border-t border-white/10">
         <div className="container flex flex-col items-center justify-between gap-3 py-6 text-m-micro text-steel-300 sm:flex-row">
           <p>{`© ${currentYear} ${COMPANY_INFO.name}. All rights reserved.`}</p>
-          <Link
-            href="/privacy"
-            className="font-semibold text-steel-200 underline-offset-4 transition-colors hover:text-white hover:underline"
-          >
-            Privacy policy
-          </Link>
+          <div className="flex flex-wrap justify-center gap-4">
+            <Link
+              href="/privacy"
+              className="font-semibold text-steel-200 underline-offset-4 transition-colors hover:text-white hover:underline"
+            >
+              Privacy policy
+            </Link>
+            <Link
+              href="/terms"
+              className="font-semibold text-steel-200 underline-offset-4 transition-colors hover:text-white hover:underline"
+            >
+              Terms of service
+            </Link>
+          </div>
         </div>
       </div>
     </footer>
