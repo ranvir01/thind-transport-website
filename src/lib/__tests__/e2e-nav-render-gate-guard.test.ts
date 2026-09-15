@@ -236,7 +236,7 @@ const HARD_GOTO_COPY: Record<string, string> = {
   // subtitle, so they are not the family gate. Forced-dark surface:
   // never text-fg*/bg-surface*/border-border*. src/app/hub/driver has
   // no loading.tsx.
-  "/hub/driver/timeoff": "dispatch can't book you over it",
+  "/hub/driver/timeoff": "book you over it",
   // Nested /hub/driver/more before /hub/driver so the PWA home still
   // maps to its own "Last pay" glance. Title "More" IS a DriverNav label
   // (Home / Messages / Pay / More), so waitForText on it is not a render
