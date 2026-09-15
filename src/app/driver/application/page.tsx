@@ -319,7 +319,7 @@ export default function DriverApplicationPage() {
       formDataToSend.append("driverName", formData.personal.applicant_name || "Unknown")
       formDataToSend.append("driverEmail", formData.personal.email || session?.user?.email || "")
       formDataToSend.append("driverPhone", formData.personal.phone || "")
-      // Full form data so the portal stores the application record, not just the PDF
+      // Full structured application: DB record + detailed review email (not just the PDF)
       formDataToSend.append("applicationData", JSON.stringify(formData))
 
       const uploadResponse = await fetch("/api/driver/upload-application", {
