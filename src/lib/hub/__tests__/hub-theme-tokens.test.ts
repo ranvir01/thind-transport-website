@@ -450,3 +450,147 @@ describe("hub-theme.css token contract", () => {
     }
   })
 })
+
+/* ------------------------------------------------------------------------ */
+/* Forced-dark surfaces: the office rule must never win a paint there         */
+/* ------------------------------------------------------------------------ */
+
+/**
+ * The tests above guard the ROOT token blocks. This one guards the descendant
+ * rules that paint on `[data-surface="dark"]` — the driver PWA and the portal,
+ * which ignore the stored office mode.
+ *
+ * The bug it exists to stop shipped: `.app-toast` had a forced-dark rule
+ * setting background/color off the --driver-* ladder, and then three office
+ * tint rules `[data-app] .app-toast[data-type="success"|"error"|"warning"]`
+ * were added below it. Both shapes are (0,3,0), so source order decided, and
+ * the office tint repainted the background as
+ * `color-mix(--green-soft 60%, --surface)` — near-WHITE while the office mode
+ * is light — under the forced-dark rule's still-winning `color: #fff`. Every
+ * success toast on a driver's phone ("Dispatch confirmed", "POD sent to the
+ * office") rendered white-on-white at 1.08:1. The nightly cycle passed
+ * throughout: the text was in the DOM, just invisible.
+ *
+ * So: on a forced-dark root, whichever rule wins a paint property must itself
+ * be a forced-dark rule. A tie that source order happens to decide correctly
+ * today is still a failure — the next rule appended below flips it back.
+ */
+describe("hub-theme.css forced-dark surfaces", () => {
+  const FORCED_DARK_ATTR = "data-surface"
+  /**
+   * Longhands only. The office base rule sets the `border` SHORTHAND and the
+   * forced-dark rule overrides just `border-color`, which is correct CSS —
+   * policing the shorthand would flag that pairing as a bug.
+   */
+  const PAINT = ["background", "background-color", "color", "border-color"] as const
+
+  /** The driver/portal root: forced dark while the stored office mode is light. */
+  const ROOT_ENV: Record<string, string> = {
+    "data-app": "hauldesk",
+    "data-mode": "light",
+    "data-theme": "indigo",
+    "data-surface": "dark",
+  }
+
+  type Compound = { classes: string[]; attrs: Map<string, string | undefined>; specificity: number }
+
+  function parseCompound(text: string): Compound {
+    const classes = [...text.matchAll(/\.([\w-]+)/g)].map((m) => m[1] ?? "")
+    const attrs = new Map<string, string | undefined>()
+    for (const m of text.matchAll(ATTR_RE)) {
+      attrs.set(m[1] ?? "", m[2] ? (m[3] ?? m[4] ?? m[5] ?? "") : undefined)
+    }
+    return { classes, attrs, specificity: classes.length + attrs.size }
+  }
+
+  /**
+   * Descendant selectors only, `<root compound> <element compound>` — the shape
+   * every rule in this section uses. null when the selector is not that shape.
+   */
+  function parseDescendant(selector: string): { root: Compound; el: Compound } | null {
+    const parts = selector.trim().split(/\s+/)
+    if (parts.length !== 2) return null
+    const [rootText, elText] = parts as [string, string]
+    // The element half must be a class-led compound; the root half attributes only.
+    if (!elText.startsWith(".")) return null
+    if (rootText.replace(ATTR_RE, "").trim() !== "") return null
+    return { root: parseCompound(rootText), el: parseCompound(elText) }
+  }
+
+  const attrsSatisfied = (attrs: Map<string, string | undefined>, env: Record<string, string>) =>
+    [...attrs].every(([name, value]) => name in env && (value === undefined || env[name] === value))
+
+  /** Every `.app-toast` rule, with the state attributes each one demands. */
+  const toastRules = blocks.flatMap((b) =>
+    b.selectors
+      .map((s) => ({ block: b, selector: s, parsed: parseDescendant(s) }))
+      .filter((r) => r.parsed?.el.classes.includes("app-toast"))
+  )
+
+  it("finds the .app-toast rules it is meant to police", () => {
+    expect(toastRules.length, "no `<root> .app-toast` rules parsed out of hub-theme.css").toBeGreaterThan(1)
+    expect(
+      toastRules.some((r) => r.parsed?.root.attrs.has(FORCED_DARK_ATTR)),
+      "no .app-toast rule targets [data-surface] — the forced-dark toast rule is gone"
+    ).toBe(true)
+  })
+
+  /**
+   * sonner tags a toast with data-type only when it has a kind, so "" stands
+   * for the plain toast. Discovering the kinds from the stylesheet means a
+   * fourth one (info) is policed the day its rule is written.
+   */
+  const toastTypes = [
+    "",
+    ...new Set(
+      toastRules
+        .map((r) => r.parsed?.el.attrs.get("data-type"))
+        .filter((v): v is string => typeof v === "string" && v !== "")
+    ),
+  ]
+
+  for (const type of toastTypes) {
+    const label = type === "" ? "a plain toast" : `a ${type} toast`
+    it(`${label} is painted only by forced-dark rules`, () => {
+      const env = { ...ROOT_ENV, ...(type ? { "data-type": type } : {}) }
+      const applicable = toastRules.filter(
+        (r) =>
+          r.parsed !== null &&
+          attrsSatisfied(r.parsed.root.attrs, env) &&
+          attrsSatisfied(r.parsed.el.attrs, env)
+      )
+      expect(applicable.length, `no .app-toast rule applies to ${label} on a forced-dark root`).toBeGreaterThan(0)
+
+      for (const prop of PAINT) {
+        const candidates = applicable.filter((r) => r.block.declarations.has(prop))
+        if (!candidates.length) continue
+        // Every declaration here is !important, so the cascade is specificity
+        // then source order. Ties resolve to the later block — and a tie is
+        // exactly the fragility this test refuses to accept, so it is reported
+        // as a failure of its own below.
+        const top = candidates.reduce((best, r) => {
+          const a = (r.parsed?.root.specificity ?? 0) + (r.parsed?.el.specificity ?? 0)
+          const b = (best.parsed?.root.specificity ?? 0) + (best.parsed?.el.specificity ?? 0)
+          return a >= b ? r : best
+        })
+        const topSpec = (top.parsed?.root.specificity ?? 0) + (top.parsed?.el.specificity ?? 0)
+        const tied = candidates.filter(
+          (r) => r !== top && (r.parsed?.root.specificity ?? 0) + (r.parsed?.el.specificity ?? 0) === topSpec
+        )
+        expect(
+          tied.map((r) => `${describeBlock(r.block)}`),
+          `${label}: \`${prop}\` is a source-order coin flip between ${describeBlock(top.block)} and ` +
+            `${tied.map((r) => describeBlock(r.block)).join(", ")} — give the forced-dark rule the ` +
+            `[${FORCED_DARK_ATTR}="dark"] attribute it needs to out-specify the office one`
+        ).toEqual([])
+        expect(
+          top.parsed?.root.attrs.has(FORCED_DARK_ATTR),
+          `${label}: \`${prop}\` on a forced-dark surface is won by ${describeBlock(top.block)}, which does ` +
+            `not require [${FORCED_DARK_ATTR}="dark"] — it resolves MODE tokens (--surface, the tone ramps), ` +
+            `and those are LIGHT whenever the office mode is light. That is how the driver's success toast ` +
+            `went white-on-white. Paint this from the --driver-* ladder in a [${FORCED_DARK_ATTR}="dark"] rule.`
+        ).toBe(true)
+      }
+    })
+  }
+})

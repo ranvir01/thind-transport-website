@@ -194,6 +194,12 @@
   --driver-text: #ffffff;
   --driver-text-2: #d2d3d6;
   --driver-text-3: #abadb2;
+  /* Tone hues for this ladder. The office ramp (--green/--amber/--red and the
+     -soft pairs) is a MODE token, so it is LIGHT whenever the office mode is
+     light — unusable here for the same reason --surface is. */
+  --driver-good: #3ecd82;
+  --driver-warn: #e5b13d;
+  --driver-bad: #f46b66;
   --driver-overlay: rgba(0, 0, 0, 0.72);
   --driver-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 1px 2px rgba(0, 0, 0, 0.4), 0 6px 20px rgba(0, 0, 0, 0.3);
   --driver-shadow-raised: 0 0 0 1px rgba(255, 255, 255, 0.07), 0 8px 24px rgba(0, 0, 0, 0.5), 0 24px 48px rgba(0, 0, 0, 0.4);
@@ -388,6 +394,26 @@
 [data-app="hauldesk"] .app-toast[data-type="warning"] {
   background: color-mix(in srgb, var(--amber-soft) 60%, var(--surface)) !important;
   border-color: color-mix(in srgb, var(--amber) 30%, transparent) !important;
+}
+/* …and the same three tints for the forced-dark surfaces. The office tints
+   above mix a -soft ramp into --surface — BOTH light when the office mode is
+   light — and at (0,3,0) they tie the forced-dark toast rule and win on source
+   order, repainting its background near-white while its `color` stayed
+   --driver-text (#fff). A driver's "POD sent to the office" came back as a
+   blank white bar: 1.08:1, invisible, on the only confirmation the app gives
+   them. Tint the driver ladder instead; (0,4,0) also out-specifies the office
+   tint, so the cascade no longer turns on which rule was written last. */
+[data-app="hauldesk"][data-surface="dark"] .app-toast[data-type="success"] {
+  background: color-mix(in srgb, var(--driver-good) 18%, var(--driver-surface-2)) !important;
+  border-color: color-mix(in srgb, var(--driver-good) 40%, transparent) !important;
+}
+[data-app="hauldesk"][data-surface="dark"] .app-toast[data-type="error"] {
+  background: color-mix(in srgb, var(--driver-bad) 18%, var(--driver-surface-2)) !important;
+  border-color: color-mix(in srgb, var(--driver-bad) 40%, transparent) !important;
+}
+[data-app="hauldesk"][data-surface="dark"] .app-toast[data-type="warning"] {
+  background: color-mix(in srgb, var(--driver-warn) 18%, var(--driver-surface-2)) !important;
+  border-color: color-mix(in srgb, var(--driver-warn) 40%, transparent) !important;
 }
 
 /* Data tables: sticky header, zebra rows, hover highlight. */
