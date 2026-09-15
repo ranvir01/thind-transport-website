@@ -29,7 +29,7 @@
  * Requires: npm run start on localhost:3000 (no DB needed for the UI flow).
  */
 import { mkdirSync } from "node:fs"
-import { BASE, sleep, check, failures, makeShot, clickByText, waitForText, realConsoleErrors, launchBrowser } from "./e2e-lib.mjs"
+import { BASE, sleep, check, failures, makeShot, clickByText, clickApplyStickyFooter, waitForText, realConsoleErrors, launchBrowser } from "./e2e-lib.mjs"
 
 const OUT = process.argv[2] ?? "e2e-shots-apply"
 mkdirSync(OUT, { recursive: true })
@@ -81,21 +81,6 @@ async function fill(page, selector, value) {
 /** Click the (sr-only-radio) label whose text contains `text`. */
 async function clickRadioLabel(page, text) {
   await clickByText(page, text, { tag: "label" })
-}
-
-/** Click the /apply mobile sticky footer CTA (step-accurate labels). */
-async function clickApplyStickyFooter(page, text) {
-  const clicked = await page.evaluate((t) => {
-    const footer = document.querySelector(".fixed.bottom-0")
-    if (!footer) return false
-    const btn = [...footer.querySelectorAll("button")].find((n) =>
-      (n.textContent ?? "").toLowerCase().includes(t.toLowerCase())
-    )
-    if (!btn || btn.disabled) return false
-    btn.click()
-    return true
-  }, text)
-  if (!clicked) throw new Error(`apply sticky footer "${text}" not found`)
 }
 
 const PREQUALIFY_TEXT = [
