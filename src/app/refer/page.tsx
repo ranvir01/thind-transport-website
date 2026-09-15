@@ -16,7 +16,7 @@ import {
 } from "@/lib/recruiting-posts"
 
 export const metadata: Metadata = recruitingShareTags({
-  title: `Send this job | ${COMPANY_INFO.name}`,
+  title: "Send this job",
   description: `Copy-paste posts, QR codes, and free channels to hire CDL-A company drivers and owner-operators for ${COMPANY_INFO.name} in ${COMPANY_INFO.location}. Company ${PAY_RATES.companyDriver.local.perMile}/mile · owner-operators keep ${PAY_RATES.ownerOperator.commission} of gross.`,
   path: "/refer",
 })
