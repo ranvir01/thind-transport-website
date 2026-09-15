@@ -29,7 +29,7 @@
  * Requires: npm run start on localhost:3000 (no DB needed for the UI flow).
  */
 import { mkdirSync } from "node:fs"
-import { BASE, sleep, check, failures, makeShot, clickByText, waitForText, realConsoleErrors, launchBrowser } from "./e2e-lib.mjs"
+import { BASE, sleep, check, failures, makeShot, clickByText, clickApplyStickyFooter, waitForText, realConsoleErrors, launchBrowser } from "./e2e-lib.mjs"
 
 const OUT = process.argv[2] ?? "e2e-shots-apply"
 mkdirSync(OUT, { recursive: true })
@@ -163,7 +163,7 @@ async function main() {
   await fill(page, "#lastName", "Applicant")
   await fill(page, "#email", "e2e-apply@example.com")
   await fill(page, "#phone", "2065556789")
-  await clickByText(page, "Continue Application")
+  await clickApplyStickyFooter(page, "Check My Eligibility")
   await waitForText(page, "Step 2 of 4")
   check(true, "step 1 (contact) advances through captureLead")
 
@@ -171,7 +171,7 @@ async function main() {
   await clickRadioLabel(page, "Company Driver")
   await clickRadioLabel(page, "Class A")
   await clickRadioLabel(page, "3-5 Years")
-  await clickByText(page, "Continue Application")
+  await clickApplyStickyFooter(page, "Continue")
   await waitForText(page, "Step 3 of 4")
   check(true, "step 2 (qualify) advances")
 
@@ -180,13 +180,13 @@ async function main() {
   await fill(page, "#previousEmployer", "Example Freight LLC")
   await page.select("#availability", "immediate")
   await clickRadioLabel(page, "Regional")
-  await clickByText(page, "Continue Application")
+  await clickApplyStickyFooter(page, "Continue")
   await waitForText(page, "Step 4 of 4")
   check(true, "step 3 (details) advances")
 
   // Step 4: docs are optional — submit
   await waitForText(page, "You're Almost Done!")
-  await clickByText(page, "Submit Application")
+  await clickApplyStickyFooter(page, "Submit Application")
   let submitted = true
   try {
     await waitForText(page, "Thank You for Submitting Your Info", 25000)

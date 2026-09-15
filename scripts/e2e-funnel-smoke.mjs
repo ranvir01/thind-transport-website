@@ -23,7 +23,7 @@
  */
 import { mkdirSync } from "node:fs"
 import pg from "pg"
-import { BASE, sleep, check, failures, makeShot, clickByText, waitForText, login, realConsoleErrors, launchBrowser } from "./e2e-lib.mjs"
+import { BASE, sleep, check, failures, makeShot, clickByText, clickApplyStickyFooter, waitForText, login, realConsoleErrors, launchBrowser } from "./e2e-lib.mjs"
 
 const OUT = process.argv[2] ?? "e2e-shots-funnel"
 mkdirSync(OUT, { recursive: true })
@@ -77,7 +77,7 @@ async function main() {
   await fill(page, "#lastName", "Driver")
   await fill(page, "#email", DRIVER_EMAIL)
   await fill(page, "#phone", DRIVER_PHONE)
-  await clickByText(page, "Continue Application")
+  await clickApplyStickyFooter(page, "Check My Eligibility")
   await waitForText(page, "Step 2 of 4")
   check(true, "apply step 1 (contact) advances through captureLead")
   await shot(page, "02-apply-step2-390")

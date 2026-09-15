@@ -330,8 +330,8 @@ export function ApplicationForm() {
   const showStickyFooter = pathname === "/apply" && step < 5
 
   return (
-    <div className={cn("space-y-8 relative", showStickyFooter && "pb-24 md:pb-0")}>
-      {/* Mobile Sticky Footer */}
+    <div className={cn("space-y-8 relative", showStickyFooter && "pb-28 md:pb-0")}>
+      {/* Mobile Sticky Footer — steps 1–4 only; step 5 is success (no next step) */}
       {showStickyFooter && (
         <div className="fixed bottom-0 left-0 right-0 z-[100] md:hidden bg-navy p-3 border-t border-white/10 shadow-2xl safe-area-bottom">
           <div className="flex gap-3">
@@ -343,18 +343,32 @@ export function ApplicationForm() {
               <Phone className="h-5 w-5" />
             </a>
             <Button
+              type="button"
+              disabled={isSubmitting}
               onClick={() => {
-                 // If valid, go next, otherwise scroll to error
-                 if (step === 4) {
-                   handleSubmit(onSubmit)()
-                 } else {
-                   nextStep()
-                 }
+                // Step 4 submits the form; earlier steps validate and advance.
+                if (step === 4) {
+                  handleSubmit(onSubmit)()
+                } else {
+                  nextStep()
+                }
               }}
-              className="flex-1 h-12 bg-orange-600 hover:bg-orange-500 text-white font-bold text-base rounded-xl shadow-lg shadow-orange-500/30"
+              className="flex-1 h-12 bg-orange-600 hover:bg-orange-500 text-white font-bold text-base rounded-xl shadow-lg shadow-orange-500/30 disabled:opacity-70"
             >
-              {step === 4 ? "Submit Application" : "Continue Application"}
-              <ChevronRight className="ml-2 h-5 w-5" />
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                  {step === 4 ? "Submitting..." : "Saving..."}
+                </>
+              ) : (
+                <>
+                  {step === 1 && "Check My Eligibility"}
+                  {step === 2 && "Continue"}
+                  {step === 3 && "Continue"}
+                  {step === 4 && "Submit Application"}
+                  <ChevronRight className="ml-2 h-5 w-5" />
+                </>
+              )}
             </Button>
           </div>
         </div>

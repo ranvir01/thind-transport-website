@@ -501,6 +501,21 @@ export async function clickByText(page, text, { tag = "button", timeout = 8000 }
   throw new Error(`Could not find ${tag} containing "${text}"`)
 }
 
+/** Click the /apply mobile sticky footer CTA (step-accurate labels). */
+export async function clickApplyStickyFooter(page, text) {
+  const clicked = await page.evaluate((t) => {
+    const footer = document.querySelector(".fixed.bottom-0")
+    if (!footer) return false
+    const btn = [...footer.querySelectorAll("button")].find((n) =>
+      (n.textContent ?? "").toLowerCase().includes(t.toLowerCase())
+    )
+    if (!btn || btn.disabled) return false
+    btn.click()
+    return true
+  }, text)
+  if (!clicked) throw new Error(`apply sticky footer "${text}" not found`)
+}
+
 /**
  * Type `text` into a ChatThread composer, press Send, and wait until the
  * message is persisted AND rendered.
