@@ -4,9 +4,10 @@
  * dispatcher opens the direct thread from the Messages list at 1440px, fills
  * the composer from a template chip, and sends a marker message; the driver
  * PWA at 390px shows the unread badge, opens the thread, and replies; the
- * office list then shows the reply unread, the thread shows the reply bubble
- * and the "Seen by" receipt. Driver logins are refused the office messages
- * routes (list and thread deep link).
+ * office list then shows the reply unread (office must leave the open thread
+ * first — ChatThread's 15s refresh remount-marks new messages read), the
+ * thread shows the reply bubble and the "Seen by" receipt. Driver logins are
+ * refused the office messages routes (list and thread deep link).
  *
  * Reseeds demo data first (see reseed in e2e-lib.mjs) — the list check pins
  * the seeded "lumper receipt" preview as the last message, and a prior run's
@@ -167,6 +168,13 @@ async function main() {
   check(officeThread.includes(officeMarker), "office marker message appears in the thread")
   await shot(office, "02-office-sent")
 
+  // Leave the thread before the driver replies. ChatThread polls
+  // router.refresh() every 15s and markThreadReadAction runs on
+  // messages.length — sitting here lets a poll swallow the unread
+  // badge (Tuesday nightly 34949769223).
+  await office.goto(`${BASE}/hub/messages`, { waitUntil: "networkidle2" })
+  await waitForText(office, "Every driver conversation in one place")
+
   console.log("3. Driver PWA at 390px shows the unread badge and the message")
   const driverCtx = await browser.createBrowserContext()
   const driver = await driverCtx.newPage()
@@ -214,7 +222,9 @@ async function main() {
     const row = [...document.querySelectorAll("a[href^='/hub/messages/']")].find((a) =>
       a.innerText.includes(marker)
     )
-    return row ? /\d/.test(row.querySelector("span.rounded-full")?.textContent ?? "") : false
+    return row
+      ? /\d/.test(row.querySelector("span.rounded-full, span.rounded-pill")?.textContent ?? "")
+      : false
   }, driverMarker)
   check(officeUnread, "office list shows an unread badge for the reply")
   await shot(office, "05-office-list-unread")
