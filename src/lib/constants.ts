@@ -9,7 +9,7 @@ export const COMPANY_INFO = {
   mc: "876103",
   owner: "Sukhdev Thind",
   founded: 2014,
-  ownerExperience: "20+",
+  ownerExperience: "25+",
 } as const
 
 /** Official FMCSA links — Motus replaces legacy URS / FMCSA Portal for carrier registration (2026). */
