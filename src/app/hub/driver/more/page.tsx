@@ -32,17 +32,6 @@ export default async function DriverMorePage() {
     <div className="space-y-4">
       <h1 className="text-[22px] font-semibold text-white">More</h1>
 
-      {/* Orientation (#86): the three things a new driver needs to know, on the
-          one screen every tab leads back to. */}
-      <section className="driver-card p-4">
-        <p className="font-display text-[11px] font-semibold uppercase tracking-wide text-steel-300">How to use this app</p>
-        <ul className="mt-2 list-disc pl-4 space-y-1.5 text-body-sm text-steel-200">
-          <li>Confirm the load, tap I&apos;m here / Leaving now, then Snap &amp; send the POD.</li>
-          <li>Pay, documents, DVIR, and time off live under these tabs — no hunting menus.</li>
-          <li>No signal? Taps queue and send themselves when you&apos;re back online.</li>
-        </ul>
-      </section>
-
       <ul className="hub-stagger space-y-2">
         {LINKS.map((link) => (
           <li key={link.href}>

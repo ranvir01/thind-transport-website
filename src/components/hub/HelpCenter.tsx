@@ -18,6 +18,7 @@ import {
   PlayCircle, Phone, Receipt, Search, ShieldCheck, SlidersHorizontal, Truck, Users, Wallet, X,
 } from "lucide-react"
 import { HELP_TOPICS, HUB_TOURS, PLAYBOOKS } from "@/lib/hub/help"
+import { PersonaTheater } from "@/components/hub/showcase/PersonaTheater"
 import { HAULDESK_MISSION } from "@/lib/hub/setup-guide"
 import { COMPANY_INFO } from "@/lib/constants"
 import { Panel } from "@/components/hub/ui"
@@ -113,6 +114,20 @@ export function HelpCenter() {
         </Panel>
       ) : null}
 
+      {!searching && (
+        <section>
+          <h2 className="mb-3 text-[13.5px] font-semibold text-fg">Live product theater</h2>
+          <p className="mb-3 text-sm text-fg-3">
+            Walk every seat on mock data — or{" "}
+            <Link href="/hub/demo" className="font-medium text-accent-text hover:underline">
+              play the 90-second interactive demo
+            </Link>
+            .
+          </p>
+          <PersonaTheater compact />
+        </section>
+      )}
+
       {tours.length > 0 && (
         <section>
           <h2 className="mb-3 text-[13.5px] font-semibold text-fg">Interactive tours</h2>
@@ -126,7 +141,9 @@ export function HelpCenter() {
                   <div className="min-w-0">
                     <h3 className="font-semibold text-fg">{tour.title}</h3>
                     <p className="mt-1 text-sm text-fg-2">{tour.summary}</p>
-                    <p className="mt-1 text-xs text-fg-3">{tour.steps.length} steps · starts on Today</p>
+                    <p className="mt-1 text-xs text-fg-3">
+                      {tour.steps.length} steps · starts on {tour.startPath}
+                    </p>
                   </div>
                   <Link
                     href={`${tour.startPath}?tour=${tour.id}`}

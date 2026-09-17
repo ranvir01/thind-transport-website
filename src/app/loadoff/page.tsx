@@ -8,6 +8,7 @@ import {
 import { PageBreadcrumb } from "@/components/shared/PageBreadcrumb"
 import { AsphaltHero } from "@/components/shared/AsphaltHero"
 import { Reveal } from "@/components/ui/Reveal"
+import { PersonaTheater } from "@/components/hub/showcase/PersonaTheater"
 import { APP_ICONS } from "@/lib/site-icons"
 import { STATS } from "@/lib/constants"
 
@@ -183,6 +184,23 @@ export default function LoadOffPage() {
               sizes="(max-width: 1024px) 100vw, 1024px"
               className="img-authentic h-auto w-full"
             />
+          </Reveal>
+        </div>
+      </section>
+
+      <section aria-labelledby="theater-heading" className="brand-section-panel py-section">
+        <div className="container">
+          <Reveal className="mx-auto max-w-measure text-center">
+            <h2 id="theater-heading" className="font-display text-m-h2 font-bold text-balance text-white">
+              Every seat, live mock data
+            </h2>
+            <p className="mt-3 text-m-body text-steel-300">
+              Dispatcher, driver, accountant, owner, broker, and shipper — same freight, connected.
+              No login required for this walkthrough.
+            </p>
+          </Reveal>
+          <Reveal index={1} className="mt-8">
+            <PersonaTheater />
           </Reveal>
         </div>
       </section>

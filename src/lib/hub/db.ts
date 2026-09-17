@@ -9,6 +9,17 @@ declare global {
   var __hubPool: Pool | undefined
 }
 
+/** Drop sslmode= so node-pg stops warning that require/prefer alias verify-full. */
+function connectionStringForPool(url: string): string {
+  try {
+    const parsed = new URL(url)
+    parsed.searchParams.delete("sslmode")
+    return parsed.toString()
+  } catch {
+    return url.replace(/([?&])sslmode=[^&]*&?/, "$1").replace(/[?&]$/, "")
+  }
+}
+
 function createPool(): Pool {
   const url = process.env.POSTGRES_URL
   if (!url) {
@@ -18,8 +29,10 @@ function createPool(): Pool {
   // Do not set search_path on the pool — Neon/Vercel pooled URLs reject startup
   // parameters. All Hub SQL uses fully qualified hub.* table names.
   const pool = new Pool({
-    connectionString: url,
-    ssl: isLocal ? undefined : { rejectUnauthorized: false },
+    connectionString: connectionStringForPool(url),
+    // Remote Neon/Vercel Postgres uses CA-signed certs — verify them (no
+    // rejectUnauthorized:false). Local dev has no TLS.
+    ssl: isLocal ? undefined : true,
     max: 5,
   })
   pool.on("error", (err) => console.error("Hub pool error:", err.message))

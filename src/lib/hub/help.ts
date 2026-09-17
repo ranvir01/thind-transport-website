@@ -90,10 +90,52 @@ export const HELP_TOPICS: HelpTopic[] = [
     href: "/hub/drivers",
     hrefLabel: "Drivers list",
   },
+  {
+    id: "showcase",
+    question: "Can I watch every role without logging in?",
+    answer:
+      "Yes. The public LoadOff page walks dispatcher, driver, accountant, owner, broker, and shipper seats on mock data. The 90-second demo is the interactive version.",
+    href: "/hub/demo",
+    hrefLabel: "Open the 90-second demo",
+  },
+  {
+    id: "preferences",
+    question: "Can I change density, captions, or appearance?",
+    answer:
+      "Office users can set light/dark and accent from the palette in the header, and captions or voiceover for product tours under Preferences.",
+    href: "/hub/settings/preferences",
+    hrefLabel: "Preferences",
+  },
 ]
 
 /** Spotlight tour — highlights real UI on Today. */
 export const HUB_TOURS: HubTour[] = [
+  {
+    id: "money-desk",
+    title: "Money desk",
+    summary: "Invoice the delivered load, then settle the week — integer cents the whole way.",
+    startPath: "/hub/money",
+    steps: [
+      {
+        id: "welcome",
+        title: "Get paid, then pay drivers",
+        body: "Money is one loop: POD in, invoice out, settlement drafted. Esc anytime.",
+      },
+    ],
+  },
+  {
+    id: "dispatch-board",
+    title: "Dispatch board",
+    summary: "Assign a driver and truck without booking over home time or an expired med card.",
+    startPath: "/hub/dispatch",
+    steps: [
+      {
+        id: "welcome",
+        title: "Assign with the rules riding along",
+        body: "The board is live freight. Illegal moves are refused in plain language.",
+      },
+    ],
+  },
   {
     id: "today-desk",
     title: "Your daily desk",
