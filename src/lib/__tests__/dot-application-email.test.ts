@@ -8,6 +8,11 @@ describe("formatDOTApplicationEmailHtml", () => {
         personal: {
           applicant_name: "Test Driver",
           email: "test@example.com",
+          phone: "(206) 555-0100",
+          emergency_phone: "(206) 555-0101",
+          dob: "1990-01-01",
+          ssn: "123-45-6789",
+          physical_exam_exp: "2027-01-01",
         },
       },
       {
