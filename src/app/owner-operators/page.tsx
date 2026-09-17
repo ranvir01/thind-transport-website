@@ -1,6 +1,6 @@
 import { Metadata } from "next"
 import Link from "next/link"
-import { BENEFITS, COMPANY_INFO, PAY_RATES, STATS } from "@/lib/constants"
+import { BENEFITS, COMPANY_INFO, PAY_RATES, STATS, WORKPLACE } from "@/lib/constants"
 import { buildOwnerOperatorJobPosting } from "@/lib/job-posting"
 import { PageBreadcrumb } from "@/components/shared/PageBreadcrumb"
 import { PersonaRemember } from "@/components/shared/PersonaRemember"
@@ -12,8 +12,10 @@ import { Reveal } from "@/components/ui/Reveal"
 const OO = PAY_RATES.ownerOperator
 
 export const metadata: Metadata = {
-  title: `Owner Operators | ${OO.commission} of the Linehaul, ${OO.fuelSurcharge} of the Fuel Surcharge`,
-  description: `Lease on in ${COMPANY_INFO.location}. ${OO.commission} of linehaul, ${OO.fuelSurcharge} fuel surcharge pass-through. Every deduction on your settlement before you sign. No forced dispatch.`,
+  title: {
+    absolute: "90% Lease-On Owner Operator | Nationwide | Thind",
+  },
+  description: `Lease on nationwide: keep ${OO.commission} of linehaul + ${OO.fuelSurcharge} FSC, no forced dispatch. Lease-to-buy available — ask for terms. Apply or call ${COMPANY_INFO.phone}.`,
   alternates: { canonical: "/owner-operators" },
 }
 
@@ -66,6 +68,10 @@ const DEDUCTIONS = [
 
 const FAQ = [
   {
+    q: "What does a 90% lease-on owner operator keep?",
+    a: `You keep ${OO.commission} of gross on linehaul and ${OO.fuelSurcharge} of the fuel surcharge — nationwide across ${STATS.statesCovered} states, not a call-center lease with hidden pass-throughs.`,
+  },
+  {
     q: "Is there forced dispatch?",
     a: `No. You see the load, the rate, and the lane before you accept it. Turning one down doesn't cost you your place in line — if it did, the ${OO.commission} split wouldn't mean much.`,
   },
@@ -82,13 +88,17 @@ const FAQ = [
     a: "Yes — ask and we'll show you a real one with the numbers changed. Anyone who won't show you the statement before you sign is telling you something.",
   },
   {
-    q: "Do you offer lease-purchase?",
-    a: "Talk to us directly. We'd rather have that conversation on the phone with real numbers for your situation than publish terms that turn out not to apply to you.",
+    q: "Do you offer lease-to-buy?",
+    a: "Yes — ask for terms. We'd rather walk through lease-to-buy on the phone with real numbers for your situation than publish terms that turn out not to apply to you.",
   },
 ] as const
 
 export default function OwnerOperatorsPage() {
-  const jobPosting = buildOwnerOperatorJobPosting()
+  const jobPosting = {
+    ...buildOwnerOperatorJobPosting(),
+    title: `90% lease-on owner operator — nationwide, ${OO.commission} of linehaul`,
+    description: `Nationwide lease-on with ${COMPANY_INFO.name}: keep ${OO.commission} of gross with ${OO.fuelSurcharge} fuel-surcharge pass-through. No forced dispatch across ${STATS.statesCovered} states. Typical gross ${OO.annualGross}/year at ${OO.perMile}/mile. Lease-to-buy — ask for terms. HQ in ${COMPANY_INFO.location}. ${BENEFITS.ownerOperator.join(" ")} ${WORKPLACE.languages} ${WORKPLACE.elp}`,
+  }
   const faqJsonLd = {
     "@context": "https://schema.org",
     "@type": "FAQPage",
@@ -116,9 +126,9 @@ export default function OwnerOperatorsPage() {
             className="!border-b-0 !bg-transparent !pb-0 !pt-4 !backdrop-blur-none [&>div]:px-0 [&_ol]:justify-start"
           />
         }
-        eyebrow={`Lease on · ${COMPANY_INFO.location}`}
-        title="The split, and every deduction, before you sign."
-        description="You already know what a bad lease looks like — a good percentage on paper and a settlement full of lines nobody will explain. Here is the split, here are every one of the deductions, and here is the statement you'll get every week."
+        eyebrow={`Nationwide lease-on · ${STATS.statesCovered} states`}
+        title="90% lease-on owner operators — nationwide, not a call center"
+        description={`Keep ${OO.commission} of gross on linehaul and ${OO.fuelSurcharge} of the fuel surcharge — a nationwide lease-on where you see every deduction before you sign. Here is the split, here are the deductions, and here is the statement you get every week.`}
       >
         {/* Three facts, one of them the size of the argument. */}
         <dl className="rounded-m-3 border border-white/10 bg-white/5 p-6">
@@ -151,7 +161,7 @@ export default function OwnerOperatorsPage() {
                 The arrangement
               </h2>
               <p className="mt-3 max-w-measure text-m-body text-steel-200">
-                Four numbers. If a recruiter anywhere else won&apos;t give you all four on the first call,
+                Four numbers for a 90% lease-on owner operator. If a recruiter anywhere else won&apos;t give you all four on the first call,
                 that is the answer.
               </p>
             </Reveal>
@@ -200,8 +210,11 @@ export default function OwnerOperatorsPage() {
             <div className="mt-8 rounded-m-2 border border-ink/15 p-5">
               <h3 className="font-display text-m-h4 font-bold text-ink">You get the same screen we do</h3>
               <p className="mt-2 max-w-measure text-m-body text-ink-2">
-                Settlements run in our own system, LoadOff. Each one lists the loads, the linehaul, the
-                fuel surcharge, and every deduction as its own line — not one lump sum labelled
+                Settlements run in{" "}
+                <a href="/hub" className="font-semibold text-signal underline-offset-4 hover:underline">
+                  the hub
+                </a>
+                . Each one lists the loads, the linehaul, the fuel surcharge, and every deduction as its own line — not one lump sum labelled
                 &ldquo;expenses.&rdquo; Your escrow balance is on there too, every week, so you always
                 know what you&apos;d get back.
               </p>
@@ -246,7 +259,7 @@ export default function OwnerOperatorsPage() {
               {`Bring your truck. Keep ${OO.commission}.`}
             </h2>
             <p className="mt-4 text-m-body text-steel-200">
-              {`${STATS.trucksInFleet} trucks out of ${COMPANY_INFO.location}, family-owned since ${COMPANY_INFO.founded}. Call and ask us anything — including the questions this page didn't answer.`}
+              {`${STATS.trucksInFleet} trucks nationwide — ${COMPANY_INFO.location} HQ, family-owned since ${COMPANY_INFO.founded}. Call and ask us anything — including the questions this page didn't answer.`}
             </p>
             <p className="mt-8">
               <a

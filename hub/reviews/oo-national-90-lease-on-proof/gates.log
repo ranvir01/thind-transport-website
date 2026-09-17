@@ -1,0 +1,6 @@
+2026-09-17 local gate chain (branch grok/rex-oo-national-90-lease-on)
+npm run build — pass
+npx vitest run — 377 files, 3611 passed, 80 skipped
+node scripts/typecheck-gate.mjs — pass (app 0, tests 0)
+npm run lint — pass
+node scripts/e2e-public-smoke.mjs — Public site smoke clean
