@@ -1,4 +1,25 @@
 {
+  "env": {
+    "CLAUDE_CODE_ENABLE_FUNCTION_HOOKS": "1"
+  },
+  "extraKnownMarketplaces": {
+    "typesafe-ai": {
+      "source": {
+        "source": "github",
+        "repo": "typesafe-ai/skills"
+      }
+    },
+    "org-tools": {
+      "source": {
+        "source": "github",
+        "repo": "ranvir01/grok-bot-org"
+      }
+    }
+  },
+  "enabledPlugins": {
+    "typesafe@typesafe-ai": true,
+    "fast-jev-compaction@org-tools": true
+  },
   "hooks": {
     "SessionStart": [
       {
